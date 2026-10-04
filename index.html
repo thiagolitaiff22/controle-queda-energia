@@ -5,33 +5,33 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <title>Queda de Energia · Rodrigues Litaiff</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <style>
 :root{
-  --bg:#FFFFFF; --panel:#FFFFFF; --soft:#F6F7F9; --hover:#F1F3F6; --active:#ECEFF4;
-  --ink:#111827; --ink-2:#4B5563; --ink-3:#6B7280; --line:#E5E7EB; --line-2:#D9DDE3;
-  --blue:#2F6FDE; --blue-soft:#E8F0FD; --green:#1F8A57; --green-soft:#E3F4EA;
-  --amber:#C07A12; --amber-soft:#FCF0DC; --red:#D1343B; --red-soft:#FBE6E7; --purple:#7C4DDB;
-  --tile:#EEF1F6; --shadow:0 1px 2px rgba(17,24,39,.04);
-  --font:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --bg:hsl(0 0% 100%); --panel:hsl(0 0% 100%); --soft:hsl(0 0% 96%); --hover:hsl(0 0% 95%); --active:hsl(222 47% 30% / .1);
+  --ink:hsl(222 15% 7%); --ink-2:hsl(220 12% 28%); --ink-3:hsl(220 9% 46%); --line:hsl(0 0% 90%); --line-2:hsl(0 0% 84%);
+  --primary:hsl(222 47% 30%); --on-primary:#fff;
+  --blue:hsl(218 65% 46%); --blue-soft:hsl(218 65% 46% / .1); --green:hsl(152 52% 34%); --green-soft:hsl(152 52% 34% / .1);
+  --amber:hsl(34 85% 40%); --amber-soft:hsl(34 85% 40% / .12); --red:hsl(2 62% 46%); --red-soft:hsl(2 62% 46% / .1); --purple:hsl(262 50% 52%);
+  --tile:hsl(222 47% 30% / .1); --shadow:none;
+  --font:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   color-scheme:dark;
-  --bg:#000000; --panel:#0B0B0B; --soft:#141414; --hover:#1A1A1A; --active:#222222;
-  --ink:#EDEDED; --ink-2:#B5B5B5; --ink-3:#8C8C8C; --line:#232323; --line-2:#2E2E2E;
-  --blue:#6A9CF0; --blue-soft:#1B2A42; --green:#4CC48A; --green-soft:#16301F;
-  --amber:#E7A94A; --amber-soft:#35280F; --red:#F07076; --red-soft:#3A1A1C; --purple:#A585F0;
-  --tile:#1A1A1A; --shadow:none;
+  --bg:hsl(222 24% 8%); --panel:hsl(222 20% 11%); --soft:hsl(222 14% 16%); --hover:hsl(222 18% 14%); --active:hsl(217 62% 60% / .12);
+  --ink:hsl(220 20% 92%); --ink-2:hsl(220 12% 72%); --ink-3:hsl(220 12% 58%); --line:hsl(220 14% 20%); --line-2:hsl(220 12% 27%);
+  --primary:hsl(217 62% 60%); --on-primary:hsl(222 45% 10%);
+  --blue:hsl(218 62% 62%); --blue-soft:hsl(218 62% 54% / .16); --green:hsl(152 48% 50%); --green-soft:hsl(152 48% 42% / .16);
+  --amber:hsl(38 78% 56%); --amber-soft:hsl(38 78% 50% / .16); --red:hsl(2 62% 62%); --red-soft:hsl(2 62% 54% / .16); --purple:hsl(262 48% 68%);
+  --tile:hsl(217 62% 60% / .12); --shadow:none;
 }}
 :root[data-theme="dark"]{
   color-scheme:dark;
-  --bg:#000000; --panel:#0B0B0B; --soft:#141414; --hover:#1A1A1A; --active:#222222;
-  --ink:#EDEDED; --ink-2:#B5B5B5; --ink-3:#8C8C8C; --line:#232323; --line-2:#2E2E2E;
-  --blue:#6A9CF0; --blue-soft:#1B2A42; --green:#4CC48A; --green-soft:#16301F;
-  --amber:#E7A94A; --amber-soft:#35280F; --red:#F07076; --red-soft:#3A1A1C; --purple:#A585F0;
-  --tile:#1A1A1A; --shadow:none;
+  --bg:hsl(222 24% 8%); --panel:hsl(222 20% 11%); --soft:hsl(222 14% 16%); --hover:hsl(222 18% 14%); --active:hsl(217 62% 60% / .12);
+  --ink:hsl(220 20% 92%); --ink-2:hsl(220 12% 72%); --ink-3:hsl(220 12% 58%); --line:hsl(220 14% 20%); --line-2:hsl(220 12% 27%);
+  --primary:hsl(217 62% 60%); --on-primary:hsl(222 45% 10%);
+  --blue:hsl(218 62% 62%); --blue-soft:hsl(218 62% 54% / .16); --green:hsl(152 48% 50%); --green-soft:hsl(152 48% 42% / .16);
+  --amber:hsl(38 78% 56%); --amber-soft:hsl(38 78% 50% / .16); --red:hsl(2 62% 62%); --red-soft:hsl(2 62% 54% / .16); --purple:hsl(262 48% 68%);
+  --tile:hsl(217 62% 60% / .12); --shadow:none;
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -119,35 +119,57 @@ svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .tnum{font-variant-numeric:tabular-nums}
 
 /* ---------- shell ---------- */
-.app{display:grid;grid-template-columns:232px minmax(0,1fr);min-height:100%}
-.app.collapsed{grid-template-columns:0 minmax(0,1fr)}
-.app.collapsed .side{visibility:hidden}
-.side{border-right:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;gap:18px;padding-block:14px;padding-inline:10px;position:sticky;top:0;height:100vh;overflow:auto}
+.app{display:grid;grid-template-columns:240px minmax(0,1fr);min-height:100%}
+.app.collapsed{grid-template-columns:64px minmax(0,1fr)}
+.app.collapsed .brand > div:not(.logo),.app.collapsed .nav button span,.app.collapsed .side-foot > div:not(.av){display:none}
+.app.collapsed .side .brand{justify-content:center;padding:0}
+.app.collapsed .nav button{justify-content:center;padding-inline:0}
+.app.collapsed .side-foot{justify-content:center}
+.side{border-right:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow:auto;z-index:20}
+.side .brand{height:56px;border-bottom:1px solid var(--line);padding:0 14px;flex:none}
+.side .nav{padding:8px;flex:1 1 auto}
 .brand{display:flex;align-items:center;gap:10px;padding:2px 6px}
-.brand .logo{width:36px;height:36px;border-radius:9px;background:var(--tile);display:grid;place-items:center;color:var(--blue)}
+.brand .logo{width:36px;height:36px;border-radius:12px;background:var(--tile);display:grid;place-items:center;color:var(--primary);font-weight:700;flex:none}
 .brand b{display:block;font-size:14px;font-weight:700;line-height:1.2}
 .brand span{font-size:12px;color:var(--ink-3)}
 .nav{display:flex;flex-direction:column;gap:2px}
 .nav-lbl{font-size:11px;font-weight:600;color:var(--ink-3);padding:10px 12px 4px;letter-spacing:.02em}
-.nav button{display:flex;align-items:center;gap:11px;border:0;background:none;text-align:left;padding:8px 12px;border-radius:9px;font-size:14px;font-weight:500;color:var(--ink-2)}
+.nav button{display:flex;align-items:center;gap:10px;border:0;background:none;text-align:left;padding:7px 12px;border-radius:9px;font-size:14px;font-weight:400;color:var(--ink-2);width:100%}
+.nav button svg.i{width:20px;height:20px}
 .nav button:hover{background:var(--hover);color:var(--ink)}
-.nav button[aria-selected="true"]{background:var(--active);color:var(--ink);font-weight:600}
+.nav button[aria-selected="true"]{background:var(--active);color:var(--primary);font-weight:500}
 .nav button[disabled]{cursor:default;opacity:.6}
 .nav button[disabled]:hover{background:none;color:var(--ink-2)}
 .nav .soon-tag{margin-left:auto;font-size:10.5px;font-weight:600;color:var(--ink-3);background:var(--soft);border:1px solid var(--line);border-radius:999px;padding:1px 7px}
-.side-foot{margin-top:auto;display:flex;align-items:center;gap:10px;padding:10px 8px 0;border-top:1px solid var(--line)}
-.side-foot .av{width:28px;height:28px;border-radius:50%;background:var(--tile);display:grid;place-items:center;font-size:12px;font-weight:700;color:var(--ink-2)}
+.side-foot{margin-top:auto;display:flex;align-items:center;gap:10px;padding:12px 14px;border-top:1px solid var(--line)}
+.side-foot > div{min-width:0}
+.side-foot b{display:block;font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.side-foot .av{width:28px;height:28px;border-radius:50%;background:var(--tile);color:var(--primary)!important;flex:none;display:grid;place-items:center;font-size:12px;font-weight:700;color:var(--ink-2)}
 .side-foot small{display:block;color:var(--ink-3);font-size:11.5px}
 
 .main{min-width:0;display:flex;flex-direction:column}
-.topbar{height:52px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding-inline:16px;background:var(--panel);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+.topbar{height:56px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;padding-inline:16px;background:color-mix(in srgb, var(--panel) 85%, transparent);backdrop-filter:blur(16px);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
 .icon-btn{width:34px;height:34px;display:grid;place-items:center;border:0;background:none;border-radius:8px;color:var(--ink-2)}
 .icon-btn:hover{background:var(--hover);color:var(--ink)}
-.top-right{display:flex;align-items:center;gap:4px}
+.top-right{display:flex;align-items:center;gap:8px}
+.top-left{display:flex;align-items:center;gap:8px;min-width:0}
+.top-right small{font-size:11.5px;color:var(--ink-3);white-space:nowrap}
+.side-scrim{display:none}
+@media (max-width:900px){
+  .app,.app.collapsed{grid-template-columns:minmax(0,1fr)}
+  .app .side{position:fixed;left:0;top:0;bottom:0;width:260px;transform:translateX(-100%);transition:transform .2s;box-shadow:0 10px 40px rgba(0,0,0,.25)}
+  .app.open .side{transform:none}
+  .app.open .side-scrim{display:block;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:15}
+  .app.collapsed .brand > div:not(.logo),.app.collapsed .nav button span,.app.collapsed .side-foot > div:not(.av){display:revert}
+  .app.collapsed .side .brand{justify-content:flex-start;padding:0 14px}
+  .app.collapsed .nav button{justify-content:flex-start;padding-inline:12px}
+  .top-right small{display:none}
+}
 .bell{position:relative}
 .bell .badge{position:absolute;top:3px;right:3px;min-width:16px;height:16px;border-radius:999px;background:var(--red);color:#fff;font-size:10px;font-weight:700;display:grid;place-items:center;padding-inline:4px}
 
-.content{padding-inline:24px;padding-block:24px 48px;display:flex;flex-direction:column;gap:18px;max-width:1320px;width:100%}
+.content{padding:24px;padding-bottom:48px;display:flex;flex-direction:column;gap:18px;max-width:1400px;width:100%}
+@media (max-width:640px){ .content{padding:16px 16px 40px} }
 
 /* ---------- page header ---------- */
 .ph{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start;justify-content:space-between}
@@ -161,7 +183,7 @@ svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .ph-actions small{font-size:11.5px;color:var(--ink-3)}
 .btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line-2);background:var(--panel);padding:8px 13px;border-radius:9px;font-weight:600;font-size:13.5px;box-shadow:var(--shadow)}
 .btn:hover{background:var(--hover)}
-.btn.primary{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.btn.primary{background:var(--primary);border-color:var(--primary);color:var(--on-primary)}
 .btn.primary:hover{opacity:.9}
 .btn.danger{color:var(--red);border-color:var(--red)}
 .btn.danger.armed{background:var(--red);color:#fff}
@@ -244,7 +266,7 @@ header.top h1{margin:4px 0 0;font-size:32px;line-height:1.1;font-weight:800;lett
 .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}
 .stat{padding:14px 14px 0;display:flex;flex-direction:column;min-height:134px;overflow:hidden}
-.stat-h{display:flex;align-items:center;gap:8px;color:var(--ink-2);font-size:11.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.stat-h{display:flex;align-items:center;gap:8px;color:var(--ink-3);font-size:10.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase}
 .stat-h svg.i{width:17px;height:17px}
 .help{display:inline-grid;place-items:center;width:15px;height:15px;border-radius:50%;border:1.4px solid var(--ink-3);color:var(--ink-3);font-size:9.5px;font-weight:700;cursor:pointer;text-transform:none;letter-spacing:0;background:none;padding:0;font-family:inherit}
 .help:hover,.help[aria-expanded="true"]{border-color:var(--ink);color:var(--ink)}
@@ -254,7 +276,7 @@ header.top h1{margin:4px 0 0;font-size:32px;line-height:1.1;font-weight:800;lett
 .help-pop li{margin:2px 0}
 .help-pop b{font-weight:600}
 .help-pop .btn{margin-top:10px;width:100%;justify-content:center}
-.stat-v{font-size:26px;font-weight:800;letter-spacing:-.02em;margin-top:6px;line-height:1.1}
+.stat-v{font-size:28px;font-weight:700;letter-spacing:-.02em;margin-top:6px;line-height:1.1}
 .stat-c{font-size:12.5px;color:var(--ink-2);margin-top:3px}
 .stat-viz{margin-top:auto;padding-top:10px;margin-inline:-14px}
 .stat-viz svg{display:block;width:100%;height:44px}
@@ -500,13 +522,6 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
 @media (max-width:1100px){ .stats{grid-template-columns:repeat(2,minmax(0,1fr))} .stats.five{grid-template-columns:repeat(3,minmax(0,1fr))} }
 @media (max-width:900px){
   .top-actions{align-items:flex-start}
-  .app.collapsed .side{visibility:visible}
-  .side{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding-block:10px;gap:10px}
-  .nav{flex-direction:row;overflow-x:auto;gap:4px}
-  .nav-lbl,.side-foot{display:none}
-  .nav button{white-space:nowrap}
-  #btn-side{display:none}
-  .content{padding-inline:16px}
   .row.head{display:none}
   .row{grid-template-columns:1fr 1fr!important;gap:10px 14px}
   .row .c-name,.row .c-act{grid-column:1/-1}
@@ -538,6 +553,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   <symbol id="i-sync" viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16M3 12a9 9 0 0 1 15.5-6.2L21 8M21 3v5h-5M3 21v-5h5"/></symbol>
   <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></symbol>
   <symbol id="i-panel" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></symbol>
   <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
   <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9"/></symbol>
   <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
@@ -578,31 +594,31 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   </div>
 </div>
 
-<div class="wrap" id="app" hidden>
-  <header class="top">
-    <div>
-      <div class="eyebrow">Rodrigues Litaiff Advogados</div>
-      <h1>Queda de Energia</h1>
-      <p class="sub">Ações contra a Âmbar Energia · Alvarães/AM</p>
-    </div>
-    <div class="top-actions">
-      <div class="top-btns">
-        <button class="btn theme-btn" id="btn-theme" type="button" aria-label="Modo escuro" title="Modo escuro"><svg class="i"><use id="theme-ico" href="#i-moon"/></svg></button>
+<div class="app" id="app" hidden>
+  <aside class="side" aria-label="Menu">
+    <div class="brand"><div class="logo"><svg class="i"><use href="#i-bolt"/></svg></div><div><b>Queda de Energia</b><span>Rodrigues Litaiff Advogados</span></div></div>
+    <nav class="nav" role="tablist" aria-orientation="vertical">
+      <button class="tab" role="tab" id="tab-clientes" aria-selected="true" type="button" title="Dashboard"><svg class="i"><use href="#i-grid"/></svg><span>Dashboard</span></button>
+      <button class="tab" role="tab" id="tab-lista" aria-selected="false" type="button" title="Clientes"><svg class="i"><use href="#i-users"/></svg><span>Clientes</span></button>
+      <button class="tab" role="tab" id="tab-pos" aria-selected="false" type="button" title="Pós-audiência"><svg class="i"><use href="#i-gavel"/></svg><span>Pós-audiência</span></button>
+      <button class="tab" role="tab" id="tab-ret" aria-selected="false" type="button" title="Retorno em 6 meses"><svg class="i"><use href="#i-repeat"/></svg><span>Retorno em 6 meses</span></button>
+      <button class="tab" role="tab" id="tab-ct" aria-selected="false" type="button" title="Contestações"><svg class="i"><use href="#i-scale"/></svg><span>Contestações</span></button>
+      <button class="tab admin-only" role="tab" id="tab-equipe" aria-selected="false" type="button" title="Configurações"><svg class="i"><use href="#i-gear"/></svg><span>Configurações</span></button>
+    </nav>
+    <div class="side-foot"><div class="av" id="me-av">E</div><div><b id="me"></b><button type="button" class="linkbtn" id="btn-sair">Sair</button></div></div>
+  </aside>
+  <div class="side-scrim" id="side-scrim"></div>
+  <div class="main">
+    <div class="topbar">
+      <div class="top-left"><button class="icon-btn" id="btn-side" type="button" aria-label="Recolher menu" title="Recolher menu"><svg class="i"><use href="#i-panel"/></svg></button></div>
+      <div class="top-right">
+        <small id="sync">Conectando à base…</small>
+        <button class="icon-btn theme-btn" id="btn-theme" type="button" aria-label="Modo escuro" title="Modo escuro"><svg class="i"><use id="theme-ico" href="#i-moon"/></svg></button>
         <button class="btn primary" id="btn-novo" type="button"><svg class="i"><use href="#i-plus"/></svg>Novo cliente</button>
       </div>
-      <small id="sync">Conectando à base…</small>
-      <div class="me-line"><span id="me"></span><button type="button" class="linkbtn" id="btn-sair">Sair</button></div>
     </div>
-  </header>
-
-  <nav class="tabs" role="tablist">
-    <button class="tab" role="tab" id="tab-clientes" aria-selected="true" type="button">Dashboard</button>
-    <button class="tab" role="tab" id="tab-lista" aria-selected="false" type="button">Clientes</button>
-    <button class="tab" role="tab" id="tab-pos" aria-selected="false" type="button">Pós-audiência</button>
-    <button class="tab" role="tab" id="tab-ret" aria-selected="false" type="button">Retorno em 6 meses</button>
-    <button class="tab" role="tab" id="tab-ct" aria-selected="false" type="button">Contestações</button>
-    <button class="tab admin-only" role="tab" id="tab-equipe" aria-selected="false" type="button">Configurações</button>
-  </nav>
+    <div class="content">
+      <div class="ph"><div><h1 id="pg-tit">Dashboard</h1><p id="pg-sub">Audiências, avisos e pauta · Ações contra a Âmbar Energia, Alvarães/AM</p></div></div>
 
   <div class="banner" id="banner" hidden></div>
 
@@ -810,6 +826,8 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
         <div class="prosp-grid" id="prosp-list"></div>
       </section>
 
+    </div>
+  </div>
 </div>
 
 <dialog id="dlg">
@@ -2076,14 +2094,32 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     finally { $('av-save').disabled = false; }
   });
   var VIEWS = { c: ['tab-clientes', 'view-clientes'], l: ['tab-lista', 'view-lista'], p: ['tab-pos', 'view-pos'], r: ['tab-ret', 'view-ret'], t: ['tab-ct', 'view-ct'], e: ['tab-equipe', 'view-equipe'] };
+  var TITULOS = {
+    c: ['Dashboard', 'Audiências, avisos e pauta · Ações contra a Âmbar Energia, Alvarães/AM'],
+    l: ['Clientes', 'Todos os clientes e a etapa de cada processo'],
+    p: ['Pós-audiência', 'Resultados, conclusos, embargos e pagamentos'],
+    r: ['Retorno em 6 meses', 'Quando cada cliente pode entrar com uma nova ação'],
+    t: ['Contestações', 'Teses da Âmbar em cada processo'],
+    e: ['Configurações', 'Equipe, integrações e prospectadores']
+  };
   function showTab(which){
     state.view = which;
     if (which === 'e' && !isAdmin()) which = 'c';
+    if (TITULOS[which]){ $('pg-tit').textContent = TITULOS[which][0]; $('pg-sub').textContent = TITULOS[which][1]; }
+    $('app').classList.remove('open');
     $('btn-novo').hidden = which === 'e';
     Object.keys(VIEWS).forEach(function(k){ $(VIEWS[k][0]).setAttribute('aria-selected', k === which ? 'true' : 'false'); $(VIEWS[k][1]).hidden = k !== which; });
     try { sessionStorage.setItem('qe-view', which); } catch(e){}
   }
   Object.keys(VIEWS).forEach(function(k){ $(VIEWS[k][0]).addEventListener('click', function(){ showTab(k); }); });
+  // sidebar: collapses to icons on desktop, slides in on small screens
+  try { if (localStorage.getItem('qe-side') === 'mini') $('app').classList.add('collapsed'); } catch(e){}
+  $('btn-side').addEventListener('click', function(){
+    if (window.matchMedia('(max-width:900px)').matches){ $('app').classList.toggle('open'); return; }
+    var mini = $('app').classList.toggle('collapsed');
+    try { localStorage.setItem('qe-side', mini ? 'mini' : ''); } catch(e){}
+  });
+  $('side-scrim').addEventListener('click', function(){ $('app').classList.remove('open'); });
   try { var sv = sessionStorage.getItem('qe-view'); if (sv && VIEWS[sv]) showTab(sv); } catch(e){}
 
   $('p-res').innerHTML = opts(RES, 'Todos os resultados') + '<option value="-">Sem resultado lançado</option>';
@@ -2702,7 +2738,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     var p = await SB.from('equipe').select('*').eq('email', email).maybeSingle();
     state.me = { email: email, funcao: f.data, nome: (p.data && p.data.nome) || email };
     document.body.dataset.role = f.data;
-    $('me').innerHTML = '<b>' + esc(state.me.nome) + '</b> · ' + esc(FUNCAO[f.data] || f.data);
+    $('me').textContent = state.me.nome + ' · ' + (FUNCAO[f.data] || f.data); $('me-av').textContent = String(state.me.nome || '?').trim().charAt(0).toUpperCase();
     $('auth').hidden = true; $('app').hidden = false;
     try { var sv = sessionStorage.getItem('qe-view'); showTab(sv && VIEWS[sv] ? sv : state.view || 'c'); } catch(e){ showTab(state.view || 'c'); }
     if (iniciado){ render(); return; }
@@ -2717,7 +2753,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
       state.equipe = rows;
       var eu = rows.filter(function(u){ return u.email === state.me.email; })[0];
       if (!eu || !eu.ativo){ sair(); return; }
-      if (eu.funcao !== state.me.funcao || eu.nome !== state.me.nome){ state.me.funcao = eu.funcao; state.me.nome = eu.nome; document.body.dataset.role = eu.funcao; $('me').innerHTML = '<b>' + esc(eu.nome) + '</b> · ' + esc(FUNCAO[eu.funcao] || eu.funcao); showTab(state.view); }
+      if (eu.funcao !== state.me.funcao || eu.nome !== state.me.nome){ state.me.funcao = eu.funcao; state.me.nome = eu.nome; document.body.dataset.role = eu.funcao; $('me').textContent = eu.nome + ' · ' + (FUNCAO[eu.funcao] || eu.funcao); $('me-av').textContent = String(eu.nome || '?').trim().charAt(0).toUpperCase(); showTab(state.view); }
       renderEquipe();
     }, function(){}, function(x){ return x; }, 'email');
   }
