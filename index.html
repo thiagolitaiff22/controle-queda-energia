@@ -454,6 +454,24 @@ header.top h1{margin:4px 0 0;font-size:32px;line-height:1.1;font-weight:800;lett
 .foot-note{font-size:12.5px;color:var(--ink-3);margin:0}
 .more{display:flex;justify-content:center;padding:12px;border-top:1px solid var(--line)}
 
+.ct-box{padding:18px 20px;display:flex;flex-direction:column;gap:14px}
+.ct-resumo{font-size:13px;color:var(--ink-2)}
+.ct-resumo b{color:var(--ink);font-weight:700}
+.ct-tese{border-top:1px solid var(--line);padding-top:12px}
+.ct-tese summary{cursor:pointer;list-style:none;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:center}
+.ct-tese summary::-webkit-details-marker{display:none}
+.ct-nome{font-weight:600;font-size:14px}
+.ct-num{font-size:13px;color:var(--ink-2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.ct-num b{color:var(--ink);font-size:15px}
+.ct-tese .etapas-bar{grid-column:1 / -1;height:6px}
+.ct-res{grid-column:1 / -1;font-size:12px;color:var(--ink-3)}
+.ct-lista{margin-top:10px;display:flex;flex-direction:column;gap:2px;max-height:320px;overflow:auto}
+.ct-cli{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;font-size:12.5px;padding:5px 6px;border-radius:6px;text-align:left;background:none;border:0;color:inherit;font-family:inherit;cursor:pointer}
+.ct-cli:hover{background:var(--soft)}
+.ct-cli span:last-child{color:var(--ink-3);font-variant-numeric:tabular-nums;white-space:nowrap}
+.ct-comb{font-size:12.5px;color:var(--ink-2);display:flex;flex-direction:column;gap:4px}
+.ct-comb div{display:flex;justify-content:space-between;gap:12px}
+.ct-comb b{font-variant-numeric:tabular-nums}
 .soon{padding:24px;display:flex;flex-direction:column;gap:10px;max-width:72ch}
 .soon h2{margin:0;font-size:17px}
 .soon ul{margin:0;padding-left:18px;color:var(--ink-2)}
@@ -781,16 +799,8 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
         </div>
         <div class="prosp-grid" id="prosp-list"></div>
         <div class="sec-title">Análise de contestação</div>
-        <div class="card soon">
-          <span class="pill muted" style="align-self:flex-start">Próxima etapa</span>
-          <h2>Análise de contestação em massa</h2>
-          <p class="small" style="margin:0;font-size:13px;color:var(--ink-2)">As teses de cada contestação já foram importadas da planilha. Esta aba vai agrupar os clientes por tese e organizar a réplica, por exemplo:</p>
-          <ul>
-            <li>Upload das contestações (PDF) vinculadas a cada cliente</li>
-            <li>Teses recorrentes da defesa e resposta padrão para cada uma</li>
-            <li>Status da réplica por processo</li>
-          </ul>
-        </div>
+        <p class="view-desc">Teses que a Âmbar usou na contestação de cada processo. Um processo pode ter mais de uma tese. Clique em uma tese para ver os clientes; clique no nome para abrir o cadastro.</p>
+        <div class="card ct-box" id="ct-box"></div>
       </section>
 
 </div>
@@ -1499,7 +1509,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
       '</div>';
     }).join('');
   }
-  function render(){ renderStats(); renderPauta(); renderList(); renderLista(); renderPos(); renderRet(); renderProsp(); renderEquipe(); if (typeof AV !== 'undefined' && AV && !AV.rodando) avMontar(); }
+  function render(){ renderStats(); renderPauta(); renderList(); renderLista(); renderPos(); renderRet(); renderProsp(); renderEquipe(); renderContest(); if (typeof AV !== 'undefined' && AV && !AV.rodando) avMontar(); }
   var clQ = '';
   // stage of each process, derived from what is already recorded (no extra typing)
   var ETAPAS = [
@@ -1577,6 +1587,56 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
 
   /* ---------- equipe ---------- */
   var FUNCAO = { admin: 'Administrador', assistente: 'Assistente' };
+  /* ---------- análise de contestação (teses da defesa) ---------- */
+  var TESES = [
+    ['reiteracao', 'Aparente reiteração de demandas', /REITERA/],
+    ['devedor', 'Devedor contumaz', /DEVEDOR/],
+    ['generica', 'Contestação genérica', /GEN[EÉ]RICA/],
+    ['cortada', 'Unidade consumidora cortada', /CORTAD/],
+    ['coisa', 'Coisa julgada', /COISA JULGADA/],
+    ['ilegitimidade', 'Ilegitimidade ativa (nunca foi titular)', /ILEGITIMIDADE|NUNCA FOI TITULAR/],
+    ['inconsistencia', 'Inconsistência na indicação do autor', /INCONSIST/]
+  ];
+  function tesesDe(r){
+    var t = String(r.tese || '').toUpperCase(); if (!t.trim()) return [];
+    var out = TESES.filter(function(x){ return x[2].test(t); }).map(function(x){ return x[0]; });
+    return out.length ? out : ['outra'];
+  }
+  function nomeTese(k){ var x = TESES.filter(function(t){ return t[0] === k; })[0]; return x ? x[1] : 'Outra tese'; }
+  function renderContest(){
+    var box = $('ct-box'); if (!box) return;
+    var rows = state.rows, com = rows.filter(function(r){ return tesesDe(r).length; });
+    if (!rows.length){ box.innerHTML = '<div class="small">Carregando…</div>'; return; }
+    var grupos = {}, combos = {};
+    com.forEach(function(r){
+      var ks = tesesDe(r);
+      ks.forEach(function(k){ (grupos[k] = grupos[k] || []).push(r); });
+      var c = ks.map(nomeTese).join(' + '); combos[c] = (combos[c] || 0) + 1;
+    });
+    var ordem = Object.keys(grupos).sort(function(a, b){ return grupos[b].length - grupos[a].length; });
+    var html = '<div class="ct-resumo"><b>' + com.length + '</b> de ' + rows.length + ' clientes com tese registrada' + (rows.length - com.length ? ' · <b>' + (rows.length - com.length) + '</b> sem tese' : '') + ' · <b>' + ordem.length + '</b> teses diferentes</div>';
+    html += ordem.map(function(k){
+      var lista = grupos[k].slice().sort(function(a, b){ return String(a.nome).localeCompare(String(b.nome), 'pt'); });
+      var pct = Math.round(lista.length / com.length * 100);
+      var res = {}; lista.forEach(function(r){ if (r.resultado && RES[r.resultado]) res[r.resultado] = (res[r.resultado] || 0) + 1; });
+      var resTxt = Object.keys(res).map(function(x){ return RES[x][0] + ': ' + res[x]; }).join(' · ');
+      return '<details class="ct-tese"><summary><span class="ct-nome">' + esc(nomeTese(k)) + '</span><span class="ct-num"><b>' + lista.length + '</b> · ' + pct + '%</span>' +
+        '<div class="etapas-bar"><span style="width:' + pct + '%;background:var(--blue)"></span></div>' +
+        (resTxt ? '<span class="ct-res">Resultados: ' + esc(resTxt) + '</span>' : '') + '</summary>' +
+        '<div class="ct-lista">' + lista.map(function(r){ return '<button type="button" class="ct-cli" data-ct="' + esc(r.id) + '"><span>' + esc(r.nome) + '</span><span>' + esc(r.processo || '') + (r.audData ? ' · ' + fmtShort(r.audData) : '') + '</span></button>'; }).join('') + '</div></details>';
+    }).join('');
+    var cks = Object.keys(combos).sort(function(a, b){ return combos[b] - combos[a]; });
+    html += '<details class="ct-tese"><summary><span class="ct-nome">Combinações de teses</span><span class="ct-num"><b>' + cks.length + '</b></span></summary><div class="ct-comb" style="margin-top:10px">' +
+      cks.map(function(c){ return '<div><span>' + esc(c) + '</span><b>' + combos[c] + '</b></div>'; }).join('') + '</div></details>';
+    var abertos = Array.prototype.map.call(box.querySelectorAll('details[open] .ct-nome'), function(e){ return e.textContent; });
+    box.innerHTML = html;
+    Array.prototype.forEach.call(box.querySelectorAll('details'), function(d){ if (abertos.indexOf(d.querySelector('.ct-nome').textContent) >= 0) d.open = true; });
+  }
+  $('ct-box').addEventListener('click', function(e){
+    var b = e.target.closest('[data-ct]'); if (!b) return;
+    var r = state.rows.filter(function(x){ return x.id === b.dataset.ct; })[0]; if (r) openForm(r);
+  });
+
   function renderEquipe(){
     var box = $('eq-list'); if (!box) return;
     var eq = (state.equipe || []).slice().sort(function(a, b){ return (a.nome || '').localeCompare(b.nome || '', 'pt-BR'); });
