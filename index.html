@@ -454,24 +454,23 @@ header.top h1{margin:4px 0 0;font-size:32px;line-height:1.1;font-weight:800;lett
 .foot-note{font-size:12.5px;color:var(--ink-3);margin:0}
 .more{display:flex;justify-content:center;padding:12px;border-top:1px solid var(--line)}
 
-.ct-box{padding:18px 20px;display:flex;flex-direction:column;gap:14px}
-.ct-resumo{font-size:13px;color:var(--ink-2)}
-.ct-resumo b{color:var(--ink);font-weight:700}
-.ct-tese{border-top:1px solid var(--line);padding-top:12px}
-.ct-tese summary{cursor:pointer;list-style:none;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:center}
-.ct-tese summary::-webkit-details-marker{display:none}
-.ct-nome{font-weight:600;font-size:14px}
-.ct-num{font-size:13px;color:var(--ink-2);font-variant-numeric:tabular-nums;white-space:nowrap}
-.ct-num b{color:var(--ink);font-size:15px}
-.ct-tese .etapas-bar{grid-column:1 / -1;height:6px}
-.ct-res{grid-column:1 / -1;font-size:12px;color:var(--ink-3)}
-.ct-lista{margin-top:10px;display:flex;flex-direction:column;gap:2px;max-height:320px;overflow:auto}
-.ct-cli{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;font-size:12.5px;padding:5px 6px;border-radius:6px;text-align:left;background:none;border:0;color:inherit;font-family:inherit;cursor:pointer}
-.ct-cli:hover{background:var(--soft)}
-.ct-cli span:last-child{color:var(--ink-3);font-variant-numeric:tabular-nums;white-space:nowrap}
-.ct-comb{font-size:12.5px;color:var(--ink-2);display:flex;flex-direction:column;gap:4px}
-.ct-comb div{display:flex;justify-content:space-between;gap:12px}
-.ct-comb b{font-variant-numeric:tabular-nums}
+.ct-chips{display:flex;flex-wrap:wrap;gap:8px}
+.ct-chips .chip{cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.ct-chips .chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.ct-chips .chip .n{font-weight:500;opacity:.75;font-variant-numeric:tabular-nums}
+.ct-tab{padding:0;overflow-x:auto}
+.ct-tbl{width:100%;border-collapse:collapse;font-size:13px}
+.ct-tbl th{text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-3);font-weight:600;padding:10px 14px;border-bottom:1px solid var(--line);white-space:nowrap}
+.ct-tbl td{padding:9px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+.ct-tbl tr:last-child td{border-bottom:0}
+.ct-tbl tbody tr{cursor:pointer}
+.ct-tbl tbody tr:hover td{background:var(--hover)}
+.ct-tbl td.n{font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--ink-2)}
+.ct-tbl td.nome{font-weight:600}
+.ct-pills{display:flex;flex-wrap:wrap;gap:4px}
+.ct-pills span{font-size:11.5px;padding:2px 8px;border-radius:999px;background:var(--soft);border:1px solid var(--line);white-space:nowrap}
+.ct-mais{padding:12px 14px;text-align:center}
+@media (max-width:640px){ .ct-tbl thead{display:none} .ct-tbl tr{display:block;padding:10px 14px;border-bottom:1px solid var(--line)} .ct-tbl td{display:block;padding:2px 0;border:0} }
 .soon{padding:24px;display:flex;flex-direction:column;gap:10px;max-width:72ch}
 .soon h2{margin:0;font-size:17px}
 .soon ul{margin:0;padding-left:18px;color:var(--ink-2)}
@@ -601,6 +600,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     <button class="tab" role="tab" id="tab-lista" aria-selected="false" type="button">Clientes</button>
     <button class="tab" role="tab" id="tab-pos" aria-selected="false" type="button">Pós-audiência</button>
     <button class="tab" role="tab" id="tab-ret" aria-selected="false" type="button">Retorno em 6 meses</button>
+    <button class="tab" role="tab" id="tab-ct" aria-selected="false" type="button">Contestações</button>
     <button class="tab admin-only" role="tab" id="tab-equipe" aria-selected="false" type="button">Configurações</button>
   </nav>
 
@@ -703,6 +703,16 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
         <div class="card list" id="p-list"></div>
       </section>
 
+      <section id="view-ct" hidden style="display:flex;flex-direction:column;gap:14px">
+        <p class="view-desc">Tese que a Âmbar usou na contestação de cada processo. Um processo pode ter mais de uma tese. Clique em uma tese para filtrar; clique no cliente para abrir o cadastro.</p>
+        <div class="ct-chips" id="ct-chips" role="group" aria-label="Filtrar por tese"></div>
+        <div class="card filterbar"><div class="fb-top">
+          <div class="search"><svg class="i"><use href="#i-search"/></svg><input id="ct-q" type="search" placeholder="Buscar por nome, CPF ou processo"></div>
+          <span class="fb-count tnum" id="ct-count"></span>
+        </div></div>
+        <div class="card ct-tab"><table class="ct-tbl"><thead><tr><th>Cliente</th><th>CPF</th><th>Processo</th><th>Tese da contestação</th></tr></thead><tbody id="ct-body"></tbody></table></div>
+      </section>
+
       <section id="view-ret" hidden style="display:flex;flex-direction:column;gap:18px">
         <p class="view-desc">Data em que cada cliente pode entrar com uma nova ação, contada 6 meses após o protocolo.</p>
         <div class="stats three">
@@ -798,9 +808,6 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
           <button class="btn" id="btn-prosp-novo" type="button"><svg class="i"><use href="#i-plus"/></svg>Novo prospectador</button>
         </div>
         <div class="prosp-grid" id="prosp-list"></div>
-        <div class="sec-title">Análise de contestação</div>
-        <p class="view-desc">Teses que a Âmbar usou na contestação de cada processo. Um processo pode ter mais de uma tese. Clique em uma tese para ver os clientes; clique no nome para abrir o cadastro.</p>
-        <div class="card ct-box" id="ct-box"></div>
       </section>
 
 </div>
@@ -1603,38 +1610,35 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     return out.length ? out : ['outra'];
   }
   function nomeTese(k){ var x = TESES.filter(function(t){ return t[0] === k; })[0]; return x ? x[1] : 'Outra tese'; }
+  var ctFiltro = '', ctQ = '', ctLimite = 200;
   function renderContest(){
-    var box = $('ct-box'); if (!box) return;
-    var rows = state.rows, com = rows.filter(function(r){ return tesesDe(r).length; });
-    if (!rows.length){ box.innerHTML = '<div class="small">Carregando…</div>'; return; }
-    var grupos = {}, combos = {};
-    com.forEach(function(r){
+    var chips = $('ct-chips'); if (!chips) return;
+    var rows = state.rows, cont = {}, sem = 0;
+    rows.forEach(function(r){ var ks = tesesDe(r); if (!ks.length) sem++; ks.forEach(function(k){ cont[k] = (cont[k] || 0) + 1; }); });
+    var ordem = Object.keys(cont).sort(function(a, b){ return cont[b] - cont[a]; });
+    chips.innerHTML = '<button type="button" class="chip" data-tese="" aria-pressed="' + (ctFiltro === '') + '">Todas <span class="n">' + rows.length + '</span></button>' +
+      ordem.map(function(k){ return '<button type="button" class="chip" data-tese="' + k + '" aria-pressed="' + (ctFiltro === k) + '">' + esc(nomeTese(k)) + ' <span class="n">' + cont[k] + '</span></button>'; }).join('') +
+      (sem ? '<button type="button" class="chip" data-tese="__sem" aria-pressed="' + (ctFiltro === '__sem') + '">Sem tese <span class="n">' + sem + '</span></button>' : '');
+    var q = ctQ.toLowerCase(), qd = ctQ.replace(/[^0-9]/g, '');
+    var lista = rows.filter(function(r){
       var ks = tesesDe(r);
-      ks.forEach(function(k){ (grupos[k] = grupos[k] || []).push(r); });
-      var c = ks.map(nomeTese).join(' + '); combos[c] = (combos[c] || 0) + 1;
-    });
-    var ordem = Object.keys(grupos).sort(function(a, b){ return grupos[b].length - grupos[a].length; });
-    var html = '<div class="ct-resumo"><b>' + com.length + '</b> de ' + rows.length + ' clientes com tese registrada' + (rows.length - com.length ? ' · <b>' + (rows.length - com.length) + '</b> sem tese' : '') + ' · <b>' + ordem.length + '</b> teses diferentes</div>';
-    html += ordem.map(function(k){
-      var lista = grupos[k].slice().sort(function(a, b){ return String(a.nome).localeCompare(String(b.nome), 'pt'); });
-      var pct = Math.round(lista.length / com.length * 100);
-      var res = {}; lista.forEach(function(r){ if (r.resultado && RES[r.resultado]) res[r.resultado] = (res[r.resultado] || 0) + 1; });
-      var resTxt = Object.keys(res).map(function(x){ return RES[x][0] + ': ' + res[x]; }).join(' · ');
-      return '<details class="ct-tese"><summary><span class="ct-nome">' + esc(nomeTese(k)) + '</span><span class="ct-num"><b>' + lista.length + '</b> · ' + pct + '%</span>' +
-        '<div class="etapas-bar"><span style="width:' + pct + '%;background:var(--blue)"></span></div>' +
-        (resTxt ? '<span class="ct-res">Resultados: ' + esc(resTxt) + '</span>' : '') + '</summary>' +
-        '<div class="ct-lista">' + lista.map(function(r){ return '<button type="button" class="ct-cli" data-ct="' + esc(r.id) + '"><span>' + esc(r.nome) + '</span><span>' + esc(r.processo || '') + (r.audData ? ' · ' + fmtShort(r.audData) : '') + '</span></button>'; }).join('') + '</div></details>';
-    }).join('');
-    var cks = Object.keys(combos).sort(function(a, b){ return combos[b] - combos[a]; });
-    html += '<details class="ct-tese"><summary><span class="ct-nome">Combinações de teses</span><span class="ct-num"><b>' + cks.length + '</b></span></summary><div class="ct-comb" style="margin-top:10px">' +
-      cks.map(function(c){ return '<div><span>' + esc(c) + '</span><b>' + combos[c] + '</b></div>'; }).join('') + '</div></details>';
-    var abertos = Array.prototype.map.call(box.querySelectorAll('details[open] .ct-nome'), function(e){ return e.textContent; });
-    box.innerHTML = html;
-    Array.prototype.forEach.call(box.querySelectorAll('details'), function(d){ if (abertos.indexOf(d.querySelector('.ct-nome').textContent) >= 0) d.open = true; });
+      if (ctFiltro === '__sem' ? ks.length : (ctFiltro && ks.indexOf(ctFiltro) < 0)) return false;
+      if (!q) return true;
+      return String(r.nome || '').toLowerCase().indexOf(q) >= 0 || (qd.length >= 3 && (String(r.cpf || '').replace(/[^0-9]/g, '').indexOf(qd) >= 0 || String(r.processo || '').replace(/[^0-9]/g, '').indexOf(qd) >= 0));
+    }).sort(function(a, b){ return String(a.nome).localeCompare(String(b.nome), 'pt'); });
+    $('ct-count').textContent = lista.length + (lista.length === 1 ? ' cliente' : ' clientes');
+    $('ct-body').innerHTML = lista.slice(0, ctLimite).map(function(r){
+      var ks = tesesDe(r);
+      return '<tr data-ct="' + esc(r.id) + '"><td class="nome">' + esc(r.nome) + '</td><td class="n">' + esc(r.cpf || '—') + '</td><td class="n">' + esc(r.processo || '—') + '</td><td><div class="ct-pills">' + (ks.length ? ks.map(function(k){ return '<span>' + esc(nomeTese(k)) + '</span>'; }).join('') : '<span>Sem tese</span>') + '</div></td></tr>';
+    }).join('') + (lista.length > ctLimite ? '<tr class="ct-mais-row"><td colspan="4" class="ct-mais"><button type="button" class="btn" id="ct-mais">Mostrar mais ' + Math.min(200, lista.length - ctLimite) + '</button></td></tr>' : '') +
+      (!lista.length ? '<tr><td colspan="4" class="ct-mais small">Nenhum cliente encontrado.</td></tr>' : '');
   }
-  $('ct-box').addEventListener('click', function(e){
-    var b = e.target.closest('[data-ct]'); if (!b) return;
-    var r = state.rows.filter(function(x){ return x.id === b.dataset.ct; })[0]; if (r) openForm(r);
+  $('ct-chips').addEventListener('click', function(e){ var b = e.target.closest('[data-tese]'); if (!b) return; ctFiltro = b.dataset.tese; ctLimite = 200; renderContest(); });
+  $('ct-q').addEventListener('input', function(e){ ctQ = e.target.value.trim(); ctLimite = 200; renderContest(); });
+  $('ct-body').addEventListener('click', function(e){
+    if (e.target.closest('#ct-mais')){ ctLimite += 200; renderContest(); return; }
+    var tr = e.target.closest('[data-ct]'); if (!tr) return;
+    var r = state.rows.filter(function(x){ return x.id === tr.dataset.ct; })[0]; if (r) openForm(r);
   });
 
   function renderEquipe(){
@@ -2071,7 +2075,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     } catch(err){ toast(errMsg(err)); }
     finally { $('av-save').disabled = false; }
   });
-  var VIEWS = { c: ['tab-clientes', 'view-clientes'], l: ['tab-lista', 'view-lista'], p: ['tab-pos', 'view-pos'], r: ['tab-ret', 'view-ret'], e: ['tab-equipe', 'view-equipe'] };
+  var VIEWS = { c: ['tab-clientes', 'view-clientes'], l: ['tab-lista', 'view-lista'], p: ['tab-pos', 'view-pos'], r: ['tab-ret', 'view-ret'], t: ['tab-ct', 'view-ct'], e: ['tab-equipe', 'view-equipe'] };
   function showTab(which){
     state.view = which;
     if (which === 'e' && !isAdmin()) which = 'c';
