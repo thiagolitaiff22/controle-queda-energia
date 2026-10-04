@@ -454,6 +454,27 @@ header.top h1{margin:4px 0 0;font-size:32px;line-height:1.1;font-weight:800;lett
 .foot-note{font-size:12.5px;color:var(--ink-3);margin:0}
 .more{display:flex;justify-content:center;padding:12px;border-top:1px solid var(--line)}
 
+.kb{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(250px,1fr);gap:12px;overflow-x:auto;padding-bottom:8px;align-items:start}
+.kb-col{background:var(--soft);border:1px solid var(--line);border-radius:12px;display:flex;flex-direction:column;min-width:0;max-height:calc(100vh - 230px)}
+.kb-head{padding:12px 14px 10px;border-bottom:2px solid var(--c);border-radius:12px 12px 0 0;background:color-mix(in srgb, var(--c) 9%, var(--panel))}
+.kb-tit{display:flex;justify-content:space-between;align-items:baseline;gap:8px;color:var(--c);font-weight:700;font-size:12.5px;letter-spacing:.04em;text-transform:uppercase}
+.kb-tit b{font-size:16px;font-variant-numeric:tabular-nums}
+.kb-sub{font-size:11.5px;color:var(--ink-3);margin-top:3px;line-height:1.35}
+.kb-cards{padding:10px;display:flex;flex-direction:column;gap:8px;overflow-y:auto}
+.kb-vazio{font-size:12.5px;color:var(--ink-3);text-align:center;padding:22px 0}
+.kb-card{background:var(--panel);border:1px solid var(--line-2);border-radius:10px;padding:10px 12px;text-align:left;font-family:inherit;color:inherit;cursor:pointer;display:flex;flex-direction:column;gap:6px;width:100%}
+.kb-card:hover{border-color:var(--ink-3)}
+.kb-nome{font-weight:600;font-size:13.5px;line-height:1.3;display:flex;gap:7px;align-items:baseline}
+.kb-nome i{width:7px;height:7px;border-radius:50%;background:var(--c);flex:none;transform:translateY(-1px)}
+.kb-linha{font-size:12px;color:var(--ink-2);display:flex;gap:6px;align-items:center;font-variant-numeric:tabular-nums}
+.kb-linha svg{width:13px;height:13px;color:var(--ink-3);flex:none}
+.kb-tags{display:flex;flex-wrap:wrap;gap:4px}
+.kb-tags span{font-size:11px;font-weight:600;padding:2px 7px;border-radius:6px;background:var(--soft);color:var(--ink-2);border:1px solid var(--line)}
+.kb-tags .t-blue{background:var(--blue-soft);color:var(--blue);border-color:transparent}
+.kb-tags .t-amber{background:var(--amber-soft);color:var(--amber);border-color:transparent}
+.kb-tags .t-red{background:var(--red-soft);color:var(--red);border-color:transparent}
+.kb-tags .t-green{background:var(--green-soft);color:var(--green);border-color:transparent}
+.kb-mais{margin:2px 10px 10px}
 .ct-chips{display:flex;flex-wrap:wrap;gap:8px}
 .ct-chips .chip{cursor:pointer;display:inline-flex;gap:6px;align-items:center}
 .ct-chips .chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
@@ -596,6 +617,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   </header>
 
   <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tab-kb" aria-selected="false" type="button">Kanban</button>
     <button class="tab" role="tab" id="tab-clientes" aria-selected="true" type="button">Audiências</button>
     <button class="tab" role="tab" id="tab-lista" aria-selected="false" type="button">Clientes</button>
     <button class="tab" role="tab" id="tab-pos" aria-selected="false" type="button">Pós-audiência</button>
@@ -607,6 +629,14 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   <div class="banner" id="banner" hidden></div>
 
       <div id="cad-box" hidden></div>
+
+      <section id="view-kb" hidden style="display:flex;flex-direction:column;gap:12px">
+        <div class="card filterbar"><div class="fb-top">
+          <div class="search"><svg class="i"><use href="#i-search"/></svg><input id="kb-q" type="search" placeholder="Buscar por nome, CPF ou processo"></div>
+          <span class="fb-count tnum" id="kb-count"></span>
+        </div></div>
+        <div class="kb" id="kb"></div>
+      </section>
 
       <section id="view-lista" hidden style="display:flex;flex-direction:column;gap:14px">
         <div class="card etapas" id="cl-etapas"></div>
@@ -1516,7 +1546,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
       '</div>';
     }).join('');
   }
-  function render(){ renderStats(); renderPauta(); renderList(); renderLista(); renderPos(); renderRet(); renderProsp(); renderEquipe(); renderContest(); if (typeof AV !== 'undefined' && AV && !AV.rodando) avMontar(); }
+  function render(){ renderStats(); renderPauta(); renderList(); renderLista(); renderPos(); renderRet(); renderProsp(); renderEquipe(); renderContest(); renderKanban(); if (typeof AV !== 'undefined' && AV && !AV.rodando) avMontar(); }
   var clQ = '';
   // stage of each process, derived from what is already recorded (no extra typing)
   var ETAPAS = [
@@ -1610,6 +1640,69 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     return out.length ? out : ['outra'];
   }
   function nomeTese(k){ var x = TESES.filter(function(t){ return t[0] === k; })[0]; return x ? x[1] : 'Outra tese'; }
+  /* ---------- Kanban: a coluna sai do que já está no cadastro ---------- */
+  var KB_COLS = [
+    ['cadastro', 'Cadastro', 'ainda sem número de processo', '--ink-3'],
+    ['protocolado', 'Protocolado', 'com processo, audiência ainda não marcada', '--amber'],
+    ['aguardando', 'Aguardando audiência', 'audiência marcada', '--blue'],
+    ['contestacao', 'Contestação', 'audiência realizada, sem resultado lançado', '--purple'],
+    ['conclusos', 'Conclusos', 'conclusos para decisão ou sentença', '--amber'],
+    ['procedente', 'Procedente', 'procedente ou parcialmente procedente', '--green'],
+    ['improcedente', 'Improcedente', 'improcedente, extinto ou autor ausente', '--red']
+  ];
+  function colunaKb(r){
+    var res = r.resultado || '';
+    if (res === 'parcial' || res === 'procedente') return 'procedente';
+    if (res === 'improcedente' || res === 'extinto' || res === 'ausente') return 'improcedente';
+    if (res === 'aguardando' || r.concluso) return 'conclusos';
+    if (!r.processo) return 'cadastro';
+    if (!r.audData) return 'protocolado';
+    var n = daysUntil(r.audData);
+    return n != null && n >= 0 ? 'aguardando' : 'contestacao';
+  }
+  var kbQ = '', kbLimite = {};
+  function kbCard(r, cor){
+    var tags = [], ks = tesesDe(r);
+    if (ks.length) tags.push('<span>' + esc(ks.map(function(k){ return nomeTese(k).replace('Aparente reiteração de demandas', 'Reiteração').replace('Contestação genérica', 'Genérica').replace('Unidade consumidora cortada', 'UC cortada').replace(/ \(.*\)$/, ''); }).join(' + ')) + '</span>');
+    if (r.online) tags.push('<span class="t-blue">Online</span>');
+    if (r.audData && daysUntil(r.audData) >= 0) tags.push(r.avisado ? '<span class="t-green">Avisado</span>' : r.situacao === 'sem_contato' ? '<span class="t-red">Sem contato</span>' : '<span class="t-amber">A avisar</span>');
+    if (r.resultado === 'ausente') tags.push('<span class="t-red">Ausente</span>');
+    if (r.embargos === 'opostos') tags.push('<span class="t-red">Embargos</span>');
+    if (r.pagamento && PAG[r.pagamento]) tags.push('<span class="' + (r.pagamento === 'pago' ? 't-green' : 't-blue') + '">' + esc(PAG[r.pagamento][0]) + '</span>');
+    if (r.tribunalNovidade) tags.push('<span class="t-blue">Novidade no tribunal</span>');
+    return '<button type="button" class="kb-card" data-kb="' + esc(r.id) + '" style="--c:var(' + cor + ')">' +
+      '<span class="kb-nome"><i></i>' + esc(r.nome) + '</span>' +
+      (r.processo ? '<span class="kb-linha"><svg class="i"><use href="#i-file"/></svg>' + esc(r.processo) + '</span>' : '') +
+      (r.audData ? '<span class="kb-linha"><svg class="i"><use href="#i-cal"/></svg>Audiência ' + fmtShort(r.audData) + (r.audHora ? ' · ' + esc(r.audHora) : '') + '</span>' : '') +
+      (tags.length ? '<span class="kb-tags">' + tags.join('') + '</span>' : '') + '</button>';
+  }
+  function renderKanban(){
+    var box = $('kb'); if (!box) return;
+    var q = kbQ.toLowerCase(), qd = kbQ.replace(/[^0-9]/g, '');
+    var rows = state.rows.filter(function(r){
+      if (!q) return true;
+      return String(r.nome || '').toLowerCase().indexOf(q) >= 0 || (qd.length >= 3 && (String(r.cpf || '').replace(/[^0-9]/g, '').indexOf(qd) >= 0 || String(r.processo || '').replace(/[^0-9]/g, '').indexOf(qd) >= 0));
+    });
+    $('kb-count').textContent = rows.length + (rows.length === 1 ? ' cliente' : ' clientes');
+    var por = {}; KB_COLS.forEach(function(c){ por[c[0]] = []; });
+    rows.forEach(function(r){ por[colunaKb(r)].push(r); });
+    var rolagem = {}; Array.prototype.forEach.call(box.querySelectorAll('.kb-cards'), function(e){ rolagem[e.dataset.col] = e.scrollTop; });
+    box.innerHTML = KB_COLS.map(function(c){
+      var lista = por[c[0]].sort(function(a, b){ return String(a.audData || '9').localeCompare(String(b.audData || '9')) || String(a.audHora || '').localeCompare(String(b.audHora || '')) || String(a.nome).localeCompare(String(b.nome), 'pt'); });
+      var lim = kbLimite[c[0]] || 40;
+      return '<div class="kb-col" style="--c:var(' + c[3] + ')"><div class="kb-head"><div class="kb-tit"><span>' + c[1] + '</span><b>' + lista.length + '</b></div><div class="kb-sub">' + c[2] + '</div></div>' +
+        '<div class="kb-cards" data-col="' + c[0] + '">' + (lista.length ? lista.slice(0, lim).map(function(r){ return kbCard(r, c[3]); }).join('') : '<div class="kb-vazio">Vazio.</div>') + '</div>' +
+        (lista.length > lim ? '<button type="button" class="btn kb-mais" data-mais="' + c[0] + '">Mostrar mais ' + Math.min(40, lista.length - lim) + ' de ' + (lista.length - lim) + '</button>' : '') + '</div>';
+    }).join('');
+    Array.prototype.forEach.call(box.querySelectorAll('.kb-cards'), function(e){ if (rolagem[e.dataset.col]) e.scrollTop = rolagem[e.dataset.col]; });
+  }
+  $('kb-q').addEventListener('input', function(e){ kbQ = e.target.value.trim(); kbLimite = {}; renderKanban(); });
+  $('kb').addEventListener('click', function(e){
+    var m = e.target.closest('[data-mais]'); if (m){ kbLimite[m.dataset.mais] = (kbLimite[m.dataset.mais] || 40) + 40; renderKanban(); return; }
+    var c = e.target.closest('[data-kb]'); if (!c) return;
+    var r = state.rows.filter(function(x){ return x.id === c.dataset.kb; })[0]; if (r) openForm(r);
+  });
+
   var ctFiltro = '', ctQ = '', ctLimite = 200;
   function renderContest(){
     var chips = $('ct-chips'); if (!chips) return;
@@ -2075,7 +2168,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     } catch(err){ toast(errMsg(err)); }
     finally { $('av-save').disabled = false; }
   });
-  var VIEWS = { c: ['tab-clientes', 'view-clientes'], l: ['tab-lista', 'view-lista'], p: ['tab-pos', 'view-pos'], r: ['tab-ret', 'view-ret'], t: ['tab-ct', 'view-ct'], e: ['tab-equipe', 'view-equipe'] };
+  var VIEWS = { k: ['tab-kb', 'view-kb'], c: ['tab-clientes', 'view-clientes'], l: ['tab-lista', 'view-lista'], p: ['tab-pos', 'view-pos'], r: ['tab-ret', 'view-ret'], t: ['tab-ct', 'view-ct'], e: ['tab-equipe', 'view-equipe'] };
   function showTab(which){
     state.view = which;
     if (which === 'e' && !isAdmin()) which = 'c';
