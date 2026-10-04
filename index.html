@@ -571,6 +571,26 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
 @media (max-width:1100px){ #view-clientes .stats > .card:nth-child(3){border-left:0} #view-clientes .stats > .card:nth-child(n+3){border-top:1px solid var(--line)} }
 @media (max-width:560px){ #view-clientes .stats > .card + .card{border-left:0;border-top:1px solid var(--line)} }
 
+/* ---------- Dashboard limpo ---------- */
+.modo-link{border:0;background:none;padding:0;font:inherit;font-size:11.5px;color:var(--ink-3);cursor:pointer;margin-top:1px}
+.modo-link:hover{color:var(--ink);text-decoration:underline}
+.modo-link.on{color:var(--blue);font-weight:600}
+#view-clientes .filterbar .fb-top .search{display:none}
+#view-clientes .filterbar .fb-top{justify-content:flex-end}
+#view-clientes .stats .legend{display:none}
+#view-clientes .stat-c{color:var(--ink-3)}
+.fb-rapido{gap:2px 18px;border-bottom:1px solid var(--line)}
+.fb-rapido > button{border:0;border-radius:0;background:none;padding:8px 0;margin-bottom:-1px;border-bottom:2px solid transparent;font-weight:500;color:var(--ink-3)}
+.fb-rapido > button:hover{background:none;color:var(--ink)}
+.fb-rapido > button[aria-pressed="true"]{background:none;color:var(--ink);border-bottom-color:var(--primary);font-weight:600}
+.fb-rapido > button .dot{display:none}
+.fb-rapido .fb-fim{padding-bottom:4px}
+#view-clientes .list-sum .ls-parts{display:none}
+#list .tel-add,#cl-list .tel-add{border:0;padding:0;background:none;font-weight:500;color:var(--ink-3)}
+#list .tel-add:hover,#cl-list .tel-add:hover{color:var(--blue);text-decoration:underline}
+
+#list .toggle,#cl-list .toggle{border:0;background:none;padding:0;gap:5px;font-weight:600}
+#list .toggle .dot,#cl-list .toggle .dot{width:9px;height:9px;border-width:0;background:currentColor}
 /* ---------- listas finas ---------- */
 #list .row,#cl-list .row{padding:6px 16px;gap:14px;font-size:12.5px;min-height:44px}
 #list .row.head,#cl-list .row.head{padding-block:8px;font-size:10.5px}
@@ -1201,8 +1221,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     var n = daysUntil(r.audData);
     var cls = n < 0 ? '' : (n <= 3 ? 'crit' : (n <= 7 ? 'warn' : 'blue'));
     return '<div class="val">' + fmtShort(r.audData) + (r.audHora ? ' · ' + esc(r.audHora) : '') + '</div>' +
-           '<div class="mini ' + cls + '">' + relLabel(n) + '</div>' +
-           '<div class="modo" role="group" aria-label="Tipo de audiência"><button type="button" data-act="modo" data-v="p" data-id="' + esc(r.id) + '" aria-pressed="' + (!r.online) + '">Presencial</button><button type="button" class="on" data-act="modo" data-v="o" data-id="' + esc(r.id) + '" aria-pressed="' + (!!r.online) + '">Online</button></div>';
+           '<div class="mini ' + cls + '">' + relLabel(n) + ' · <button type="button" class="modo-link' + (r.online ? ' on' : '') + '" data-act="modo" data-v="' + (r.online ? 'p' : 'o') + '" data-id="' + esc(r.id) + '" title="Clique para mudar para ' + (r.online ? 'presencial' : 'online') + '">' + (r.online ? 'online' : 'presencial') + '</button></div>';
   }
   var MEIOS = { whatsapp: 'WhatsApp', convite: 'Convite', prospectador: 'Prospectador', ligacao: 'Ligação', pessoalmente: 'Pessoalmente' };
   function passMeio(r, f){ if (!f || f === 'todos') return true; if (!r.avisado) return false; if (f === 'outro') return r.meioAviso === 'ligacao' || r.meioAviso === 'pessoalmente'; return r.meioAviso === f; }
@@ -1601,6 +1620,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
       '</div>';
     }).join('');
   }
+  if (/^(localhost|127.0.0.1)$/.test(location.hostname)) window.__qeDev = { state: state, render: function(){ render(); } };
   function render(){ renderStats(); renderPauta(); renderList(); renderLista(); renderPos(); renderRet(); renderProsp(); renderEquipe(); renderContest(); renderBusca(); if (typeof AV !== 'undefined' && AV && !AV.rodando) avMontar(); }
   var clQ = '';
   // stage of each process, derived from what is already recorded (no extra typing)
@@ -1733,7 +1753,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
         '<button type="button" class="btn bc-acao" data-bc="' + esc(r.id) + '"><svg class="i"><use href="#i-pencil"/></svg>Abrir cadastro</button></div>';
     }).join('') + (achados.length > 6 ? '<div class="bc-vazio">Mais ' + (achados.length - 6) + ' clientes com esse nome. Digite mais para refinar.</div>' : '');
   }
-  $('bc-q').addEventListener('input', renderBusca);
+  $('bc-q').addEventListener('input', function(){ state.q = this.value.trim(); state.limit = 100; renderBusca(); renderList(); });
   $('bc-res').addEventListener('click', function(e){
     var b = e.target.closest('[data-bc]'); if (!b) return;
     var r = state.rows.filter(function(x){ return x.id === b.dataset.bc; })[0]; if (r) openForm(r);
