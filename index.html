@@ -551,6 +551,26 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
 .f-foot .right{display:flex;gap:8px;margin-left:auto}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:9px;font-weight:600;font-size:13px;z-index:20}
 
+/* ---------- Dashboard enxuto: menos caixas ---------- */
+#view-clientes{gap:14px!important}
+#view-clientes .bc{padding:0;border:0;background:none;box-shadow:none}
+#view-clientes .stats{gap:0;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+#view-clientes .stats > .card{border:0;border-radius:0;background:none;box-shadow:none}
+#view-clientes .stats > .card + .card{border-left:1px solid var(--line)}
+#view-clientes .stat{min-height:0;padding-bottom:12px}
+#view-clientes .stat-viz{padding-top:8px}
+#view-clientes .pauta{display:flex;gap:0;overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:12px}
+#view-clientes .pauta .day{flex:1 0 170px;border:0;border-radius:0;box-shadow:none;background:none}
+#view-clientes .pauta .day + .day{border-left:1px solid var(--line)}
+#view-clientes .pauta .day:hover{background:var(--soft)}
+#view-clientes .pauta .day[aria-pressed="true"]{background:var(--active);box-shadow:inset 0 -2px 0 var(--primary)}
+#view-clientes .filterbar{padding:0;border:0;background:none;box-shadow:none}
+#view-clientes .list-sum{border:0;background:none;box-shadow:none;padding:0;margin:0}
+#view-clientes .sec-title{margin:6px 0 -6px}
+#view-clientes #list-title{display:none}
+@media (max-width:1100px){ #view-clientes .stats > .card:nth-child(3){border-left:0} #view-clientes .stats > .card:nth-child(n+3){border-top:1px solid var(--line)} }
+@media (max-width:560px){ #view-clientes .stats > .card + .card{border-left:0;border-top:1px solid var(--line)} }
+
 /* ---------- responsive ---------- */
 @media (max-width:1100px){ .stats{grid-template-columns:repeat(2,minmax(0,1fr))} .stats.five{grid-template-columns:repeat(3,minmax(0,1fr))} }
 @media (max-width:900px){
@@ -667,7 +687,6 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
           <div class="search bc-campo"><svg class="i"><use href="#i-search"/></svg><input id="bc-q" type="search" autocomplete="off" placeholder="Onde está o cliente? Busque por nome, CPF ou processo"></div>
           <div class="bc-res" id="bc-res" hidden></div>
         </div>
-        <div class="sec-title">Visão geral</div>
         <div class="stats">
           <div class="card stat">
             <div class="stat-h"><svg class="i"><use href="#i-users"/></svg>Clientes<span class="help" data-p-help="semtel" data-p-rot="Ver quem está sem telefone" title="Todos os clientes cadastrados. &quot;Com nº de processo&quot; são os que já foram protocolados.|Com telefone: tem número próprio cadastrado.|Via outro cliente: é avisado pelo número de outro cliente (parente ou vizinho).|Prospectador: o contato é feito pelo prospectador da comunidade.|Sem telefone: nenhum meio de contato cadastrado.">?</span></div>
