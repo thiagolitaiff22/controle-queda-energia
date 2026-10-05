@@ -517,9 +517,13 @@ header.top h1{margin:4px 0 0;font-size:32px;line-height:1.1;font-weight:800;lett
 #ct-aud-prox svg.i{transform:rotate(-90deg)}
 .ct-aud-bar .icon-btn[disabled]{opacity:.35;cursor:default}
 .ct-on{display:block;font-size:11px;font-weight:700;color:var(--blue);letter-spacing:.04em;text-transform:uppercase;margin-top:1px}
-.ct-on-btn{border:0;background:none;padding:4px 8px;border-radius:8px;font-size:12.5px;color:var(--blue);cursor:pointer;margin-left:auto}
+.ct-on-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-2);background:none;padding:6px 12px;border-radius:9px;font-size:13px;font-weight:500;color:var(--blue);cursor:pointer}
+.ct-on-btn b{font-variant-numeric:tabular-nums}
+.ct-on-dot{width:8px;height:8px;border-radius:50%;background:var(--blue)}
 .ct-on-btn:hover{background:var(--hover)}
-.ct-on-btn[aria-pressed="true"]{background:var(--blue-soft);font-weight:600}
+.ct-on-btn[aria-pressed="true"]{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600}
+.ct-on-btn[aria-pressed="true"] .ct-on-dot{background:#fff}
+.ct-tbl td.nome.online,#list .name.online,#cl-list .name.online{color:var(--blue)}
 .ct-aud-info{font-size:12.5px;color:var(--ink-3);margin-left:6px}
 .ct-aud{display:flex;flex-wrap:wrap;gap:2px 22px;border-bottom:1px solid var(--line)}
 .ct-aud button{border:0;background:none;padding:9px 0;margin-bottom:-1px;border-bottom:2px solid transparent;font-size:13.5px;font-weight:500;color:var(--ink-3);white-space:nowrap}
@@ -885,14 +889,13 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
           <select id="ct-aud-sel"></select>
           <button type="button" class="icon-btn" id="ct-aud-prox" aria-label="Próxima audiência" title="Próxima audiência"><svg class="i"><use href="#i-chev"/></svg></button>
           <span class="ct-aud-info" id="ct-aud-info"></span>
-          <button type="button" class="ct-on-btn" id="ct-on-btn" hidden title="Mostrar só quem faz a audiência online"></button>
         </div>
         <div class="stats five ct-stats" id="ct-stats"></div>
         <p class="view-desc">Tese que a Âmbar usou na contestação de cada processo. Um processo pode ter mais de uma tese. Escolha a audiência no alto; clique numa tese ou num indicador para filtrar a lista; clique no cliente para abrir o cadastro.</p>
         <div class="card ct-res-box"><table class="ct-resumo" id="ct-chips" aria-label="Audiências por tese"></table></div>
         <div class="card filterbar"><div class="fb-top">
           <div class="search"><svg class="i"><use href="#i-search"/></svg><input id="ct-q" type="search" placeholder="Buscar por nome, CPF ou processo"></div>
-          <span class="fb-count tnum" id="ct-count"></span>
+          <button type="button" class="ct-on-btn" id="ct-on-btn" hidden title="Mostrar só quem faz a audiência online"></button><span class="fb-count tnum" id="ct-count"></span>
         </div></div>
         <div class="ct-resf" id="ct-resf" role="group" aria-label="Filtrar por resultado"></div>
         <div class="card ct-tab"><table class="ct-tbl"><thead><tr><th>Cliente</th><th>CPF</th><th>Processo</th><th>Audiência</th><th>Tese da contestação</th><th>Resultado na audiência</th></tr></thead><tbody id="ct-body"></tbody></table></div>
@@ -1513,7 +1516,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     }
     list.slice(0, state.limit).forEach(function(r){
       html += '<div class="row">' +
-        '<div class="c-name"><div class="name"><span>' + esc(r.nome) + '</span>' + pastaIco(r) + '</div><div class="addr">' + esc(r.endereco || 'Endereço não informado') + '</div></div>' +
+        '<div class="c-name"><div class="name' + (r.online ? ' online' : '') + '"' + (r.online ? ' title="Audiência online"' : '') + '><span>' + esc(r.nome) + '</span>' + pastaIco(r) + '</div><div class="addr">' + esc(r.endereco || 'Endereço não informado') + '</div></div>' +
         '<div><span class="lbl">Processo</span><div class="val" style="font-size:12.5px">' + esc(r.processo || '—') + '</div>' +
           '<div class="mini' + (r.cpf && !cpfValido(r.cpf) ? ' crit' : '') + '">CPF ' + esc(r.cpf || '—') + (r.cpf && !cpfValido(r.cpf) ? ' · inválido' : '') + '</div></div>' +
         '<div><span class="lbl">Contato</span>' + telCell(r) + '</div>' +
@@ -1883,7 +1886,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     $('ct-aud-prox').disabled = !ks.length || (pos >= 0 && pos === ks.length - 1);
     $('ct-aud-info').textContent = ctSessao ? (pos + 1) + ' de ' + ks.length + ' audiências' : ks.length + ' audiências no sistema';
     var nOn = state.rows.filter(function(r){ return r.online && (!ctSessao || chaveS(r) === ctSessao); }).length;
-    $('ct-on-btn').hidden = !nOn && !ctOnline; $('ct-on-btn').setAttribute('aria-pressed', ctOnline); $('ct-on-btn').innerHTML = (ctOnline ? 'Mostrando só online · ' : '') + '<b>' + nOn + '</b> ' + (nOn === 1 ? 'faz' : 'fazem') + ' online';
+    $('ct-on-btn').hidden = !nOn && !ctOnline; $('ct-on-btn').setAttribute('aria-pressed', ctOnline); $('ct-on-btn').innerHTML = '<i class="ct-on-dot"></i>Só online <b>' + nOn + '</b>';
     var rows = state.rows.filter(function(r){ return !ctSessao || chaveS(r) === ctSessao; });
     var cont = {}, sem = 0;
     rows.forEach(function(r){ var t = tesesDe(r); if (!t.length) sem++; t.forEach(function(k){ cont[k] = (cont[k] || 0) + 1; }); });
@@ -1927,7 +1930,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     $('ct-count').textContent = lista.length + (lista.length === 1 ? ' cliente' : ' clientes');
     $('ct-body').innerHTML = lista.slice(0, ctLimite).map(function(r){
       var t = tesesDe(r);
-      return '<tr data-ct="' + esc(r.id) + '"><td class="nome">' + esc(r.nome) + '</td><td class="n">' + esc(r.cpf || '—') + '</td><td class="n">' + (r.processo ? '<button type="button" class="copia" data-copiar="' + esc(r.processo) + '" title="Copiar o número do processo">' + esc(r.processo) + '<svg class="i"><use href="#i-copy"/></svg></button>' : '—') + '</td><td class="n">' + (r.audData ? fmtShort(r.audData) + (r.audHora ? ' · ' + esc(r.audHora) : '') : '—') + (r.online ? '<span class="ct-on">Online</span>' : '') + '</td><td><div class="ct-pills">' + (t.length ? t.map(function(k){ return '<span>' + esc(nomeTese(k)) + '</span>'; }).join('') : '<span>Sem tese</span>') + '</div></td><td><div class="ct-ctl" role="group" aria-label="Resultado de ' + esc(r.nome) + '">' + CT_RES.map(function(x){ return '<button type="button" data-res="' + x[0] + '" data-id="' + esc(r.id) + '" aria-pressed="' + (resAud(r) === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div></td></tr>';
+      return '<tr data-ct="' + esc(r.id) + '"><td class="nome' + (r.online ? ' online' : '') + '"' + (r.online ? ' title="Audiência online"' : '') + '>' + esc(r.nome) + '</td><td class="n">' + esc(r.cpf || '—') + '</td><td class="n">' + (r.processo ? '<button type="button" class="copia" data-copiar="' + esc(r.processo) + '" title="Copiar o número do processo">' + esc(r.processo) + '<svg class="i"><use href="#i-copy"/></svg></button>' : '—') + '</td><td class="n">' + (r.audData ? fmtShort(r.audData) + (r.audHora ? ' · ' + esc(r.audHora) : '') : '—') + (r.online ? '<span class="ct-on">Online</span>' : '') + '</td><td><div class="ct-pills">' + (t.length ? t.map(function(k){ return '<span>' + esc(nomeTese(k)) + '</span>'; }).join('') : '<span>Sem tese</span>') + '</div></td><td><div class="ct-ctl" role="group" aria-label="Resultado de ' + esc(r.nome) + '">' + CT_RES.map(function(x){ return '<button type="button" data-res="' + x[0] + '" data-id="' + esc(r.id) + '" aria-pressed="' + (resAud(r) === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div></td></tr>';
     }).join('') + (lista.length > ctLimite ? '<tr class="ct-mais-row"><td colspan="6" class="ct-mais"><button type="button" class="btn" id="ct-mais">Mostrar mais ' + Math.min(200, lista.length - ctLimite) + '</button></td></tr>' : '') +
       (!lista.length ? '<tr><td colspan="6" class="ct-mais small">Nenhum cliente encontrado.</td></tr>' : '');
   }
