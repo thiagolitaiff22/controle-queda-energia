@@ -519,6 +519,11 @@ header.top h1{margin:4px 0 0;font-size:32px;line-height:1.1;font-weight:800;lett
 .ct-tbl tr.ct-sessao:hover td{background:var(--soft)}
 .ct-tbl tr.ct-sessao b{font-size:13.5px;margin-right:10px}
 .ct-tbl tr.ct-sessao span{font-size:12px;color:var(--ink-3)}
+.copia{display:inline-flex;align-items:center;gap:6px;border:0;background:none;padding:2px 6px;margin:-2px -6px;border-radius:6px;font:inherit;color:inherit;cursor:copy;font-variant-numeric:tabular-nums;white-space:nowrap}
+.copia svg.i{width:14px;height:14px;color:var(--ink-3)}
+.copia:hover{background:var(--hover)}
+.copia:hover svg.i{color:var(--primary)}
+.copia.ok svg.i{color:var(--green)}
 .ct-ctl{display:inline-flex;border:1px solid var(--line-2);border-radius:8px;overflow:hidden}
 .ct-ctl button{border:0;background:none;padding:4px 9px;font-size:12px;font-weight:500;color:var(--ink-3);white-space:nowrap}
 .ct-ctl button + button{border-left:1px solid var(--line-2)}
@@ -679,6 +684,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></symbol>
   <symbol id="i-panel" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></symbol>
   <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
   <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
   <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9"/></symbol>
   <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
@@ -1868,7 +1874,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     $('ct-body').innerHTML = lista.slice(0, ctLimite).map(function(r){
       var ks = tesesDe(r), cab = '';
       if (sessao(r) !== ultima){ ultima = sessao(r); cab = cabSessao(r); }
-      return cab + '<tr data-ct="' + esc(r.id) + '"><td class="nome">' + esc(r.nome) + '</td><td class="n">' + esc(r.cpf || '—') + '</td><td class="n">' + esc(r.processo || '—') + '</td><td class="n">' + (r.audData ? fmtShort(r.audData) + (r.audHora ? ' · ' + esc(r.audHora) : '') : '—') + '</td><td><div class="ct-pills">' + (ks.length ? ks.map(function(k){ return '<span>' + esc(nomeTese(k)) + '</span>'; }).join('') : '<span>Sem tese</span>') + '</div></td><td><div class="ct-ctl" role="group" aria-label="Resultado de ' + esc(r.nome) + '">' + CT_RES.map(function(x){ return '<button type="button" data-res="' + x[0] + '" data-id="' + esc(r.id) + '" aria-pressed="' + (resAud(r) === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div></td></tr>';
+      return cab + '<tr data-ct="' + esc(r.id) + '"><td class="nome">' + esc(r.nome) + '</td><td class="n">' + esc(r.cpf || '—') + '</td><td class="n">' + (r.processo ? '<button type="button" class="copia" data-copiar="' + esc(r.processo) + '" title="Copiar o número do processo">' + esc(r.processo) + '<svg class="i"><use href="#i-copy"/></svg></button>' : '—') + '</td><td class="n">' + (r.audData ? fmtShort(r.audData) + (r.audHora ? ' · ' + esc(r.audHora) : '') : '—') + '</td><td><div class="ct-pills">' + (ks.length ? ks.map(function(k){ return '<span>' + esc(nomeTese(k)) + '</span>'; }).join('') : '<span>Sem tese</span>') + '</div></td><td><div class="ct-ctl" role="group" aria-label="Resultado de ' + esc(r.nome) + '">' + CT_RES.map(function(x){ return '<button type="button" data-res="' + x[0] + '" data-id="' + esc(r.id) + '" aria-pressed="' + (resAud(r) === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div></td></tr>';
     }).join('') + (lista.length > ctLimite ? '<tr class="ct-mais-row"><td colspan="6" class="ct-mais"><button type="button" class="btn" id="ct-mais">Mostrar mais ' + Math.min(200, lista.length - ctLimite) + '</button></td></tr>' : '') +
       (!lista.length ? '<tr><td colspan="6" class="ct-mais small">Nenhum cliente encontrado.</td></tr>' : '');
   }
@@ -1880,8 +1886,23 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   });
   $('ct-q').addEventListener('input', function(e){ ctQ = e.target.value.trim(); ctLimite = 200; renderContest(); });
   $('ct-resf').addEventListener('click', function(e){ var b = e.target.closest('[data-resf]'); if (!b) return; ctRes = b.dataset.resf; ctLimite = 200; renderContest(); });
+  function copiarTexto(t){
+    var antigo = function(){ return new Promise(function(ok, falha){
+      var ta = document.createElement('textarea'); ta.value = t; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy') ? ok() : falha(new Error('cópia bloqueada')); } catch(e){ falha(e); } finally { ta.remove(); }
+    }); };
+    if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(t).catch(antigo);
+    return antigo();
+  }
   $('ct-body').addEventListener('click', async function(e){
     if (e.target.closest('#ct-mais')){ ctLimite += 200; renderContest(); return; }
+    var cp = e.target.closest('[data-copiar]');
+    if (cp){
+      try { await copiarTexto(cp.dataset.copiar); cp.classList.add('ok'); setTimeout(function(){ cp.classList.remove('ok'); }, 1500); toast('Processo copiado: ' + cp.dataset.copiar); }
+      catch(err){ toast('Não foi possível copiar. Selecione o número e use Ctrl+C.'); }
+      return;
+    }
     var m = e.target.closest('[data-res]');
     if (m){
       var r0 = state.rows.filter(function(x){ return x.id === m.dataset.id; })[0]; if (!r0) return;
