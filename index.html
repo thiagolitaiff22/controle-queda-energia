@@ -459,9 +459,10 @@ header.top h1{margin:4px 0 0;font-size:32px;line-height:1.1;font-weight:800;lett
 .st:hover{text-decoration:underline;text-underline-offset:3px}
 .st.acao{border:1px solid var(--amber);color:var(--amber);border-radius:999px;padding:3px 11px;font-size:12px}
 .st.acao:hover{background:var(--amber-soft);text-decoration:none}
-.modo-sel{appearance:none;-webkit-appearance:none;border:1px solid transparent;background:transparent;border-radius:6px;padding:1px 16px 1px 5px;margin:1px 0 0 -5px;font:inherit;font-size:11.5px;font-weight:500;color:var(--ink-3);cursor:pointer;background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);background-position:calc(100% - 8px) 55%,calc(100% - 5px) 55%;background-size:3px 3px;background-repeat:no-repeat}
-.modo-sel:hover,.modo-sel:focus{border-color:var(--line-2);color:var(--ink)}
-.modo-sel.on{color:var(--blue);font-weight:700}
+.modo-sel{appearance:none;-webkit-appearance:none;border:1px solid var(--line-2);background-color:var(--soft);border-radius:999px;padding:2px 20px 2px 10px;margin-top:4px;font:inherit;font-size:11.5px;font-weight:600;color:var(--ink-2);cursor:pointer;background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);background-position:calc(100% - 11px) 55%,calc(100% - 8px) 55%;background-size:3px 3px;background-repeat:no-repeat}
+.modo-sel:hover,.modo-sel:focus{border-color:var(--ink-3);color:var(--ink)}
+.modo-sel.on{background-color:var(--blue);border-color:var(--blue);color:#fff}
+.modo-sel.on:hover{color:#fff}
 .modo-sel option{color:var(--ink);background:var(--panel)}
 .ct-tbl td .modo-sel{display:block}
 .modo{display:inline-flex;margin-top:5px;border:1px solid var(--line);border-radius:999px;padding:2px;background:var(--soft)}
@@ -903,7 +904,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
           <button type="button" class="ct-on-btn" id="ct-on-btn" hidden title="Mostrar só quem faz a audiência online"></button><span class="fb-count tnum" id="ct-count"></span>
         </div></div>
         <div class="ct-resf" id="ct-resf" role="group" aria-label="Filtrar por resultado"></div>
-        <div class="card ct-tab"><table class="ct-tbl"><thead><tr><th>Cliente</th><th>CPF</th><th>Processo</th><th>Audiência</th><th>Tese da contestação</th><th>Resultado na audiência</th></tr></thead><tbody id="ct-body"></tbody></table></div>
+        <div class="card ct-tab"><table class="ct-tbl"><thead><tr><th>Cliente</th><th>CPF</th><th>Processo</th><th id="ct-th-aud">Audiência</th><th>Tese da contestação</th><th>Resultado na audiência</th></tr></thead><tbody id="ct-body"></tbody></table></div>
       </section>
 
       <section id="view-ret" hidden style="display:flex;flex-direction:column;gap:18px">
@@ -1934,9 +1935,10 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
       return buscaCliente(r, ctQ);
     }).sort(function(x, y){ return String(x.nome).localeCompare(String(y.nome), 'pt'); });
     $('ct-count').textContent = lista.length + (lista.length === 1 ? ' cliente' : ' clientes');
+    $('ct-th-aud').textContent = ctSessao ? 'Tipo' : 'Audiência';
     $('ct-body').innerHTML = lista.slice(0, ctLimite).map(function(r){
       var t = tesesDe(r);
-      return '<tr data-ct="' + esc(r.id) + '"><td class="nome' + (r.online ? ' online' : '') + '"' + (r.online ? ' title="Audiência online"' : '') + '>' + esc(r.nome) + '</td><td class="n">' + esc(r.cpf || '—') + '</td><td class="n">' + (r.processo ? '<button type="button" class="copia" data-copiar="' + esc(r.processo) + '" title="Copiar o número do processo">' + esc(r.processo) + '<svg class="i"><use href="#i-copy"/></svg></button>' : '—') + '</td><td class="n">' + (r.audData ? fmtShort(r.audData) + (r.audHora ? ' · ' + esc(r.audHora) : '') : '—') + (r.audData ? modoSwitch(r) : '') + '</td><td><div class="ct-pills">' + (t.length ? t.map(function(k){ return '<span>' + esc(nomeTese(k)) + '</span>'; }).join('') : '<span>Sem tese</span>') + '</div></td><td><div class="ct-ctl" role="group" aria-label="Resultado de ' + esc(r.nome) + '">' + CT_RES.map(function(x){ return '<button type="button" data-res="' + x[0] + '" data-id="' + esc(r.id) + '" aria-pressed="' + (resAud(r) === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div></td></tr>';
+      return '<tr data-ct="' + esc(r.id) + '"><td class="nome' + (r.online ? ' online' : '') + '"' + (r.online ? ' title="Audiência online"' : '') + '>' + esc(r.nome) + '</td><td class="n">' + esc(r.cpf || '—') + '</td><td class="n">' + (r.processo ? '<button type="button" class="copia" data-copiar="' + esc(r.processo) + '" title="Copiar o número do processo">' + esc(r.processo) + '<svg class="i"><use href="#i-copy"/></svg></button>' : '—') + '</td><td class="n">' + (!ctSessao && r.audData ? fmtShort(r.audData) + (r.audHora ? ' · ' + esc(r.audHora) : '') : '') + (r.audData ? modoSwitch(r) : '—') + '</td><td><div class="ct-pills">' + (t.length ? t.map(function(k){ return '<span>' + esc(nomeTese(k)) + '</span>'; }).join('') : '<span>Sem tese</span>') + '</div></td><td><div class="ct-ctl" role="group" aria-label="Resultado de ' + esc(r.nome) + '">' + CT_RES.map(function(x){ return '<button type="button" data-res="' + x[0] + '" data-id="' + esc(r.id) + '" aria-pressed="' + (resAud(r) === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div></td></tr>';
     }).join('') + (lista.length > ctLimite ? '<tr class="ct-mais-row"><td colspan="6" class="ct-mais"><button type="button" class="btn" id="ct-mais">Mostrar mais ' + Math.min(200, lista.length - ctLimite) + '</button></td></tr>' : '') +
       (!lista.length ? '<tr><td colspan="6" class="ct-mais small">Nenhum cliente encontrado.</td></tr>' : '');
   }
