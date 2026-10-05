@@ -522,11 +522,13 @@ header.top h1{margin:4px 0 0;font-size:32px;line-height:1.1;font-weight:800;lett
 .ct-bars-head span{font-size:12.5px;color:var(--ink-3)}
 .ct-bars-head .linkbtn{font-size:12.5px;margin-left:8px}
 .ct-bars{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:4px 28px}
-.ct-bar{display:grid;grid-template-columns:minmax(150px,1.1fr) minmax(80px,1fr) auto;align-items:center;gap:12px;border:0;background:none;text-align:left;padding:7px 10px;margin:0 -10px;border-radius:8px;font:inherit;color:var(--ink-2);cursor:pointer}
+.ct-bar{display:grid;grid-template-columns:minmax(200px,1.5fr) minmax(80px,1fr) auto;align-items:center;gap:12px;border:0;background:none;text-align:left;padding:7px 10px;margin:0 -10px;border-radius:8px;font:inherit;color:var(--ink-2);cursor:pointer}
 .ct-bar:hover{background:var(--hover);color:var(--ink)}
 .ct-bar[aria-pressed="true"]{background:var(--active);color:var(--ink)}
 .ct-bar[aria-pressed="true"] .ct-bar-nome{font-weight:700}
 .ct-bar-nome{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ct-bar-qtd{font-style:normal;font-size:10px;font-weight:600;letter-spacing:.02em;padding:1px 6px;border-radius:999px;margin-right:7px;background:var(--active);color:var(--ink-2);vertical-align:1px}
+.ct-bar-qtd.so{background:var(--soft);color:var(--ink-3)}
 .ct-bar-trilho{height:6px;border-radius:999px;background:var(--soft);overflow:hidden}
 .ct-bar-trilho i{display:block;height:100%;border-radius:999px;background:var(--blue)}
 .ct-bar[aria-pressed="true"] .ct-bar-trilho i{background:var(--primary)}
@@ -1823,6 +1825,11 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     return out.length ? out : ['outra'];
   }
   function nomeTese(k){ var x = TESES.filter(function(t){ return t[0] === k; })[0]; return x ? x[1] : 'Outra tese'; }
+  /* Nome curto de cada tese, para as combinações ("Reiteração + Devedor contumaz"). */
+  var TESE_CURTA = { reiteracao: 'Reiteração de demandas', devedor: 'Devedor contumaz', generica: 'Contestação genérica', cortada: 'UC cortada', coisa: 'Coisa julgada', ilegitimidade: 'Ilegitimidade ativa', inconsistencia: 'Inconsistência do autor', outra: 'Outra tese' };
+  /* Combinação exata de teses do processo: cada cliente cai em um grupo só (as teses não se somam). */
+  function comboDe(r){ return tesesDe(r).join('+'); }
+  function nomeCombo(c){ var ks = c.split('+'); return ks.length === 1 ? nomeTese(ks[0]) : ks.map(function(k){ return TESE_CURTA[k] || nomeTese(k); }).join(' + '); }
   /* ---------- "onde está o cliente": busca no topo do Dashboard ---------- */
   function bcAviso(r){
     if (r.avisado) return 'Avisado' + (r.meioAviso ? ' por ' + (MEIOS[r.meioAviso] || r.meioAviso).toLowerCase() : '') + (r.avisadoA ? ' · recebeu: ' + r.avisadoA : '') + (r.avisadoEm ? ' · ' + fmtShort(r.avisadoEm) : '');
@@ -1912,19 +1919,22 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     $('ct-on-btn').hidden = !nOn && !ctOnline; $('ct-on-btn').setAttribute('aria-pressed', ctOnline); $('ct-on-btn').innerHTML = '<i class="ct-on-dot"></i>Online <b>' + nOn + '</b>';
     var rows = state.rows.filter(function(r){ return !ctSessao || chaveS(r) === ctSessao; });
     var cont = {}, sem = 0;
-    rows.forEach(function(r){ var t = tesesDe(r); if (!t.length) sem++; t.forEach(function(k){ cont[k] = (cont[k] || 0) + 1; }); });
-    var ordem = Object.keys(cont).sort(function(x, y){ return cont[y] - cont[x]; });
+    rows.forEach(function(r){ var c = comboDe(r); if (!c) sem++; else cont[c] = (cont[c] || 0) + 1; });
+    /* Primeiro quem tem uma tese só, depois as combinações; dentro de cada, o maior primeiro. */
+    var nT = function(c){ return c.split('+').length; };
+    var ordem = Object.keys(cont).sort(function(x, y){ return nT(x) - nT(y) || cont[y] - cont[x]; });
     if (ctFiltro && ctFiltro !== '__sem' && !cont[ctFiltro]) ctFiltro = '';
     var maior = Math.max.apply(null, ordem.map(function(k){ return cont[k]; }).concat([sem, 1]));
     var barra = function(k, nome){
       var n = k === '__sem' ? sem : cont[k], p = rows.length ? Math.round(n / rows.length * 100) : 0;
-      return '<button type="button" class="ct-bar" data-tese="' + k + '" aria-pressed="' + (ctFiltro === k) + '" title="' + esc(nome) + ': ' + n + ' de ' + rows.length + ' clientes"><span class="ct-bar-nome">' + esc(nome) + '</span><span class="ct-bar-trilho"><i style="width:' + Math.max(2, n / maior * 100) + '%"></i></span><span class="ct-bar-num"><b>' + n + '</b><small>' + p + '%</small></span></button>';
+      var q = k === '__sem' ? 0 : nT(k);
+      return '<button type="button" class="ct-bar" data-tese="' + k + '" aria-pressed="' + (ctFiltro === k) + '" title="' + esc(nome) + ': ' + n + ' de ' + rows.length + ' clientes"><span class="ct-bar-nome">' + (q > 1 ? '<em class="ct-bar-qtd">' + q + ' teses</em>' : q === 1 ? '<em class="ct-bar-qtd so">só esta</em>' : '') + esc(nome) + '</span><span class="ct-bar-trilho"><i style="width:' + Math.max(2, n / maior * 100) + '%"></i></span><span class="ct-bar-num"><b>' + n + '</b><small>' + p + '%</small></span></button>';
     };
-    chips.innerHTML = ordem.map(function(k){ return barra(k, nomeTese(k)); }).join('') + (sem ? barra('__sem', 'Sem tese registrada') : '');
-    $('ct-bars-info').innerHTML = rows.length + ' clientes · ' + ordem.length + (ordem.length === 1 ? ' tese' : ' teses') + ' · um processo pode ter mais de uma' +
+    chips.innerHTML = ordem.map(function(k){ return barra(k, nomeCombo(k)); }).join('') + (sem ? barra('__sem', 'Sem tese registrada') : '');
+    $('ct-bars-info').innerHTML = rows.length + ' clientes · ' + (ordem.length + (sem ? 1 : 0)) + ' grupos · cada cliente aparece em um grupo só' +
       (ctFiltro ? '<button type="button" class="linkbtn" data-tese="">Mostrar todas</button>' : '');
 
-    var porTese = function(r){ var t = tesesDe(r); return ctFiltro === '__sem' ? !t.length : (!ctFiltro || t.indexOf(ctFiltro) >= 0); };
+    var porTese = function(r){ var c = comboDe(r); return ctFiltro === '__sem' ? !c : (!ctFiltro || c === ctFiltro); };
     var base = rows.filter(porTese);
     var nRes = function(k){ return base.filter(function(r){ return k === '' ? true : k === '__sem' ? !resAud(r) : resAud(r) === k; }).length; };
     var totB = base.length, julg = base.filter(function(r){ var k = resAud(r); return k === 'procedente' || k === 'improcedente'; }).length;
