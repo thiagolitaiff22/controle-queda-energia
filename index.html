@@ -1886,7 +1886,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     $('ct-aud-prox').disabled = !ks.length || (pos >= 0 && pos === ks.length - 1);
     $('ct-aud-info').textContent = ctSessao ? (pos + 1) + ' de ' + ks.length + ' audiências' : ks.length + ' audiências no sistema';
     var nOn = state.rows.filter(function(r){ return r.online && (!ctSessao || chaveS(r) === ctSessao); }).length;
-    $('ct-on-btn').hidden = !nOn && !ctOnline; $('ct-on-btn').setAttribute('aria-pressed', ctOnline); $('ct-on-btn').innerHTML = '<i class="ct-on-dot"></i>Só online <b>' + nOn + '</b>';
+    $('ct-on-btn').hidden = !nOn && !ctOnline; $('ct-on-btn').setAttribute('aria-pressed', ctOnline); $('ct-on-btn').innerHTML = '<i class="ct-on-dot"></i>Online <b>' + nOn + '</b>';
     var rows = state.rows.filter(function(r){ return !ctSessao || chaveS(r) === ctSessao; });
     var cont = {}, sem = 0;
     rows.forEach(function(r){ var t = tesesDe(r); if (!t.length) sem++; t.forEach(function(k){ cont[k] = (cont[k] || 0) + 1; }); });
