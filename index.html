@@ -516,6 +516,24 @@ header.top h1{margin:4px 0 0;font-size:32px;line-height:1.1;font-weight:800;lett
 .more{display:flex;justify-content:center;padding:12px;border-top:1px solid var(--line)}
 
 .ct-res-box{padding:0;overflow-x:auto}
+.ct-bars-box{padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.ct-bars-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.ct-bars-head b{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+.ct-bars-head span{font-size:12.5px;color:var(--ink-3)}
+.ct-bars-head .linkbtn{font-size:12.5px;margin-left:8px}
+.ct-bars{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:4px 28px}
+.ct-bar{display:grid;grid-template-columns:minmax(150px,1.1fr) minmax(80px,1fr) auto;align-items:center;gap:12px;border:0;background:none;text-align:left;padding:7px 10px;margin:0 -10px;border-radius:8px;font:inherit;color:var(--ink-2);cursor:pointer}
+.ct-bar:hover{background:var(--hover);color:var(--ink)}
+.ct-bar[aria-pressed="true"]{background:var(--active);color:var(--ink)}
+.ct-bar[aria-pressed="true"] .ct-bar-nome{font-weight:700}
+.ct-bar-nome{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ct-bar-trilho{height:6px;border-radius:999px;background:var(--soft);overflow:hidden}
+.ct-bar-trilho i{display:block;height:100%;border-radius:999px;background:var(--blue)}
+.ct-bar[aria-pressed="true"] .ct-bar-trilho i{background:var(--primary)}
+.ct-bar-num{font-size:13px;font-variant-numeric:tabular-nums;white-space:nowrap;min-width:72px;text-align:right}
+.ct-bar-num b{color:var(--ink);font-weight:700}
+.ct-bar-num small{color:var(--ink-3);margin-left:6px;font-size:11.5px}
+@media (max-width:640px){ .ct-bars{grid-template-columns:1fr} }
 .ct-aud-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .ct-aud-bar label{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:700;margin-right:4px}
 .ct-aud-bar select{border:1px solid var(--line-2);background:var(--panel);border-radius:9px;padding:8px 12px;font-size:14px;font-weight:600;min-width:280px;max-width:100%}
@@ -897,8 +915,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
           <span class="ct-aud-info" id="ct-aud-info"></span>
         </div>
         <div class="stats five ct-stats" id="ct-stats"></div>
-        <p class="view-desc">Tese que a Âmbar usou na contestação de cada processo. Um processo pode ter mais de uma tese. Escolha a audiência no alto; clique numa tese ou num indicador para filtrar a lista; clique no cliente para abrir o cadastro.</p>
-        <div class="card ct-res-box"><table class="ct-resumo" id="ct-chips" aria-label="Audiências por tese"></table></div>
+        <div class="card ct-bars-box"><div class="ct-bars-head"><b>Teses da contestação</b><span id="ct-bars-info"></span></div><div class="ct-bars" id="ct-chips" role="group" aria-label="Filtrar por tese"></div></div>
         <div class="card filterbar"><div class="fb-top">
           <div class="search"><svg class="i"><use href="#i-search"/></svg><input id="ct-q" type="search" placeholder="Buscar por nome ou CPF"></div>
           <button type="button" class="ct-on-btn" id="ct-on-btn" hidden title="Mostrar só quem faz a audiência online"></button><span class="fb-count tnum" id="ct-count"></span>
@@ -1899,12 +1916,14 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     rows.forEach(function(r){ var t = tesesDe(r); if (!t.length) sem++; t.forEach(function(k){ cont[k] = (cont[k] || 0) + 1; }); });
     var ordem = Object.keys(cont).sort(function(x, y){ return cont[y] - cont[x]; });
     if (ctFiltro && ctFiltro !== '__sem' && !cont[ctFiltro]) ctFiltro = '';
-    var linha = function(k, nome, cls){
-      var n = k === '' ? rows.length : k === '__sem' ? sem : cont[k];
-      return '<tr data-tese="' + k + '" aria-selected="' + (ctFiltro === k) + '"' + (cls ? ' class="' + cls + '"' : '') + '><td>' + esc(nome) + '</td><td class="tot">' + n + '</td><td class="pct">' + (rows.length ? Math.round(n / rows.length * 100) : 0) + '%</td></tr>';
+    var maior = Math.max.apply(null, ordem.map(function(k){ return cont[k]; }).concat([sem, 1]));
+    var barra = function(k, nome){
+      var n = k === '__sem' ? sem : cont[k], p = rows.length ? Math.round(n / rows.length * 100) : 0;
+      return '<button type="button" class="ct-bar" data-tese="' + k + '" aria-pressed="' + (ctFiltro === k) + '" title="' + esc(nome) + ': ' + n + ' de ' + rows.length + ' clientes"><span class="ct-bar-nome">' + esc(nome) + '</span><span class="ct-bar-trilho"><i style="width:' + Math.max(2, n / maior * 100) + '%"></i></span><span class="ct-bar-num"><b>' + n + '</b><small>' + p + '%</small></span></button>';
     };
-    chips.innerHTML = '<thead><tr><th>Tese da contestação</th><th>Clientes</th><th>%</th></tr></thead><tbody>' +
-      linha('', 'Todas as teses', 'todas') + ordem.map(function(k){ return linha(k, nomeTese(k)); }).join('') + (sem ? linha('__sem', 'Sem tese registrada') : '') + '</tbody>';
+    chips.innerHTML = ordem.map(function(k){ return barra(k, nomeTese(k)); }).join('') + (sem ? barra('__sem', 'Sem tese registrada') : '');
+    $('ct-bars-info').innerHTML = rows.length + ' clientes · ' + ordem.length + (ordem.length === 1 ? ' tese' : ' teses') + ' · um processo pode ter mais de uma' +
+      (ctFiltro ? '<button type="button" class="linkbtn" data-tese="">Mostrar todas</button>' : '');
 
     var porTese = function(r){ var t = tesesDe(r); return ctFiltro === '__sem' ? !t.length : (!ctFiltro || t.indexOf(ctFiltro) >= 0); };
     var base = rows.filter(porTese);
@@ -1947,7 +1966,8 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   $('ct-aud-sel').addEventListener('change', function(){ ctSessao = this.value; ctLimite = 200; renderContest(); });
   $('ct-aud-ant').addEventListener('click', function(){ var ks = ctSessoes(), p = ks.indexOf(ctSessao); ctSessao = p > 0 ? ks[p - 1] : (p < 0 ? ks[ks.length - 1] || '' : ctSessao); ctLimite = 200; renderContest(); });
   $('ct-aud-prox').addEventListener('click', function(){ var ks = ctSessoes(), p = ks.indexOf(ctSessao); ctSessao = p < 0 ? ks[0] || '' : (ks[p + 1] || ctSessao); ctLimite = 200; renderContest(); });
-  $('ct-chips').addEventListener('click', function(e){ var b = e.target.closest('[data-tese]'); if (!b) return; ctFiltro = b.dataset.tese; ctLimite = 200; renderContest(); });
+  $('ct-chips').addEventListener('click', function(e){ var b = e.target.closest('[data-tese]'); if (!b) return; ctFiltro = ctFiltro === b.dataset.tese ? '' : b.dataset.tese; ctLimite = 200; renderContest(); });
+  $('ct-bars-info').addEventListener('click', function(e){ if (!e.target.closest('[data-tese]')) return; ctFiltro = ''; ctLimite = 200; renderContest(); });
   $('ct-q').addEventListener('input', function(e){ ctQ = e.target.value.trim(); ctLimite = 200; renderContest(); });
   $('ct-resf').addEventListener('click', function(e){ var b = e.target.closest('[data-resf]'); if (!b) return; ctRes = b.dataset.resf; ctLimite = 200; renderContest(); });
   $('ct-stats').addEventListener('click', function(e){ var b = e.target.closest('[data-resf]'); if (!b) return; ctRes = ctRes === b.dataset.resf ? '' : b.dataset.resf; ctLimite = 200; renderContest(); });
