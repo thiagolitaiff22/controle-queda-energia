@@ -509,6 +509,26 @@ header.top h1{margin:4px 0 0;font-size:32px;line-height:1.1;font-weight:800;lett
 .foot-note{font-size:12.5px;color:var(--ink-3);margin:0}
 .more{display:flex;justify-content:center;padding:12px;border-top:1px solid var(--line)}
 
+.ct-res-box{padding:0;overflow-x:auto}
+.ct-resumo{width:100%;border-collapse:collapse;font-size:13px}
+.ct-resumo th{text-align:right;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);font-weight:600;padding:9px 14px;border-bottom:1px solid var(--line);white-space:nowrap}
+.ct-resumo th:first-child{text-align:left}
+.ct-resumo th button{border:0;background:none;padding:0;font:inherit;color:inherit;letter-spacing:inherit;text-transform:inherit;cursor:pointer}
+.ct-resumo th button:hover,.ct-resumo th button[aria-pressed="true"]{color:var(--primary)}
+.ct-resumo td{padding:7px 14px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ct-resumo td:first-child{text-align:left;white-space:normal}
+.ct-resumo tr:last-child td{border-bottom:0}
+.ct-resumo tbody tr{cursor:pointer}
+.ct-resumo tbody tr:hover td{background:var(--hover)}
+.ct-resumo tr[aria-selected="true"] td{background:var(--active)}
+.ct-resumo tr[aria-selected="true"] td:first-child{box-shadow:inset 3px 0 0 var(--primary);font-weight:600}
+.ct-resumo td.tot{font-weight:700}
+.ct-resumo td.pct{color:var(--ink-3)}
+.ct-resumo td .cel{border:0;background:none;padding:2px 6px;border-radius:6px;font:inherit;color:inherit;cursor:pointer;min-width:28px}
+.ct-resumo td .cel:hover{background:var(--soft)}
+.ct-resumo td .cel[aria-pressed="true"]{background:var(--primary);color:var(--on-primary)}
+.ct-resumo td .zero{color:var(--ink-3);opacity:.5}
+.ct-resumo tr.todas td{font-weight:600}
 .ct-chips{display:flex;flex-wrap:wrap;gap:8px}
 .ct-chips .chip{cursor:pointer;display:inline-flex;gap:6px;align-items:center}
 .ct-chips .chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
@@ -809,13 +829,13 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
       </section>
 
       <section id="view-ct" hidden style="display:flex;flex-direction:column;gap:14px">
-        <p class="view-desc">Tese que a Âmbar usou na contestação de cada processo. Um processo pode ter mais de uma tese. Clique em uma tese para filtrar; clique no cliente para abrir o cadastro.</p>
-        <div class="ct-chips" id="ct-chips" role="group" aria-label="Filtrar por tese"></div>
+        <p class="view-desc">Tese que a Âmbar usou na contestação de cada processo. Um processo pode ter mais de uma tese. Clique numa tese para filtrar a lista; clique num número para ver só aquele dia; clique no cliente para abrir o cadastro.</p>
+        <div class="card ct-res-box"><table class="ct-resumo" id="ct-chips" aria-label="Audiências por tese"></table></div>
         <div class="card filterbar"><div class="fb-top">
           <div class="search"><svg class="i"><use href="#i-search"/></svg><input id="ct-q" type="search" placeholder="Buscar por nome, CPF ou processo"></div>
           <span class="fb-count tnum" id="ct-count"></span>
         </div></div>
-        <div class="card ct-tab"><table class="ct-tbl"><thead><tr><th>Cliente</th><th>CPF</th><th>Processo</th><th>Tese da contestação</th></tr></thead><tbody id="ct-body"></tbody></table></div>
+        <div class="card ct-tab"><table class="ct-tbl"><thead><tr><th>Cliente</th><th>CPF</th><th>Processo</th><th>Audiência</th><th>Tese da contestação</th></tr></thead><tbody id="ct-body"></tbody></table></div>
       </section>
 
       <section id="view-ret" hidden style="display:flex;flex-direction:column;gap:18px">
@@ -1761,30 +1781,45 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     var r = state.rows.filter(function(x){ return x.id === b.dataset.bc; })[0]; if (r) openForm(r);
   });
 
-  var ctFiltro = '', ctQ = '', ctLimite = 200;
+  var ctFiltro = '', ctDia = '', ctQ = '', ctLimite = 200;
   function renderContest(){
     var chips = $('ct-chips'); if (!chips) return;
     var rows = state.rows, cont = {}, sem = 0;
     rows.forEach(function(r){ var ks = tesesDe(r); if (!ks.length) sem++; ks.forEach(function(k){ cont[k] = (cont[k] || 0) + 1; }); });
     var ordem = Object.keys(cont).sort(function(a, b){ return cont[b] - cont[a]; });
-    chips.innerHTML = '<button type="button" class="chip" data-tese="" aria-pressed="' + (ctFiltro === '') + '">Todas <span class="n">' + rows.length + '</span></button>' +
-      ordem.map(function(k){ return '<button type="button" class="chip" data-tese="' + k + '" aria-pressed="' + (ctFiltro === k) + '">' + esc(nomeTese(k)) + ' <span class="n">' + cont[k] + '</span></button>'; }).join('') +
-      (sem ? '<button type="button" class="chip" data-tese="__sem" aria-pressed="' + (ctFiltro === '__sem') + '">Sem tese <span class="n">' + sem + '</span></button>' : '');
+    var dias = {}; rows.forEach(function(r){ if (r.audData) dias[r.audData] = 1; });
+    dias = Object.keys(dias).sort();
+    var porDia = function(lista, d){ return lista.filter(function(r){ return r.audData === d; }).length; };
+    var grupo = function(k){ return k === '' ? rows : k === '__sem' ? rows.filter(function(r){ return !tesesDe(r).length; }) : rows.filter(function(r){ return tesesDe(r).indexOf(k) >= 0; }); };
+    var linha = function(k, nome, cls){
+      var g = grupo(k), sel = ctFiltro === k;
+      return '<tr data-tese="' + k + '" aria-selected="' + sel + '"' + (cls ? ' class="' + cls + '"' : '') + '><td>' + esc(nome) + '</td><td class="tot">' + g.length + '</td><td class="pct">' + (rows.length ? Math.round(g.length / rows.length * 100) : 0) + '%</td>' +
+        dias.map(function(d){ var n = porDia(g, d); return '<td>' + (n ? '<button type="button" class="cel" data-tese="' + k + '" data-dia="' + d + '" aria-pressed="' + (sel && ctDia === d) + '" title="' + esc(nome) + ' · audiência de ' + fmtShort(d) + '">' + n + '</button>' : '<span class="zero">0</span>') + '</td>'; }).join('') + '</tr>';
+    };
+    chips.innerHTML = '<thead><tr><th>Tese da contestação</th><th>Total</th><th>%</th>' +
+      dias.map(function(d){ return '<th><button type="button" data-tese="' + ctFiltro + '" data-dia="' + d + '" aria-pressed="' + (ctDia === d) + '" title="Ver só a audiência de ' + fmtShort(d) + '">' + fmtShort(d) + '</button></th>'; }).join('') + '</tr></thead><tbody>' +
+      linha('', 'Todas as teses', 'todas') + ordem.map(function(k){ return linha(k, nomeTese(k)); }).join('') + (sem ? linha('__sem', 'Sem tese registrada') : '') + '</tbody>';
     var q = ctQ.toLowerCase(), qd = ctQ.replace(/[^0-9]/g, '');
     var lista = rows.filter(function(r){
       var ks = tesesDe(r);
       if (ctFiltro === '__sem' ? ks.length : (ctFiltro && ks.indexOf(ctFiltro) < 0)) return false;
+      if (ctDia && r.audData !== ctDia) return false;
       if (!q) return true;
       return String(r.nome || '').toLowerCase().indexOf(q) >= 0 || (qd.length >= 3 && (String(r.cpf || '').replace(/[^0-9]/g, '').indexOf(qd) >= 0 || String(r.processo || '').replace(/[^0-9]/g, '').indexOf(qd) >= 0));
     }).sort(function(a, b){ return String(a.nome).localeCompare(String(b.nome), 'pt'); });
-    $('ct-count').textContent = lista.length + (lista.length === 1 ? ' cliente' : ' clientes');
+    $('ct-count').textContent = lista.length + (lista.length === 1 ? ' cliente' : ' clientes') + (ctFiltro ? ' · ' + (ctFiltro === '__sem' ? 'sem tese' : nomeTese(ctFiltro)) : '') + (ctDia ? ' · audiência de ' + fmtShort(ctDia) : '');
     $('ct-body').innerHTML = lista.slice(0, ctLimite).map(function(r){
       var ks = tesesDe(r);
-      return '<tr data-ct="' + esc(r.id) + '"><td class="nome">' + esc(r.nome) + '</td><td class="n">' + esc(r.cpf || '—') + '</td><td class="n">' + esc(r.processo || '—') + '</td><td><div class="ct-pills">' + (ks.length ? ks.map(function(k){ return '<span>' + esc(nomeTese(k)) + '</span>'; }).join('') : '<span>Sem tese</span>') + '</div></td></tr>';
-    }).join('') + (lista.length > ctLimite ? '<tr class="ct-mais-row"><td colspan="4" class="ct-mais"><button type="button" class="btn" id="ct-mais">Mostrar mais ' + Math.min(200, lista.length - ctLimite) + '</button></td></tr>' : '') +
-      (!lista.length ? '<tr><td colspan="4" class="ct-mais small">Nenhum cliente encontrado.</td></tr>' : '');
+      return '<tr data-ct="' + esc(r.id) + '"><td class="nome">' + esc(r.nome) + '</td><td class="n">' + esc(r.cpf || '—') + '</td><td class="n">' + esc(r.processo || '—') + '</td><td class="n">' + (r.audData ? fmtShort(r.audData) + (r.audHora ? ' · ' + esc(r.audHora) : '') : '—') + '</td><td><div class="ct-pills">' + (ks.length ? ks.map(function(k){ return '<span>' + esc(nomeTese(k)) + '</span>'; }).join('') : '<span>Sem tese</span>') + '</div></td></tr>';
+    }).join('') + (lista.length > ctLimite ? '<tr class="ct-mais-row"><td colspan="5" class="ct-mais"><button type="button" class="btn" id="ct-mais">Mostrar mais ' + Math.min(200, lista.length - ctLimite) + '</button></td></tr>' : '') +
+      (!lista.length ? '<tr><td colspan="5" class="ct-mais small">Nenhum cliente encontrado.</td></tr>' : '');
   }
-  $('ct-chips').addEventListener('click', function(e){ var b = e.target.closest('[data-tese]'); if (!b) return; ctFiltro = b.dataset.tese; ctLimite = 200; renderContest(); });
+  $('ct-chips').addEventListener('click', function(e){
+    var b = e.target.closest('[data-tese]'); if (!b) return;
+    if (b.dataset.dia !== undefined){ var mesmo = ctFiltro === b.dataset.tese && ctDia === b.dataset.dia; ctFiltro = b.dataset.tese; ctDia = mesmo ? '' : b.dataset.dia; }
+    else { ctFiltro = b.dataset.tese; }
+    ctLimite = 200; renderContest();
+  });
   $('ct-q').addEventListener('input', function(e){ ctQ = e.target.value.trim(); ctLimite = 200; renderContest(); });
   $('ct-body').addEventListener('click', function(e){
     if (e.target.closest('#ct-mais')){ ctLimite += 200; renderContest(); return; }
