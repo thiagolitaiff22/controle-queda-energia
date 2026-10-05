@@ -463,7 +463,7 @@ header.top h1{margin:4px 0 0;font-size:32px;line-height:1.1;font-weight:800;lett
 .modo button{border:0;background:none;border-radius:999px;padding:1px 8px;font-size:11px;font-weight:600;color:var(--ink-3)}
 .modo button:hover{color:var(--ink)}
 .modo button[aria-pressed="true"]{background:var(--panel);color:var(--ink);box-shadow:0 0 0 1px var(--line)}
-.modo button.on[aria-pressed="true"]{background:var(--purple);color:#fff;box-shadow:none}
+.modo button.on[aria-pressed="true"]{background:var(--blue);color:#fff;box-shadow:none}
 .tel-edit{border:0;background:none;padding:0;font:inherit;color:inherit;cursor:text;text-align:left;border-bottom:1px dashed transparent}
 .tel-edit:hover{border-bottom-color:var(--line-2)}
 .ico-btn{width:30px;height:30px;display:inline-grid;place-items:center;border:1px solid transparent;background:none;border-radius:8px;color:var(--ink-3)}
@@ -1303,12 +1303,15 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     if (!r.contato) return add;
     return '<button type="button" class="tel-edit val tnum" data-act="tel" data-id="' + esc(r.id) + '" title="Clique para corrigir">' + esc(r.contato) + '</button>';
   }
+  function modoSwitch(r){
+    return '<div class="modo" role="group" aria-label="Tipo de audiência"><button type="button" data-act="modo" data-v="p" data-id="' + esc(r.id) + '" aria-pressed="' + (!r.online) + '">Presencial</button><button type="button" class="on" data-act="modo" data-v="o" data-id="' + esc(r.id) + '" aria-pressed="' + (!!r.online) + '">Online</button></div>';
+  }
   function audCell(r){
     if (!r.audData) return '<div class="mini">Sem data</div>';
     var n = daysUntil(r.audData);
     var cls = n < 0 ? '' : (n <= 3 ? 'crit' : (n <= 7 ? 'warn' : 'blue'));
     return '<div class="val">' + fmtShort(r.audData) + (r.audHora ? ' · ' + esc(r.audHora) : '') + '</div>' +
-           '<div class="mini ' + cls + '">' + relLabel(n) + ' · <button type="button" class="modo-link' + (r.online ? ' on' : '') + '" data-act="modo" data-v="' + (r.online ? 'p' : 'o') + '" data-id="' + esc(r.id) + '" title="Clique para mudar para ' + (r.online ? 'presencial' : 'online') + '">' + (r.online ? 'online' : 'presencial') + '</button></div>';
+           '<div class="mini ' + cls + '">' + relLabel(n) + '</div>' + modoSwitch(r);
   }
   var MEIOS = { whatsapp: 'WhatsApp', convite: 'Convite', prospectador: 'Prospectador', ligacao: 'Ligação', pessoalmente: 'Pessoalmente' };
   function passMeio(r, f){ if (!f || f === 'todos') return true; if (!r.avisado) return false; if (f === 'outro') return r.meioAviso === 'ligacao' || r.meioAviso === 'pessoalmente'; return r.meioAviso === f; }
@@ -1932,7 +1935,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     $('ct-count').textContent = lista.length + (lista.length === 1 ? ' cliente' : ' clientes');
     $('ct-body').innerHTML = lista.slice(0, ctLimite).map(function(r){
       var t = tesesDe(r);
-      return '<tr data-ct="' + esc(r.id) + '"><td class="nome' + (r.online ? ' online' : '') + '"' + (r.online ? ' title="Audiência online"' : '') + '>' + esc(r.nome) + '</td><td class="n">' + esc(r.cpf || '—') + '</td><td class="n">' + (r.processo ? '<button type="button" class="copia" data-copiar="' + esc(r.processo) + '" title="Copiar o número do processo">' + esc(r.processo) + '<svg class="i"><use href="#i-copy"/></svg></button>' : '—') + '</td><td class="n">' + (r.audData ? fmtShort(r.audData) + (r.audHora ? ' · ' + esc(r.audHora) : '') : '—') + (r.online ? '<span class="ct-on">Online</span>' : '') + '</td><td><div class="ct-pills">' + (t.length ? t.map(function(k){ return '<span>' + esc(nomeTese(k)) + '</span>'; }).join('') : '<span>Sem tese</span>') + '</div></td><td><div class="ct-ctl" role="group" aria-label="Resultado de ' + esc(r.nome) + '">' + CT_RES.map(function(x){ return '<button type="button" data-res="' + x[0] + '" data-id="' + esc(r.id) + '" aria-pressed="' + (resAud(r) === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div></td></tr>';
+      return '<tr data-ct="' + esc(r.id) + '"><td class="nome' + (r.online ? ' online' : '') + '"' + (r.online ? ' title="Audiência online"' : '') + '>' + esc(r.nome) + '</td><td class="n">' + esc(r.cpf || '—') + '</td><td class="n">' + (r.processo ? '<button type="button" class="copia" data-copiar="' + esc(r.processo) + '" title="Copiar o número do processo">' + esc(r.processo) + '<svg class="i"><use href="#i-copy"/></svg></button>' : '—') + '</td><td class="n">' + (r.audData ? fmtShort(r.audData) + (r.audHora ? ' · ' + esc(r.audHora) : '') : '—') + (r.audData ? modoSwitch(r) : '') + '</td><td><div class="ct-pills">' + (t.length ? t.map(function(k){ return '<span>' + esc(nomeTese(k)) + '</span>'; }).join('') : '<span>Sem tese</span>') + '</div></td><td><div class="ct-ctl" role="group" aria-label="Resultado de ' + esc(r.nome) + '">' + CT_RES.map(function(x){ return '<button type="button" data-res="' + x[0] + '" data-id="' + esc(r.id) + '" aria-pressed="' + (resAud(r) === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div></td></tr>';
     }).join('') + (lista.length > ctLimite ? '<tr class="ct-mais-row"><td colspan="6" class="ct-mais"><button type="button" class="btn" id="ct-mais">Mostrar mais ' + Math.min(200, lista.length - ctLimite) + '</button></td></tr>' : '') +
       (!lista.length ? '<tr><td colspan="6" class="ct-mais small">Nenhum cliente encontrado.</td></tr>' : '');
   }
@@ -1956,6 +1959,14 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   }
   $('ct-body').addEventListener('click', async function(e){
     if (e.target.closest('#ct-mais')){ ctLimite += 200; renderContest(); return; }
+    var md = e.target.closest('[data-act="modo"]');
+    if (md){
+      var rm = state.rows.filter(function(x){ return x.id === md.dataset.id; })[0]; if (!rm) return;
+      var on = md.dataset.v === 'o'; if (!!rm.online === on) return;
+      try { await patchRow(rm.id, { online: on, atualizadoEm: new Date().toISOString() }); toast((on ? 'Audiência online: ' : 'Audiência presencial: ') + (rm.nome || ''), 'Desfazer', function(){ patchRow(rm.id, { online: !on }).catch(function(e3){ toast(errMsg(e3)); }); }); }
+      catch(err){ toast(errMsg(err)); }
+      return;
+    }
     var cp = e.target.closest('[data-copiar]');
     if (cp){
       try { await copiarTexto(cp.dataset.copiar); cp.classList.add('ok'); setTimeout(function(){ cp.classList.remove('ok'); }, 1500); toast('Processo copiado: ' + cp.dataset.copiar); }
