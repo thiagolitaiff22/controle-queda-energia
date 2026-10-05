@@ -510,6 +510,24 @@ header.top h1{margin:4px 0 0;font-size:32px;line-height:1.1;font-weight:800;lett
 .more{display:flex;justify-content:center;padding:12px;border-top:1px solid var(--line)}
 
 .ct-res-box{padding:0;overflow-x:auto}
+.ct-resf{display:flex;flex-wrap:wrap;gap:2px 18px;border-bottom:1px solid var(--line)}
+.ct-resf button{border:0;background:none;padding:8px 0;margin-bottom:-1px;border-bottom:2px solid transparent;font-size:13px;font-weight:500;color:var(--ink-3)}
+.ct-resf button:hover{color:var(--ink)}
+.ct-resf button[aria-pressed="true"]{color:var(--ink);border-bottom-color:var(--primary);font-weight:600}
+.ct-resf .n{font-size:11.5px;margin-left:4px;font-variant-numeric:tabular-nums;opacity:.8}
+.ct-tbl tr.ct-sessao td{background:var(--soft);padding:10px 14px;border-bottom:1px solid var(--line);cursor:default}
+.ct-tbl tr.ct-sessao:hover td{background:var(--soft)}
+.ct-tbl tr.ct-sessao b{font-size:13.5px;margin-right:10px}
+.ct-tbl tr.ct-sessao span{font-size:12px;color:var(--ink-3)}
+.ct-ctl{display:inline-flex;border:1px solid var(--line-2);border-radius:8px;overflow:hidden}
+.ct-ctl button{border:0;background:none;padding:4px 9px;font-size:12px;font-weight:500;color:var(--ink-3);white-space:nowrap}
+.ct-ctl button + button{border-left:1px solid var(--line-2)}
+.ct-ctl button:hover{background:var(--hover);color:var(--ink)}
+.ct-ctl button[aria-pressed="true"]{color:#fff;font-weight:600}
+.ct-ctl button[data-res="conclusos"][aria-pressed="true"]{background:var(--amber)}
+.ct-ctl button[data-res="procedente"][aria-pressed="true"]{background:var(--green)}
+.ct-ctl button[data-res="faltou"][aria-pressed="true"]{background:var(--red)}
+.ct-ctl button[data-res="improcedente"][aria-pressed="true"]{background:var(--purple)}
 .ct-resumo{width:100%;border-collapse:collapse;font-size:13px}
 .ct-resumo th{text-align:right;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);font-weight:600;padding:9px 14px;border-bottom:1px solid var(--line);white-space:nowrap}
 .ct-resumo th:first-child{text-align:left}
@@ -543,7 +561,8 @@ header.top h1{margin:4px 0 0;font-size:32px;line-height:1.1;font-weight:800;lett
 .ct-tbl td.n{font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--ink-2)}
 .ct-tbl td.nome{font-weight:600}
 .ct-pills{display:flex;flex-wrap:wrap;gap:4px}
-.ct-pills span{font-size:11.5px;padding:2px 8px;border-radius:999px;background:var(--soft);border:1px solid var(--line);white-space:nowrap}
+.ct-pills{gap:0 6px;color:var(--ink-2);font-size:12.5px}
+.ct-pills span + span::before{content:"+ ";color:var(--ink-3)}
 .ct-mais{padding:12px 14px;text-align:center}
 @media (max-width:640px){ .ct-tbl thead{display:none} .ct-tbl tr{display:block;padding:10px 14px;border-bottom:1px solid var(--line)} .ct-tbl td{display:block;padding:2px 0;border:0} }
 .soon{padding:24px;display:flex;flex-direction:column;gap:10px;max-width:72ch}
@@ -835,7 +854,8 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
           <div class="search"><svg class="i"><use href="#i-search"/></svg><input id="ct-q" type="search" placeholder="Buscar por nome, CPF ou processo"></div>
           <span class="fb-count tnum" id="ct-count"></span>
         </div></div>
-        <div class="card ct-tab"><table class="ct-tbl"><thead><tr><th>Cliente</th><th>CPF</th><th>Processo</th><th>Audiência</th><th>Tese da contestação</th></tr></thead><tbody id="ct-body"></tbody></table></div>
+        <div class="ct-resf" id="ct-resf" role="group" aria-label="Filtrar por resultado"></div>
+        <div class="card ct-tab"><table class="ct-tbl"><thead><tr><th>Cliente</th><th>CPF</th><th>Processo</th><th>Audiência</th><th>Tese da contestação</th><th>Resultado na audiência</th></tr></thead><tbody id="ct-body"></tbody></table></div>
       </section>
 
       <section id="view-ret" hidden style="display:flex;flex-direction:column;gap:18px">
@@ -1781,7 +1801,24 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     var r = state.rows.filter(function(x){ return x.id === b.dataset.bc; })[0]; if (r) openForm(r);
   });
 
-  var ctFiltro = '', ctDia = '', ctQ = '', ctLimite = 200;
+  var ctFiltro = '', ctDia = '', ctRes = '', ctQ = '', ctLimite = 200;
+  // what happened at the hearing, as one of four quick marks
+  var CT_RES = [['conclusos', 'Concluso'], ['procedente', 'Procedente'], ['faltou', 'Faltou'], ['improcedente', 'Improcedente']];
+  function resAud(r){
+    if (r.resultado === 'ausente' || r.comparecimento === 'faltou') return 'faltou';
+    if (r.resultado === 'parcial' || r.resultado === 'procedente') return 'procedente';
+    if (r.resultado === 'improcedente' || r.resultado === 'extinto') return 'improcedente';
+    if (r.resultado === 'aguardando' || r.concluso) return 'conclusos';
+    return '';
+  }
+  function camposRes(k, r){
+    var c = { atualizadoEm: new Date().toISOString() };
+    if (k === 'conclusos') return Object.assign(c, { resultado: 'aguardando', concluso: true, comparecimento: 'compareceu' });
+    if (k === 'procedente') return Object.assign(c, { resultado: 'parcial', concluso: false, comparecimento: 'compareceu' });
+    if (k === 'improcedente') return Object.assign(c, { resultado: 'improcedente', concluso: false, comparecimento: 'compareceu' });
+    if (k === 'faltou') return Object.assign(c, { resultado: 'ausente', concluso: false, comparecimento: 'faltou' });
+    return Object.assign(c, { resultado: '', concluso: false, comparecimento: '' });
+  }
   function renderContest(){
     var chips = $('ct-chips'); if (!chips) return;
     var rows = state.rows, cont = {}, sem = 0;
@@ -1804,15 +1841,36 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
       var ks = tesesDe(r);
       if (ctFiltro === '__sem' ? ks.length : (ctFiltro && ks.indexOf(ctFiltro) < 0)) return false;
       if (ctDia && r.audData !== ctDia) return false;
+      if (ctRes && (ctRes === '__sem' ? resAud(r) : resAud(r) !== ctRes)) return false;
       if (!q) return true;
       return String(r.nome || '').toLowerCase().indexOf(q) >= 0 || (qd.length >= 3 && (String(r.cpf || '').replace(/[^0-9]/g, '').indexOf(qd) >= 0 || String(r.processo || '').replace(/[^0-9]/g, '').indexOf(qd) >= 0));
-    }).sort(function(a, b){ return String(a.nome).localeCompare(String(b.nome), 'pt'); });
-    $('ct-count').textContent = lista.length + (lista.length === 1 ? ' cliente' : ' clientes') + (ctFiltro ? ' · ' + (ctFiltro === '__sem' ? 'sem tese' : nomeTese(ctFiltro)) : '') + (ctDia ? ' · audiência de ' + fmtShort(ctDia) : '');
-    $('ct-body').innerHTML = lista.slice(0, ctLimite).map(function(r){
+    }).sort(function(a, b){ return String(a.audData || '9999').localeCompare(String(b.audData || '9999')) || String(a.audHora || '').localeCompare(String(b.audHora || '')) || String(a.nome).localeCompare(String(b.nome), 'pt'); });
+    var base = rows.filter(function(r){
       var ks = tesesDe(r);
-      return '<tr data-ct="' + esc(r.id) + '"><td class="nome">' + esc(r.nome) + '</td><td class="n">' + esc(r.cpf || '—') + '</td><td class="n">' + esc(r.processo || '—') + '</td><td class="n">' + (r.audData ? fmtShort(r.audData) + (r.audHora ? ' · ' + esc(r.audHora) : '') : '—') + '</td><td><div class="ct-pills">' + (ks.length ? ks.map(function(k){ return '<span>' + esc(nomeTese(k)) + '</span>'; }).join('') : '<span>Sem tese</span>') + '</div></td></tr>';
-    }).join('') + (lista.length > ctLimite ? '<tr class="ct-mais-row"><td colspan="5" class="ct-mais"><button type="button" class="btn" id="ct-mais">Mostrar mais ' + Math.min(200, lista.length - ctLimite) + '</button></td></tr>' : '') +
-      (!lista.length ? '<tr><td colspan="5" class="ct-mais small">Nenhum cliente encontrado.</td></tr>' : '');
+      if (ctFiltro === '__sem' ? ks.length : (ctFiltro && ks.indexOf(ctFiltro) < 0)) return false;
+      if (ctDia && r.audData !== ctDia) return false;
+      return true;
+    });
+    var nRes = function(k){ return base.filter(function(r){ return k === '' ? true : k === '__sem' ? !resAud(r) : resAud(r) === k; }).length; };
+    $('ct-resf').innerHTML = [['', 'Todos'], ['__sem', 'Sem resultado']].concat(CT_RES).map(function(x){ return '<button type="button" data-resf="' + x[0] + '" aria-pressed="' + (ctRes === x[0]) + '">' + x[1] + '<span class="n">' + nRes(x[0]) + '</span></button>'; }).join('');
+    $('ct-count').textContent = lista.length + (lista.length === 1 ? ' cliente' : ' clientes') + (ctFiltro ? ' · ' + (ctFiltro === '__sem' ? 'sem tese' : nomeTese(ctFiltro)) : '') + (ctDia ? ' · audiência de ' + fmtShort(ctDia) : '');
+    var sessao = function(r){ return (r.audData || '') + '|' + (r.audHora || ''); };
+    var porSessao = {}; lista.forEach(function(r){ (porSessao[sessao(r)] = porSessao[sessao(r)] || []).push(r); });
+    var cabSessao = function(r){
+      var g = porSessao[sessao(r)], c = {};
+      g.forEach(function(x){ var k = resAud(x) || 'sem'; c[k] = (c[k] || 0) + 1; });
+      var titulo = r.audData ? 'Audiência de ' + ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'][parseDate(r.audData).getDay()] + ', ' + fmtDate(r.audData) + (r.audHora ? ' às ' + r.audHora.replace(':00', 'h') : '') : 'Sem audiência marcada';
+      var resumo = [['sem', 'sem resultado', 'sem resultado'], ['conclusos', 'concluso', 'conclusos'], ['procedente', 'procedente', 'procedentes'], ['faltou', 'faltou', 'faltaram'], ['improcedente', 'improcedente', 'improcedentes']]
+        .filter(function(x){ return c[x[0]]; }).map(function(x){ return c[x[0]] + ' ' + (c[x[0]] === 1 ? x[1] : x[2]); }).join(' · ');
+      return '<tr class="ct-sessao"><td colspan="6"><b>' + esc(titulo) + '</b><span>' + g.length + (g.length === 1 ? ' cliente' : ' clientes') + (resumo ? ' · ' + esc(resumo) : '') + '</span></td></tr>';
+    };
+    var ultima = null;
+    $('ct-body').innerHTML = lista.slice(0, ctLimite).map(function(r){
+      var ks = tesesDe(r), cab = '';
+      if (sessao(r) !== ultima){ ultima = sessao(r); cab = cabSessao(r); }
+      return cab + '<tr data-ct="' + esc(r.id) + '"><td class="nome">' + esc(r.nome) + '</td><td class="n">' + esc(r.cpf || '—') + '</td><td class="n">' + esc(r.processo || '—') + '</td><td class="n">' + (r.audData ? fmtShort(r.audData) + (r.audHora ? ' · ' + esc(r.audHora) : '') : '—') + '</td><td><div class="ct-pills">' + (ks.length ? ks.map(function(k){ return '<span>' + esc(nomeTese(k)) + '</span>'; }).join('') : '<span>Sem tese</span>') + '</div></td><td><div class="ct-ctl" role="group" aria-label="Resultado de ' + esc(r.nome) + '">' + CT_RES.map(function(x){ return '<button type="button" data-res="' + x[0] + '" data-id="' + esc(r.id) + '" aria-pressed="' + (resAud(r) === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div></td></tr>';
+    }).join('') + (lista.length > ctLimite ? '<tr class="ct-mais-row"><td colspan="6" class="ct-mais"><button type="button" class="btn" id="ct-mais">Mostrar mais ' + Math.min(200, lista.length - ctLimite) + '</button></td></tr>' : '') +
+      (!lista.length ? '<tr><td colspan="6" class="ct-mais small">Nenhum cliente encontrado.</td></tr>' : '');
   }
   $('ct-chips').addEventListener('click', function(e){
     var b = e.target.closest('[data-tese]'); if (!b) return;
@@ -1821,8 +1879,18 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     ctLimite = 200; renderContest();
   });
   $('ct-q').addEventListener('input', function(e){ ctQ = e.target.value.trim(); ctLimite = 200; renderContest(); });
-  $('ct-body').addEventListener('click', function(e){
+  $('ct-resf').addEventListener('click', function(e){ var b = e.target.closest('[data-resf]'); if (!b) return; ctRes = b.dataset.resf; ctLimite = 200; renderContest(); });
+  $('ct-body').addEventListener('click', async function(e){
     if (e.target.closest('#ct-mais')){ ctLimite += 200; renderContest(); return; }
+    var m = e.target.closest('[data-res]');
+    if (m){
+      var r0 = state.rows.filter(function(x){ return x.id === m.dataset.id; })[0]; if (!r0) return;
+      var antes = { resultado: r0.resultado || '', concluso: !!r0.concluso, comparecimento: r0.comparecimento || '' };
+      var k = resAud(r0) === m.dataset.res ? '' : m.dataset.res;
+      try { await patchRow(r0.id, camposRes(k, r0)); toast((k ? CT_RES.filter(function(x){ return x[0] === k; })[0][1] + ': ' : 'Resultado apagado: ') + (r0.nome || ''), 'Desfazer', function(){ patchRow(r0.id, antes).catch(function(e2){ toast(errMsg(e2)); }); }); }
+      catch(err){ toast(errMsg(err)); }
+      return;
+    }
     var tr = e.target.closest('[data-ct]'); if (!tr) return;
     var r = state.rows.filter(function(x){ return x.id === tr.dataset.ct; })[0]; if (r) openForm(r);
   });
