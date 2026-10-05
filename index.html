@@ -459,6 +459,11 @@ header.top h1{margin:4px 0 0;font-size:32px;line-height:1.1;font-weight:800;lett
 .st:hover{text-decoration:underline;text-underline-offset:3px}
 .st.acao{border:1px solid var(--amber);color:var(--amber);border-radius:999px;padding:3px 11px;font-size:12px}
 .st.acao:hover{background:var(--amber-soft);text-decoration:none}
+.modo-sel{appearance:none;-webkit-appearance:none;border:1px solid transparent;background:transparent;border-radius:6px;padding:1px 16px 1px 5px;margin:1px 0 0 -5px;font:inherit;font-size:11.5px;font-weight:500;color:var(--ink-3);cursor:pointer;background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);background-position:calc(100% - 8px) 55%,calc(100% - 5px) 55%;background-size:3px 3px;background-repeat:no-repeat}
+.modo-sel:hover,.modo-sel:focus{border-color:var(--line-2);color:var(--ink)}
+.modo-sel.on{color:var(--blue);font-weight:700}
+.modo-sel option{color:var(--ink);background:var(--panel)}
+.ct-tbl td .modo-sel{display:block}
 .modo{display:inline-flex;margin-top:5px;border:1px solid var(--line);border-radius:999px;padding:2px;background:var(--soft)}
 .modo button{border:0;background:none;border-radius:999px;padding:1px 8px;font-size:11px;font-weight:600;color:var(--ink-3)}
 .modo button:hover{color:var(--ink)}
@@ -1300,7 +1305,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     return '<button type="button" class="tel-edit val tnum" data-act="tel" data-id="' + esc(r.id) + '" title="Clique para corrigir">' + esc(r.contato) + '</button>';
   }
   function modoSwitch(r){
-    return '<div class="modo" role="group" aria-label="Tipo de audiência"><button type="button" data-act="modo" data-v="p" data-id="' + esc(r.id) + '" aria-pressed="' + (!r.online) + '">Presencial</button><button type="button" class="on" data-act="modo" data-v="o" data-id="' + esc(r.id) + '" aria-pressed="' + (!!r.online) + '">Online</button></div>';
+    return '<select class="modo-sel' + (r.online ? ' on' : '') + '" data-modo="' + esc(r.id) + '" aria-label="Tipo de audiência de ' + esc(r.nome) + '" title="Mudar o tipo de audiência"><option value="p"' + (r.online ? '' : ' selected') + '>Presencial</option><option value="o"' + (r.online ? ' selected' : '') + '>Online</option></select>';
   }
   function audCell(r){
     if (!r.audData) return '<div class="mini">Sem data</div>';
@@ -1953,6 +1958,15 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(t).catch(antigo);
     return antigo();
   }
+  async function mudarModo(sel){
+    var r = state.rows.filter(function(x){ return x.id === sel.dataset.modo; })[0]; if (!r) return;
+    var on = sel.value === 'o'; if (!!r.online === on) return;
+    try { await patchRow(r.id, { online: on, atualizadoEm: new Date().toISOString() }); toast((on ? 'Audiência online: ' : 'Audiência presencial: ') + (r.nome || ''), 'Desfazer', function(){ patchRow(r.id, { online: !on }).catch(function(e3){ toast(errMsg(e3)); }); }); }
+    catch(err){ sel.value = r.online ? 'o' : 'p'; toast(errMsg(err)); }
+  }
+  document.addEventListener('change', function(e){ var sel = e.target.closest && e.target.closest('select[data-modo]'); if (sel) mudarModo(sel); });
+  // the dropdown must not open the client's form
+  document.addEventListener('click', function(e){ if (e.target.closest && e.target.closest('select[data-modo]')) e.stopPropagation(); }, true);
   $('ct-body').addEventListener('click', async function(e){
     if (e.target.closest('#ct-mais')){ ctLimite += 200; renderContest(); return; }
     var md = e.target.closest('[data-act="modo"]');
