@@ -786,7 +786,6 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
       <button class="tab" role="tab" id="tab-aud" aria-selected="false" type="button" title="Audiências"><svg class="i"><use href="#i-cal"/></svg><span>Audiências</span></button>
       <button class="tab" role="tab" id="tab-ct" aria-selected="false" type="button" title="Contestações"><svg class="i"><use href="#i-scale"/></svg><span>Contestações</span></button>
       <button class="tab" role="tab" id="tab-lista" aria-selected="false" type="button" title="Clientes"><svg class="i"><use href="#i-users"/></svg><span>Clientes</span></button>
-      <button class="tab" role="tab" id="tab-pos" aria-selected="false" type="button" title="Pós-audiência"><svg class="i"><use href="#i-gavel"/></svg><span>Pós-audiência</span></button>
       <button class="tab" role="tab" id="tab-ret" aria-selected="false" type="button" title="Retorno"><svg class="i"><use href="#i-repeat"/></svg><span>Retorno</span></button>
       <button class="tab admin-only" role="tab" id="tab-equipe" aria-selected="false" type="button" title="Configurações"><svg class="i"><use href="#i-gear"/></svg><span>Configurações</span></button>
     </nav>
@@ -2451,7 +2450,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     } catch(err){ toast(errMsg(err)); }
     finally { $('av-save').disabled = false; }
   });
-  var VIEWS = { c: ['tab-clientes', 'view-clientes'], a: ['tab-aud', 'view-aud'], l: ['tab-lista', 'view-lista'], p: ['tab-pos', 'view-pos'], r: ['tab-ret', 'view-ret'], t: ['tab-ct', 'view-ct'], e: ['tab-equipe', 'view-equipe'] };
+  var VIEWS = { c: ['tab-clientes', 'view-clientes'], a: ['tab-aud', 'view-aud'], l: ['tab-lista', 'view-lista'], r: ['tab-ret', 'view-ret'], t: ['tab-ct', 'view-ct'], e: ['tab-equipe', 'view-equipe'] };
   var TITULOS = {
     c: ['Dashboard', 'Visão geral · Ações contra a Âmbar Energia, Alvarães/AM'],
     a: ['Audiências', 'Pauta por dia, avisos e convites'],
