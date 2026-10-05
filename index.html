@@ -1045,7 +1045,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
       <div class="field"><label for="f-comp">Comparecimento à audiência</label><select id="f-comp"><option value="">Não informado</option><option value="compareceu">Compareceu</option><option value="faltou">Faltou</option></select></div>
       <div class="field" id="f-falta-wrap"><label for="f-falta">Motivo da falta</label><input id="f-falta" placeholder="Ex.: não foi avisado, doença, viagem"></div>
       <div class="field"><label for="f-res">Resultado</label><select id="f-res"></select></div>
-      <div class="field"><label for="f-conc">Concluso para decisão</label><select id="f-conc"><option value="">Não</option><option value="sim">Sim</option></select></div>
+      <div class="field"><label for="f-conc">Conclusos para decisão</label><select id="f-conc"><option value="">Não</option><option value="sim">Sim</option></select></div>
       <div class="field full" id="f-mot-wrap"><label for="f-mot">Motivo de estar concluso</label><input id="f-mot" list="motivos-list" placeholder="Ex.: juiz vai ouvir a parte sobre a titularidade da UC"><datalist id="motivos-list"></datalist></div>
       <div class="field"><label for="f-rec">Embargos da requerida</label><select id="f-rec"></select></div>
       <div class="field"><label for="f-pag">Pagamento</label><select id="f-pag"></select></div>
@@ -1589,7 +1589,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
         '<div><span class="lbl">Processo</span><div class="val" style="font-size:12.5px;overflow-wrap:anywhere">' + esc(r.processo || '—') + '</div></div>' +
         '<div><span class="lbl">Audiência</span><div class="cell-stack"><div class="val">' + (r.audData ? fmtDate(r.audData) : '—') + '</div>' + compCell(r) + '</div></div>' +
         '<div><span class="lbl">Resultado</span><div class="cell-stack">' + (r.resultado ? tag(RES, r.resultado) : '<span class="pill muted">Lançar resultado</span>') +
-          (r.concluso ? '<span class="pill blue">Concluso</span><div class="small">' + esc(r.motivoConcluso || 'motivo não informado') + '</div>' : '') + '</div></div>' +
+          (r.concluso ? '<span class="pill blue">Conclusos</span><div class="small">' + esc(r.motivoConcluso || 'motivo não informado') + '</div>' : '') + '</div></div>' +
         '<div><span class="lbl">Embargos</span>' + tag(REC, r.embargos) + '</div>' +
         '<div><span class="lbl">Pagamento</span><div class="cell-stack">' + tag(PAG, r.pagamento) + (r.previsao && r.pagamento !== 'pago' ? '<div class="small">previsto ' + fmtDate(r.previsao) + '</div>' : '') + '</div></div>' +
         editCell(r) + '</div>';
@@ -1835,7 +1835,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
       if (r.audData) linhas.push(['Audiência', fmtDate(r.audData) + (r.audHora ? ' às ' + r.audHora : '') + (r.online ? ' · online' : ' · presencial')]);
       linhas.push(['Aviso', bcAviso(r)], ['Contato', bcContato(r)]);
       if (r.resultado && RES[r.resultado]) linhas.push(['Resultado', RES[r.resultado][0]]);
-      if (r.concluso) linhas.push(['Concluso', r.motivoConcluso || 'sim']);
+      if (r.concluso) linhas.push(['Conclusos', r.motivoConcluso || 'sim']);
       if (r.embargos === 'opostos') linhas.push(['Embargos', 'opostos pela requerida']);
       if (r.pagamento && PAG[r.pagamento]) linhas.push(['Pagamento', PAG[r.pagamento][0]]);
       if (r.tribunal && r.tribunal.ultimo) linhas.push(['Tribunal', r.tribunal.ultimo.nome + (r.tribunal.ultimo.data ? ' · ' + fmtShort(r.tribunal.ultimo.data) : '')]);
@@ -1853,7 +1853,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
 
   var ctFiltro = '', ctSessao = null, ctRes = '', ctOnline = false, ctQ = '', ctLimite = 200;
   // what happened at the hearing, as one of four quick marks
-  var CT_RES = [['conclusos', 'Concluso'], ['procedente', 'Procedente'], ['faltou', 'Faltou'], ['improcedente', 'Improcedente']];
+  var CT_RES = [['conclusos', 'Conclusos'], ['procedente', 'Procedente'], ['faltou', 'Faltou'], ['improcedente', 'Improcedente']];
   function resAud(r){
     if (r.resultado === 'ausente' || r.comparecimento === 'faltou') return 'faltou';
     if (r.resultado === 'parcial' || r.resultado === 'procedente') return 'procedente';
