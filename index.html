@@ -1170,8 +1170,10 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   function faltou(r){ return r.comparecimento === 'faltou' || r.resultado === 'ausente'; }
   function comp(r){ return faltou(r) ? 'faltou' : (r.comparecimento || ''); }
   function isPos(r){ var n = daysUntil(r.audData); return !!r.resultado || !!r.concluso || (n != null && n < 0); }
-  function textMatch(r, q){ if (!q) return true; var ql = q.toLowerCase(), qd = digits(q);
-    return [r.nome, r.endereco].join(' ').toLowerCase().indexOf(ql) >= 0 || (qd.length >= 3 && (digits(r.cpf) + ' ' + digits(r.processo) + ' ' + digits(r.contato)).indexOf(qd) >= 0); }
+  // text used for searching: lower case, no accents
+  function semAcento(t){ return String(t == null ? '' : t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+  function textMatch(r, q){ if (!q) return true; var ql = semAcento(q), qd = digits(q);
+    return semAcento([r.nome, r.endereco].join(' ')).indexOf(ql) >= 0 || (qd.length >= 3 && (digits(r.cpf) + ' ' + digits(r.processo) + ' ' + digits(r.contato)).indexOf(qd) >= 0); }
 
   /* ---------- helpers ---------- */
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
@@ -1279,8 +1281,8 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     if (!passTel(r, o.tel || state.tel)) return false;
     if (!passMeio(r, o.meio || state.meio)) return false;
     if (state.q){
-      var q = state.q.toLowerCase(), qd = digits(state.q);
-      var hay = [r.nome, r.endereco, r.avisadoA, r.tese, r.rg, prospName(r.responsavelId)].join(' ').toLowerCase();
+      var q = semAcento(state.q), qd = digits(state.q);
+      var hay = semAcento([r.nome, r.endereco, r.avisadoA, r.tese, r.rg, prospName(r.responsavelId)].join(' '));
       var hayd = digits(r.cpf) + ' ' + digits(r.rg) + ' ' + digits(r.contato) + ' ' + digits(r.processo) + ' ' + digits(r.uc);
       if (hay.indexOf(q) < 0 && !(qd.length >= 3 && hayd.indexOf(qd) >= 0)) return false;
     }
@@ -1756,14 +1758,14 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   }
   function renderLista(){
     var box = $('cl-list'); if (!box) return;
-    var q = clQ.toLowerCase(), qd = digits(clQ);
+    var q = semAcento(clQ), qd = digits(clQ);
     renderEtapas();
     var lista = state.rows.filter(function(r){
       if (clEtapa === '__novidade') return !!r.tribunalNovidade;
       if (clEtapa && etapa(r) !== clEtapa) return false;
       if (!clEtapa && !r.processo) return false;
       if (!q) return true;
-      return String(r.nome || '').toLowerCase().indexOf(q) >= 0 || (qd.length >= 3 && (digits(r.cpf) + ' ' + digits(r.processo) + ' ' + digits(r.contato)).indexOf(qd) >= 0);
+      return semAcento(r.nome).indexOf(q) >= 0 || (qd.length >= 3 && (digits(r.cpf) + ' ' + digits(r.processo) + ' ' + digits(r.contato)).indexOf(qd) >= 0);
     }).sort(function(a, b){ return String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR'); });
     $('cl-count').textContent = lista.length + (lista.length === 1 ? ' cliente' : ' clientes') + (clEtapa ? ' em ' + nomeEtapa(clEtapa).toLowerCase() : ' com processo');
     box.innerHTML = '<div class="row head"><div>Cliente</div><div>CPF</div><div>Processo</div><div>Contato</div><div>Audiência</div><div>Situação</div><div></div></div>' +
@@ -1814,10 +1816,10 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   }
   function renderBusca(){
     var box = $('bc-res'); if (!box) return;
-    var q = $('bc-q').value.trim(), ql = q.toLowerCase(), qd = q.replace(/[^0-9]/g, '');
+    var q = $('bc-q').value.trim(), ql = semAcento(q), qd = q.replace(/[^0-9]/g, '');
     if (q.length < 2){ box.hidden = true; box.innerHTML = ''; return; }
     var achados = state.rows.filter(function(r){
-      return String(r.nome || '').toLowerCase().indexOf(ql) >= 0 || (qd.length >= 3 && (String(r.cpf || '').replace(/[^0-9]/g, '').indexOf(qd) >= 0 || String(r.processo || '').replace(/[^0-9]/g, '').indexOf(qd) >= 0));
+      return semAcento(r.nome).indexOf(ql) >= 0 || (qd.length >= 3 && (String(r.cpf || '').replace(/[^0-9]/g, '').indexOf(qd) >= 0 || String(r.processo || '').replace(/[^0-9]/g, '').indexOf(qd) >= 0));
     }).sort(function(a, b){ return String(a.nome).localeCompare(String(b.nome), 'pt'); });
     box.hidden = false;
     if (!achados.length){ box.innerHTML = '<div class="bc-vazio">Nenhum cliente encontrado para "' + esc(q) + '".</div>'; return; }
@@ -1920,12 +1922,12 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
       card('improcedente', 'i-gavel', 'Improcedentes', nI, 'roxo', pc(nI, julg) + '% dos julgados', [{ l: 'Improcedentes', n: nI, c: cssVar('--purple') }, resto(nI)]);
     $('ct-resf').innerHTML = '';
 
-    var q = ctQ.toLowerCase(), qd = ctQ.replace(/[^0-9]/g, '');
+    var q = semAcento(ctQ), qd = ctQ.replace(/[^0-9]/g, '');
     var lista = base.filter(function(r){
       if (ctRes && (ctRes === '__sem' ? resAud(r) : resAud(r) !== ctRes)) return false;
       if (ctOnline && !r.online) return false;
       if (!q) return true;
-      return String(r.nome || '').toLowerCase().indexOf(q) >= 0 || (qd.length >= 3 && (String(r.cpf || '').replace(/[^0-9]/g, '').indexOf(qd) >= 0 || String(r.processo || '').replace(/[^0-9]/g, '').indexOf(qd) >= 0));
+      return semAcento(r.nome).indexOf(q) >= 0 || (qd.length >= 3 && (String(r.cpf || '').replace(/[^0-9]/g, '').indexOf(qd) >= 0 || String(r.processo || '').replace(/[^0-9]/g, '').indexOf(qd) >= 0));
     }).sort(function(x, y){ return String(x.nome).localeCompare(String(y.nome), 'pt'); });
     $('ct-count').textContent = lista.length + (lista.length === 1 ? ' cliente' : ' clientes');
     $('ct-body').innerHTML = lista.slice(0, ctLimite).map(function(r){
