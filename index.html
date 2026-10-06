@@ -545,11 +545,19 @@ header.top h1{margin:4px 0 0;font-size:32px;line-height:1.1;font-weight:800;lett
 .ct-bar-num b{color:var(--ink);font-weight:700}
 .ct-bar-num small{color:var(--ink-3);margin-left:6px;font-size:11.5px}
 @media (max-width:640px){ .ct-bars{grid-template-columns:1fr} }
+.pos-box{display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+.pos-sel{appearance:none;-webkit-appearance:none;border:1px solid var(--line-2);background-color:var(--soft);border-radius:999px;padding:2px 20px 2px 10px;font:inherit;font-size:11.5px;font-weight:600;color:var(--ink-2);cursor:pointer;background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);background-position:calc(100% - 11px) 55%,calc(100% - 8px) 55%;background-size:3px 3px;background-repeat:no-repeat}
+.pos-sel:hover{border-color:var(--ink-3);color:var(--ink)}
+.pos-sel.warn{background-color:var(--amber-soft);border-color:var(--amber);color:var(--amber)}
+.pos-sel.blue{background-color:var(--blue-soft);border-color:var(--blue);color:var(--blue)}
+.pos-sel.ok{background-color:var(--green);border-color:var(--green);color:#fff}
+.pos-sel option{color:var(--ink);background:var(--panel)}
+.pos-vazio{color:var(--ink-3)}
 .ct-aud-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .ct-aud-bar label{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:700;margin-right:4px}
 .ct-aud-bar select{border:1px solid var(--line-2);background:var(--panel);border-radius:9px;padding:8px 12px;font-size:14px;font-weight:600;min-width:280px;max-width:100%}
-#ct-aud-ant svg.i{transform:rotate(90deg)}
-#ct-aud-prox svg.i{transform:rotate(-90deg)}
+#ct-aud-ant svg.i,#cl-aud-ant svg.i{transform:rotate(90deg)}
+#ct-aud-prox svg.i,#cl-aud-prox svg.i{transform:rotate(-90deg)}
 .ct-aud-bar .icon-btn[disabled]{opacity:.35;cursor:default}
 .ct-on{display:block;font-size:11px;font-weight:700;color:var(--blue);letter-spacing:.04em;text-transform:uppercase;margin-top:1px}
 .ct-on-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-2);background:none;padding:6px 12px;border-radius:9px;font-size:13px;font-weight:500;color:var(--blue);cursor:pointer}
@@ -793,10 +801,8 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   <header class="topnav">
     <div class="brand"><div class="logo"><svg class="i"><use href="#i-bolt"/></svg></div><div><b>Queda de Energia</b><span>Rodrigues Litaiff Advogados</span></div></div>
     <nav class="nav" role="tablist" aria-orientation="horizontal">
-      <button class="tab" role="tab" id="tab-clientes" aria-selected="true" type="button" title="Dashboard"><svg class="i"><use href="#i-grid"/></svg><span>Dashboard</span></button>
-      <button class="tab" role="tab" id="tab-aud" aria-selected="false" type="button" title="Audiências"><svg class="i"><use href="#i-cal"/></svg><span>Audiências</span></button>
+      <button class="tab" role="tab" id="tab-clientes" aria-selected="true" type="button" title="Clientes"><svg class="i"><use href="#i-users"/></svg><span>Clientes</span></button>
       <button class="tab" role="tab" id="tab-ct" aria-selected="false" type="button" title="Contestações"><svg class="i"><use href="#i-scale"/></svg><span>Contestações</span></button>
-      <button class="tab" role="tab" id="tab-lista" aria-selected="false" type="button" title="Clientes"><svg class="i"><use href="#i-users"/></svg><span>Clientes</span></button>
       <button class="tab" role="tab" id="tab-ret" aria-selected="false" type="button" title="Retorno"><svg class="i"><use href="#i-repeat"/></svg><span>Retorno</span></button>
       <button class="tab admin-only" role="tab" id="tab-equipe" aria-selected="false" type="button" title="Configurações"><svg class="i"><use href="#i-gear"/></svg><span>Configurações</span></button>
     </nav>
@@ -809,7 +815,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   </header>
   <div class="main">
     <div class="content">
-      <div class="ph"><div><h1 id="pg-tit">Dashboard</h1><p id="pg-sub">Visão geral · Ações contra a Âmbar Energia, Alvarães/AM</p></div></div>
+      <div class="ph"><div><h1 id="pg-tit">Clientes</h1><p id="pg-sub">Controle geral e avisos · Ações contra a Âmbar Energia, Alvarães/AM</p></div></div>
 
   <div class="banner" id="banner" hidden></div>
 
@@ -856,11 +862,14 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
           </div>
         </div>
 
-      </section>
-
-      <section id="view-aud" class="vw-dash" hidden style="display:flex;flex-direction:column;gap:18px">
-        <div class="sec-title">Pauta por dia <span class="range tnum" id="range"></span></div>
-        <div class="pauta" id="pauta"></div>
+        <div class="ct-aud-bar">
+          <label for="cl-aud-sel">Audiência</label>
+          <button type="button" class="icon-btn" id="cl-aud-ant" aria-label="Audiência anterior" title="Audiência anterior"><svg class="i"><use href="#i-chev"/></svg></button>
+          <select id="cl-aud-sel"></select>
+          <button type="button" class="icon-btn" id="cl-aud-prox" aria-label="Próxima audiência" title="Próxima audiência"><svg class="i"><use href="#i-chev"/></svg></button>
+          <span class="ct-aud-info" id="cl-aud-info"></span>
+        </div>
+        <div hidden><span class="range tnum" id="range"></span><div class="pauta" id="pauta"></div></div>
 
         <div class="card filterbar">
           <div class="fb-top">
@@ -931,7 +940,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
           <button type="button" class="ct-on-btn" id="ct-on-btn" hidden title="Mostrar só quem faz a audiência online"></button><span class="fb-count tnum" id="ct-count"></span>
         </div></div>
         <div class="ct-resf" id="ct-resf" role="group" aria-label="Filtrar por resultado"></div>
-        <div class="card ct-tab"><table class="ct-tbl"><thead><tr><th>Cliente</th><th>CPF</th><th>Processo</th><th id="ct-th-aud">Audiência</th><th>Tese da contestação</th><th>Resultado na audiência</th></tr></thead><tbody id="ct-body"></tbody></table></div>
+        <div class="card ct-tab"><table class="ct-tbl"><thead><tr><th>Cliente</th><th>CPF</th><th>Processo</th><th id="ct-th-aud">Audiência</th><th>Tese da contestação</th><th>Resultado na audiência</th><th>Depois da sentença</th></tr></thead><tbody id="ct-body"></tbody></table></div>
       </section>
 
       <section id="view-ret" hidden style="display:flex;flex-direction:column;gap:18px">
@@ -1740,7 +1749,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     }).join('');
   }
   if (/^(localhost|127.0.0.1)$/.test(location.hostname)) window.__qeDev = { state: state, render: function(){ render(); } };
-  function render(){ renderStats(); renderPauta(); renderList(); renderLista(); renderPos(); renderRet(); renderProsp(); renderEquipe(); renderContest(); renderBusca(); if (typeof AV !== 'undefined' && AV && !AV.rodando) avMontar(); }
+  function render(){ renderStats(); renderPauta(); renderList(); renderLista(); renderPos(); renderRet(); renderProsp(); renderEquipe(); renderContest(); renderBusca(); renderClSessao(); if (typeof AV !== 'undefined' && AV && !AV.rodando) avMontar(); }
   var clQ = '';
   // stage of each process, derived from what is already recorded (no extra typing)
   var ETAPAS = [
@@ -1914,6 +1923,58 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     if (k === 'faltou') return Object.assign(c, { resultado: 'ausente', concluso: false, comparecimento: 'faltou' });
     return Object.assign(c, { resultado: '', concluso: false, comparecimento: '' });
   }
+  function sessoesAudiencia(){
+    var sess = {}; state.rows.forEach(function(r){ if (r.audData){ var k = r.audData + '|' + (r.audHora || ''); sess[k] = (sess[k] || 0) + 1; } });
+    return { cont: sess, ks: Object.keys(sess).sort() };
+  }
+  function montarSelectSessao(sel, atual, info, ant, prox){
+    var S = sessoesAudiencia(), ks = S.ks, sess = S.cont;
+    var MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+    var DL = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+    var rot = function(k){ var p = k.split('|'), n = daysUntil(p[0]);
+      return DL[parseDate(p[0]).getDay()] + ', ' + fmtDate(p[0]) + (p[1] ? ' às ' + p[1].replace(':00', 'h') : '') + ' · ' + sess[k] + (sess[k] === 1 ? ' cliente' : ' clientes') + (n === 0 ? ' · hoje' : n === 1 ? ' · amanhã' : ''); };
+    var grupos = {}, ordem = [];
+    ks.slice().reverse().forEach(function(k){ var d = k.split('|')[0], g = MESES[+d.slice(5, 7) - 1] + ' de ' + d.slice(0, 4); if (!grupos[g]){ grupos[g] = []; ordem.push(g); } grupos[g].push(k); });
+    sel.innerHTML = '<option value="">Todas as audiências · ' + state.rows.length + ' clientes</option>' +
+      ordem.map(function(g){ return '<optgroup label="' + g.replace(/^./, function(c){ return c.toUpperCase(); }) + '">' + grupos[g].slice().reverse().map(function(k){ return '<option value="' + esc(k) + '">' + esc(rot(k)) + '</option>'; }).join('') + '</optgroup>'; }).join('');
+    sel.value = atual && sess[atual] ? atual : '';
+    var pos = ks.indexOf(sel.value);
+    ant.disabled = !ks.length || pos === 0;
+    prox.disabled = !ks.length || (pos >= 0 && pos === ks.length - 1);
+    info.textContent = sel.value ? (pos + 1) + ' de ' + ks.length + ' audiências' : ks.length + ' audiências no sistema';
+    return sel.value;
+  }
+  function passoSessao(atual, dir){ var ks = sessoesAudiencia().ks, p = ks.indexOf(atual); if (p < 0) return dir > 0 ? (ks[0] || '') : (ks[ks.length - 1] || ''); return ks[p + dir] || atual; }
+  // Clientes: the dropdown drives the existing day/time filter of the list
+  function clSessaoAtual(){ return state.dia ? state.dia + '|' + (state.hora || '') : ''; }
+  function renderClSessao(){
+    var sel = $('cl-aud-sel'); if (!sel) return;
+    var atual = clSessaoAtual();
+    if (state.dia && !state.hora){ var c = sessoesAudiencia().ks.filter(function(k){ return k.indexOf(state.dia + '|') === 0; }); if (c.length === 1) atual = c[0]; }
+    montarSelectSessao(sel, atual, $('cl-aud-info'), $('cl-aud-ant'), $('cl-aud-prox'));
+  }
+  function aplicarClSessao(k){ var p = (k || '').split('|'); state.dia = p[0] || ''; state.hora = k ? (p[1] || '') : ''; state.limit = 100; renderPauta(); renderList(); renderClSessao(); }
+  $('cl-aud-sel').addEventListener('change', function(){ aplicarClSessao(this.value); });
+  $('cl-aud-ant').addEventListener('click', function(){ aplicarClSessao(passoSessao($('cl-aud-sel').value, -1)); });
+  $('cl-aud-prox').addEventListener('click', function(){ aplicarClSessao(passoSessao($('cl-aud-sel').value, 1)); });
+
+  // after a favourable decision: embargos by the requerida and payment status (no amounts)
+  function posCell(r){
+    if (resAud(r) !== 'procedente') return '<span class="pos-vazio">—</span>';
+    var emb = '<select class="pos-sel' + (r.embargos === 'opostos' ? ' warn' : '') + '" data-pos="embargos" data-id="' + esc(r.id) + '" title="Embargos da requerida"><option value=""' + (r.embargos === 'opostos' ? '' : ' selected') + '>Sem embargos</option><option value="opostos"' + (r.embargos === 'opostos' ? ' selected' : '') + '>Embargos</option></select>';
+    var pg = '<select class="pos-sel' + (r.pagamento === 'pago' ? ' ok' : r.pagamento && r.pagamento !== 'aguardando' ? ' blue' : '') + '" data-pos="pagamento" data-id="' + esc(r.id) + '" title="Situação do pagamento"><option value=""' + (!r.pagamento ? ' selected' : '') + '>Pagamento: —</option>' +
+      Object.keys(PAG).map(function(k){ return '<option value="' + k + '"' + (r.pagamento === k ? ' selected' : '') + '>' + esc(PAG[k][0]) + '</option>'; }).join('') + '</select>';
+    return '<div class="pos-box">' + emb + pg + '</div>';
+  }
+  document.addEventListener('change', async function(e){
+    var sel = e.target.closest && e.target.closest('select[data-pos]'); if (!sel) return;
+    var r = state.rows.filter(function(x){ return x.id === sel.dataset.id; })[0]; if (!r) return;
+    var campo = sel.dataset.pos, antes = r[campo] || '', novo = {}; novo[campo] = sel.value; novo.atualizadoEm = new Date().toISOString();
+    try { await patchRow(r.id, novo); toast((campo === 'embargos' ? (sel.value ? 'Embargos registrados: ' : 'Sem embargos: ') : 'Pagamento: ' + (PAG[sel.value] ? PAG[sel.value][0] : 'sem informação') + ' · ') + (r.nome || ''), 'Desfazer', function(){ var v = {}; v[campo] = antes; patchRow(r.id, v).catch(function(e3){ toast(errMsg(e3)); }); }); }
+    catch(err){ sel.value = antes; toast(errMsg(err)); }
+  });
+  document.addEventListener('click', function(e){ if (e.target.closest && e.target.closest('select[data-pos]')) e.stopPropagation(); }, true);
+
   function renderContest(){
     var chips = $('ct-chips'); if (!chips) return;
     var DSEM = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
@@ -1924,19 +1985,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     var hoje = iso(new Date());
     if (ctSessao === null && ks.length){ ctSessao = ks.filter(function(k){ return k.split('|')[0] >= hoje; })[0] || ''; }
     if (ctSessao && !sess[ctSessao]) ctSessao = '';
-    var MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
-    var DLONGO = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
-    var rotulo = function(k){ var p = k.split('|'), d = p[0], n = daysUntil(d);
-      return DLONGO[parseDate(d).getDay()] + ', ' + fmtDate(d) + (p[1] ? ' às ' + p[1].replace(':00', 'h') : '') + ' · ' + sess[k] + (sess[k] === 1 ? ' cliente' : ' clientes') + (n === 0 ? ' · hoje' : n === 1 ? ' · amanhã' : ''); };
-    var grupos = {}, ordemG = [];
-    ks.slice().reverse().forEach(function(k){ var d = k.split('|')[0], g = MESES[+d.slice(5, 7) - 1] + ' de ' + d.slice(0, 4); if (!grupos[g]){ grupos[g] = []; ordemG.push(g); } grupos[g].push(k); });
-    $('ct-aud-sel').innerHTML = '<option value="">Todas as audiências · ' + state.rows.length + ' clientes</option>' +
-      ordemG.map(function(g){ return '<optgroup label="' + g.replace(/^./, function(c){ return c.toUpperCase(); }) + '">' + grupos[g].slice().reverse().map(function(k){ return '<option value="' + esc(k) + '"' + (ctSessao === k ? ' selected' : '') + '>' + esc(rotulo(k)) + '</option>'; }).join('') + '</optgroup>'; }).join('');
-    $('ct-aud-sel').value = ctSessao || '';
-    var pos = ks.indexOf(ctSessao);
-    $('ct-aud-ant').disabled = !ks.length || pos === 0;
-    $('ct-aud-prox').disabled = !ks.length || (pos >= 0 && pos === ks.length - 1);
-    $('ct-aud-info').textContent = ctSessao ? (pos + 1) + ' de ' + ks.length + ' audiências' : ks.length + ' audiências no sistema';
+    montarSelectSessao($('ct-aud-sel'), ctSessao, $('ct-aud-info'), $('ct-aud-ant'), $('ct-aud-prox'));
     var nOn = state.rows.filter(function(r){ return r.online && (!ctSessao || chaveS(r) === ctSessao); }).length;
     $('ct-on-btn').hidden = !nOn && !ctOnline; $('ct-on-btn').setAttribute('aria-pressed', ctOnline); $('ct-on-btn').innerHTML = '<i class="ct-on-dot"></i>Online <b>' + nOn + '</b>';
     var rows = state.rows.filter(function(r){ return !ctSessao || chaveS(r) === ctSessao; });
@@ -1995,9 +2044,9 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     $('ct-th-aud').textContent = ctSessao ? 'Tipo' : 'Audiência';
     $('ct-body').innerHTML = lista.slice(0, ctLimite).map(function(r){
       var t = tesesDe(r);
-      return '<tr data-ct="' + esc(r.id) + '"><td class="nome' + (r.online ? ' online' : '') + '"' + (r.online ? ' title="Audiência online"' : '') + '>' + esc(r.nome) + '</td><td class="n">' + esc(r.cpf || '—') + '</td><td class="n">' + (r.processo ? '<button type="button" class="copia" data-copiar="' + esc(r.processo) + '" title="Copiar o número do processo">' + esc(r.processo) + '<svg class="i"><use href="#i-copy"/></svg></button>' : '—') + '</td><td class="n">' + (!ctSessao && r.audData ? fmtShort(r.audData) + (r.audHora ? ' · ' + esc(r.audHora) : '') : '') + (r.audData ? modoSwitch(r) : '—') + '</td><td><div class="ct-pills">' + (t.length ? t.map(function(k){ return '<span>' + esc(nomeTese(k)) + '</span>'; }).join('') : '<span>Sem tese</span>') + '</div></td><td><div class="ct-ctl" role="group" aria-label="Resultado de ' + esc(r.nome) + '">' + CT_RES.map(function(x){ return '<button type="button" data-res="' + x[0] + '" data-id="' + esc(r.id) + '" aria-pressed="' + (resAud(r) === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div></td></tr>';
-    }).join('') + (lista.length > ctLimite ? '<tr class="ct-mais-row"><td colspan="6" class="ct-mais"><button type="button" class="btn" id="ct-mais">Mostrar mais ' + Math.min(200, lista.length - ctLimite) + '</button></td></tr>' : '') +
-      (!lista.length ? '<tr><td colspan="6" class="ct-mais small">Nenhum cliente encontrado.</td></tr>' : '');
+      return '<tr data-ct="' + esc(r.id) + '"><td class="nome' + (r.online ? ' online' : '') + '"' + (r.online ? ' title="Audiência online"' : '') + '>' + esc(r.nome) + '</td><td class="n">' + esc(r.cpf || '—') + '</td><td class="n">' + (r.processo ? '<button type="button" class="copia" data-copiar="' + esc(r.processo) + '" title="Copiar o número do processo">' + esc(r.processo) + '<svg class="i"><use href="#i-copy"/></svg></button>' : '—') + '</td><td class="n">' + (!ctSessao && r.audData ? fmtShort(r.audData) + (r.audHora ? ' · ' + esc(r.audHora) : '') : '') + (r.audData ? modoSwitch(r) : '—') + '</td><td><div class="ct-pills">' + (t.length ? t.map(function(k){ return '<span>' + esc(nomeTese(k)) + '</span>'; }).join('') : '<span>Sem tese</span>') + '</div></td><td><div class="ct-ctl" role="group" aria-label="Resultado de ' + esc(r.nome) + '">' + CT_RES.map(function(x){ return '<button type="button" data-res="' + x[0] + '" data-id="' + esc(r.id) + '" aria-pressed="' + (resAud(r) === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div></td><td>' + posCell(r) + '</td></tr>';
+    }).join('') + (lista.length > ctLimite ? '<tr class="ct-mais-row"><td colspan="7" class="ct-mais"><button type="button" class="btn" id="ct-mais">Mostrar mais ' + Math.min(200, lista.length - ctLimite) + '</button></td></tr>' : '') +
+      (!lista.length ? '<tr><td colspan="7" class="ct-mais small">Nenhum cliente encontrado.</td></tr>' : '');
   }
   function ctSessoes(){ var m = {}; state.rows.forEach(function(r){ if (r.audData) m[(r.audData || '') + '|' + (r.audHora || '')] = 1; }); return Object.keys(m).sort(); }
   $('ct-on-btn').addEventListener('click', function(){ ctOnline = !ctOnline; ctLimite = 200; renderContest(); });
@@ -2303,7 +2352,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     helpPop.addEventListener('click', function(e){
       var b = e.target.closest('[data-ir]'); if (!b) return;
       var alvo = $('fb-rapido').querySelector('[data-p="' + b.dataset.ir + '"]'); fecharAjuda();
-      if (alvo){ showTab('a'); alvo.click(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+      if (alvo){ showTab('c'); alvo.click(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
     });
   }
   document.addEventListener('mouseover', function(e){ var el = e.target.closest && e.target.closest('.help'); if (el) prepararAjuda(el); });
@@ -2339,10 +2388,10 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   });
   $('s-total-c').addEventListener('click', function(e){
     if (!e.target.closest('#s-semtel')) return;
-    state.tel = 'sem'; state.limit = 100; renderList(); showTab('a'); window.scrollTo({ top: 0, behavior: 'smooth' });
+    state.tel = 'sem'; state.limit = 100; renderList(); showTab('c'); window.scrollTo({ top: 0, behavior: 'smooth' });
   });
   $('fb-resp').addEventListener('change', function(e){ state.resp = e.target.value; state.limit = 100; renderList(); });
-  $('fb-dia').addEventListener('click', function(){ state.dia = ''; state.hora = ''; state.limit = 100; renderPauta(); renderList(); });
+  $('fb-dia').addEventListener('click', function(){ state.dia = ''; state.hora = ''; state.limit = 100; renderPauta(); renderList(); renderClSessao(); });
   $('fb-clear').addEventListener('click', function(){
     state.filter = 'todos'; state.aud = 'todas'; state.tel = 'todos'; state.meio = 'todos'; state.dia = ''; state.hora = ''; state.q = ''; state.resp = ''; $('q').value = ''; state.limit = 100;
     renderPauta(); renderList();
@@ -2489,14 +2538,14 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     } catch(err){ toast(errMsg(err)); }
     finally { $('av-save').disabled = false; }
   });
-  var VIEWS = { c: ['tab-clientes', 'view-clientes'], a: ['tab-aud', 'view-aud'], l: ['tab-lista', 'view-lista'], r: ['tab-ret', 'view-ret'], t: ['tab-ct', 'view-ct'], e: ['tab-equipe', 'view-equipe'] };
+  var VIEWS = { c: ['tab-clientes', 'view-clientes'], r: ['tab-ret', 'view-ret'], t: ['tab-ct', 'view-ct'], e: ['tab-equipe', 'view-equipe'] };
   var TITULOS = {
-    c: ['Dashboard', 'Visão geral · Ações contra a Âmbar Energia, Alvarães/AM'],
+    c: ['Clientes', 'Controle geral e avisos · Ações contra a Âmbar Energia, Alvarães/AM'],
     a: ['Audiências', 'Pauta por dia, avisos e convites'],
     l: ['Clientes', 'Todos os clientes e a etapa de cada processo'],
     p: ['Pós-audiência', 'Resultados, conclusos, embargos e pagamentos'],
     r: ['Retorno', 'Quando cada cliente pode entrar com uma nova ação (6 meses após o protocolo)'],
-    t: ['Contestações', 'Teses da Âmbar em cada processo'],
+    t: ['Contestações', 'Audiência, resultado, teses da Âmbar e pagamento'],
     e: ['Configurações', 'Equipe, integrações e prospectadores']
   };
   function showTab(which){
