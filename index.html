@@ -2752,13 +2752,18 @@ body{font-size:14px}
   function abrirInteg(k){
     var x = IG.filter(function(i){ return i.k === k; })[0]; if (!x) return;
     var p = document.querySelector('[data-painel="' + (x.painel || x.k) + '"]'); if (!p) return;
-    igAberto = p;
+    guardarInteg(); igAberto = p;
     $('ig-dlg-logo').innerHTML = IG_LOGO[x.k]; $('ig-dlg-t').textContent = x.t;
     $('ig-dlg-body').appendChild(p);
     $('dlg-integ').showModal();
   }
-  $('dlg-integ').addEventListener('close', function(){ if (igAberto){ $('ig-paineis').appendChild(igAberto); igAberto = null; } pintarInteg(); });
-  $('ig-fechar').addEventListener('click', function(){ $('dlg-integ').close(); });
+  // devolve o painel ao lugar dele (não depende só do evento close, que alguns navegadores atrasam)
+  function guardarInteg(){ if (igAberto){ $('ig-paineis').appendChild(igAberto); igAberto = null; } pintarInteg(); }
+  function fecharInteg(){ guardarInteg(); if ($('dlg-integ').open) $('dlg-integ').close(); }
+  $('dlg-integ').addEventListener('close', guardarInteg);
+  $('dlg-integ').addEventListener('cancel', function(e){ e.preventDefault(); fecharInteg(); });
+  $('dlg-integ').addEventListener('click', function(e){ if (e.target === this) fecharInteg(); });
+  $('ig-fechar').addEventListener('click', fecharInteg);
   $('ig-grid').addEventListener('click', function(e){ var b = e.target.closest('[data-ig]'); if (b) abrirInteg(b.dataset.ig); });
   // os status de cada integração mudam quando as verificações terminam
   ['lh-status', 'dj-status', 'rg-status', 'cp-status', 'av-status'].forEach(function(id){
