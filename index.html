@@ -898,6 +898,19 @@ body{font-size:14px}
 #cl-etapa{margin-top:-4px}
 .vw-dash #cl-etapa.stats.three{grid-template-columns:repeat(4,minmax(0,1fr))}
 @media (max-width:1100px){ .vw-dash #cl-etapa.stats.three{grid-template-columns:repeat(2,minmax(0,1fr))} }
+
+/* Clientes: ordem dos cartões — Clientes, Sem protocolo, Protocolados, Audiências marcadas, Avisados, Pendentes, Audiências realizadas */
+.cl-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.cl-cards > .stats{display:contents!important}
+.cl-cards > .stats:not(#cl-etapa) > .card:nth-child(1){order:1}
+.cl-cards > .stats:not(#cl-etapa) > .card:nth-child(2){order:4}
+.cl-cards > .stats:not(#cl-etapa) > .card:nth-child(3){order:5}
+.cl-cards > .stats:not(#cl-etapa) > .card:nth-child(4){order:6}
+#cl-etapa > [data-etapa-cl="protocolar"]{order:2}
+#cl-etapa > [data-etapa-cl="protocolados"]{order:3}
+#cl-etapa > [data-etapa-cl="realizadas"]{order:7}
+@media (max-width:1100px){ .cl-cards{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media (max-width:560px){ .cl-cards{grid-template-columns:minmax(0,1fr)} }
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -1021,6 +1034,7 @@ body{font-size:14px}
           <button type="button" id="cl-aud-ant"></button><button type="button" id="cl-aud-prox"></button><span id="cl-aud-info"></span>
         </div>
         <div class="bc-res" id="bc-res" hidden></div>
+        <div class="cl-cards">
         <div class="stats">
           <div class="card stat">
             <div class="stat-h"><svg class="i"><use href="#i-users"/></svg>Clientes<span class="help" data-p-help="semtel" data-p-rot="Ver quem está sem telefone" title="Todos os clientes cadastrados. &quot;Com nº de processo&quot; são os que já foram protocolados.|Com telefone: tem número próprio cadastrado.|Via outro cliente: é avisado pelo número de outro cliente (parente ou vizinho).|Prospectador: o contato é feito pelo prospectador da comunidade.|Sem telefone: nenhum meio de contato cadastrado.">?</span></div>
@@ -1048,6 +1062,7 @@ body{font-size:14px}
           </div>
         </div>
         <div class="stats three cl-etapa-cards" id="cl-etapa" role="group" aria-label="Etapa do processo"></div>
+        </div>
 
         <div hidden><span class="range tnum" id="range"></span><div class="pauta" id="pauta"></div></div>
 
