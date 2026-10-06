@@ -8,7 +8,7 @@
 <style>
 :root{
   --bg:#ffffff; --panel:#ffffff; --soft:#f4f4f5; --hover:#f4f4f5; --active:#f4f4f5;
-  --ink:#09090b; --ink-2:#3f3f46; --ink-3:#71717a; --line:#e4e4e7; --line-2:#d4d4d8;
+  --ink:#000000; --ink-2:#0a0a0a; --ink-3:#27272a; --line:#a1a1aa; --line-2:#52525b;
   --primary:#18181b; --on-primary:#fafafa;
   --blue:#3b82f6; --blue-soft:rgba(59,130,246,.1); --green:#10b981; --green-soft:rgba(16,185,129,.1);
   --amber:#f59e0b; --amber-soft:rgba(245,158,11,.12); --red:#ef4444; --red-soft:rgba(239,68,68,.1); --purple:#8b5cf6;
@@ -800,6 +800,9 @@ body{font-size:14px}
 .bc-campo input{height:40px}
 
 /* ---------- minimalista ---------- */
+/* modo claro: letras e quadros em preto */
+:root:not([data-theme="dark"]) .card,:root:not([data-theme="dark"]) .vw-dash .stats > .card,:root:not([data-theme="dark"]) .tb-sel,:root:not([data-theme="dark"]) .tb-btn,:root:not([data-theme="dark"]) .search input{border-color:#18181b!important}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .card,:root:not([data-theme="light"]) .vw-dash .stats > .card,:root:not([data-theme="light"]) .tb-sel,:root:not([data-theme="light"]) .tb-btn,:root:not([data-theme="light"]) .search input{border-color:var(--line)!important}}
 .fbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .fbar .tb-busca{flex:1 1 260px;max-width:none}
 .fbar .tb-busca input{height:38px}
