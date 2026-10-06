@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "Queda de Energia · Pauta do PROJUDI",
+  "version": "1.0",
+  "description": "Rodrigues Litaiff Advogados: busca a pauta de audiências no PROJUDI e entrega ao BI Queda de Energia.",
+  "content_scripts": [
+    {
+      "matches": ["https://projudi.tjam.jus.br/projudi/*"],
+      "js": ["projudi.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://thiagolitaiff22.github.io/controle-queda-energia/*", "http://localhost:5173/*"],
+      "js": ["bi.js"],
+      "run_at": "document_start"
+    }
+  ]
+}
