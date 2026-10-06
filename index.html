@@ -918,6 +918,15 @@ body{font-size:14px}
 
 /* cartão selecionado: contorno azul fino */
 .vw-dash .stats > .card.card-filtro[aria-pressed="true"],.vw-dash .stats.cl-etapa-cards > button.card[aria-pressed="true"],.vw-dash .stats.ct-stats > button.card[aria-pressed="true"]{border:1px solid var(--blue)!important;box-shadow:inset 0 0 0 0.5px var(--blue)!important;background:var(--panel)!important}
+
+/* ---------- financeiro ---------- */
+.fin-stats{grid-template-columns:repeat(5,minmax(0,1fr))!important}
+@media (max-width:1100px){ .fin-stats{grid-template-columns:repeat(2,minmax(0,1fr))!important} }
+.fin-regra{font-size:12.5px;color:var(--ink-3);margin-top:-6px}
+.fin-regra b{color:var(--ink-2)}
+.fin-tbl th.dir,.fin-tbl td.dir{text-align:right}
+.fin-valor{width:110px;height:30px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);font:inherit;font-size:13px;text-align:right;padding:0 8px;font-variant-numeric:tabular-nums}
+.fin-valor:focus{border-color:var(--blue);outline:none}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -986,6 +995,7 @@ body{font-size:14px}
     <nav class="nav" role="tablist" aria-orientation="horizontal">
       <button class="tab" role="tab" id="tab-clientes" aria-selected="true" type="button" title="Clientes"><svg class="i"><use href="#i-users"/></svg><span>Clientes</span></button>
       <button class="tab" role="tab" id="tab-ct" aria-selected="false" type="button" title="Contestações"><svg class="i"><use href="#i-scale"/></svg><span>Contestações</span></button>
+      <button class="tab" role="tab" id="tab-fin" aria-selected="false" type="button" title="Financeiro"><svg class="i"><use href="#i-cash"/></svg><span>Financeiro</span></button>
       <button class="tab" role="tab" id="tab-ret" aria-selected="false" type="button" title="Retorno"><svg class="i"><use href="#i-repeat"/></svg><span>Retorno</span></button>
       <button class="tab admin-only" role="tab" id="tab-equipe" aria-selected="false" type="button" title="Configurações"><svg class="i"><use href="#i-gear"/></svg><span>Configurações</span></button>
     </nav>
@@ -1120,6 +1130,19 @@ body{font-size:14px}
         <details class="card ct-bars-box" id="ct-bars-det"><summary class="ct-bars-head"><b>Gráfico das teses</b><span id="ct-bars-info"></span></summary><div class="ct-bars" id="ct-chips" role="group" aria-label="Filtrar por tese"></div></details>
         <div class="ct-resf" id="ct-resf" role="group" aria-label="Filtrar por resultado"></div>
         <div class="card ct-tab"><table class="ct-tbl"><thead><tr><th>Cliente</th><th>CPF</th><th>Processo</th><th id="ct-th-aud">Audiência</th><th>Tese da contestação</th><th>Resultado na audiência</th></tr></thead><tbody id="ct-body"></tbody></table></div>
+      </section>
+
+      <section id="view-fin" class="vw-dash" hidden style="display:flex;flex-direction:column;gap:18px">
+        <div class="fbar">
+          <div class="search tb-busca"><svg class="i"><use href="#i-search"/></svg><input id="fin-q" type="search" placeholder="Buscar cliente por nome ou CPF"></div>
+          <select id="fin-aud-sel" class="tb-sel" aria-label="Audiência"></select>
+          <select id="fin-pag-sel" class="tb-sel" aria-label="Pagamento"></select>
+          <span class="tb-fim" id="fin-count"></span>
+        </div>
+        <div hidden><button type="button" id="fin-aud-ant"></button><button type="button" id="fin-aud-prox"></button><span id="fin-aud-info"></span></div>
+        <div class="stats fin-stats" id="fin-stats"></div>
+        <div class="fin-regra" id="fin-regra"></div>
+        <div class="card ct-tab"><table class="ct-tbl fin-tbl"><thead><tr><th>Cliente</th><th>Processo</th><th>Audiência</th><th class="dir">Condenação</th><th class="dir">Escritório</th><th class="dir">Cliente</th><th>Pagamento</th></tr></thead><tbody id="fin-body"></tbody></table></div>
       </section>
 
       <section id="view-ret" class="vw-dash" hidden style="display:flex;flex-direction:column;gap:18px">
@@ -1981,7 +2004,7 @@ body{font-size:14px}
     }).join('');
   }
   if (/^(localhost|127.0.0.1)$/.test(location.hostname)) window.__qeDev = { state: state, render: function(){ render(); } };
-  function render(){ renderStats(); renderPauta(); renderList(); renderLista(); renderPos(); renderRet(); renderProsp(); renderEquipe(); renderContest(); renderBusca(); renderClSessao(); if (typeof AV !== 'undefined' && AV && !AV.rodando) avMontar(); }
+  function render(){ renderStats(); renderPauta(); renderList(); renderLista(); renderPos(); renderRet(); renderProsp(); renderEquipe(); renderContest(); renderBusca(); renderClSessao(); renderFin(); if (typeof AV !== 'undefined' && AV && !AV.rodando) avMontar(); }
   var clQ = '';
   // stage of each process, derived from what is already recorded (no extra typing)
   var ETAPAS = [
@@ -2207,6 +2230,71 @@ body{font-size:14px}
     catch(err){ sel.value = antes; toast(errMsg(err)); }
   });
   document.addEventListener('click', function(e){ if (e.target.closest && e.target.closest('select[data-pos]')) e.stopPropagation(); }, true);
+
+  /* ---------- financeiro ---------- */
+  var FIN_PADRAO = 2000;      // condenação usual de uma sentença procedente (R$)
+  var FIN_ESCRITORIO = 0.5;   // parte do escritório (50%); o restante é do cliente
+  var finSessao = '', finPag = '', finQ = '';
+  var brl = function(v){ return (Number(v) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 2 }); };
+  function valorCond(r){ var v = Number(r.valorCondenacao); return v > 0 ? v : FIN_PADRAO; }
+  function renderFin(){
+    var body = $('fin-body'); if (!body) return;
+    var chave = function(r){ return (r.audData || '') + '|' + (r.audHora || ''); };
+    finSessao = montarSelectSessao($('fin-aud-sel'), finSessao, $('fin-aud-info'), $('fin-aud-ant'), $('fin-aud-prox'));
+    var base = state.rows.filter(function(r){ return !finSessao || chave(r) === finSessao; });
+    var proc = base.filter(function(r){ return resAud(r) === 'procedente'; });
+    var improc = base.filter(function(r){ return resAud(r) === 'improcedente'; }).length;
+    var concl = base.filter(function(r){ return resAud(r) === 'conclusos'; }).length;
+    var semRes = base.filter(function(r){ var n = daysUntil(r.audData); return !resAud(r) && n != null && n < 0; }).length;
+    var futuras = base.filter(function(r){ var n = daysUntil(r.audData); return !resAud(r) && n != null && n >= 0; }).length;
+    var tot = proc.reduce(function(a, r){ return a + valorCond(r); }, 0), esc = tot * FIN_ESCRITORIO, cli = tot - esc;
+    var pagos = proc.filter(function(r){ return r.pagamento === 'pago'; }), recebido = pagos.reduce(function(a, r){ return a + valorCond(r) * FIN_ESCRITORIO; }, 0);
+    var julg = proc.length + improc, taxa = julg ? proc.length / julg : 0;
+    var proj = (concl + semRes) * taxa * FIN_PADRAO * FIN_ESCRITORIO;
+    var projFut = futuras * taxa * FIN_PADRAO * FIN_ESCRITORIO;
+    var card = function(ico, rot, v, cls, cap, p, cor){
+      return '<div class="card stat"><div class="stat-h"><svg class="i"><use href="#' + ico + '"/></svg>' + rot + '</div><div class="stat-v tnum' + (cls ? ' ' + cls : '') + '">' + v + '</div><div class="stat-c">' + cap + '</div>' +
+        '<div class="stat-viz"><div class="bar"><span style="width:' + Math.max(0, Math.min(100, p)) + '%;background:var(' + cor + ')"></span></div></div></div>';
+    };
+    $('fin-stats').innerHTML =
+      card('i-check', 'Procedentes', proc.length, 'ok', Math.round(taxa * 100) + '% dos julgados', taxa * 100, '--green') +
+      card('i-scale', 'Condenação total', brl(tot), '', proc.length + ' × ' + brl(FIN_PADRAO) + (proc.some(function(r){ return Number(r.valorCondenacao) > 0 && Number(r.valorCondenacao) !== FIN_PADRAO; }) ? ' (com ajustes)' : ''), 100, '--blue') +
+      card('i-cash', 'Escritório', brl(esc), 'ok', Math.round(FIN_ESCRITORIO * 100) + '% da condenação · recebido ' + brl(recebido), esc ? recebido / esc * 100 : 0, '--green') +
+      card('i-users', 'Clientes', brl(cli), '', Math.round((1 - FIN_ESCRITORIO) * 100) + '% da condenação', 100, '--line-2') +
+      card('i-clock', 'Projeção de ganho', brl(proj), 'warn', (concl + semRes) + ' aguardando sentença · taxa ' + Math.round(taxa * 100) + '%', esc + proj ? proj / (esc + proj) * 100 : 0, '--amber');
+    $('fin-regra').innerHTML = 'Cada procedente vale <b>' + brl(FIN_PADRAO) + '</b> de condenação: <b>' + brl(FIN_PADRAO * FIN_ESCRITORIO) + '</b> para o escritório e <b>' + brl(FIN_PADRAO * (1 - FIN_ESCRITORIO)) + '</b> para o cliente. A projeção aplica a taxa de procedência atual aos ' + (concl + semRes) + ' processos ainda sem sentença' + (futuras ? '; com as ' + futuras + ' audiências que ainda vão acontecer, somaria mais ' + brl(projFut) : '') + '.';
+    // pagamento filter
+    var nPag = function(k){ return proc.filter(function(r){ return k === '' ? true : k === '-' ? !r.pagamento : r.pagamento === k; }).length; };
+    $('fin-pag-sel').innerHTML = '<option value="">Todos os pagamentos · ' + proc.length + '</option><option value="-">Sem informação · ' + nPag('-') + '</option>' + Object.keys(PAG).map(function(k){ return '<option value="' + k + '">' + esc2(PAG[k][0]) + ' · ' + nPag(k) + '</option>'; }).join('');
+    $('fin-pag-sel').value = finPag; $('fin-pag-sel').classList.toggle('ativo', !!finPag);
+    var lista = proc.filter(function(r){ return (!finPag || (finPag === '-' ? !r.pagamento : r.pagamento === finPag)) && buscaCliente(r, finQ); })
+      .sort(function(a, b){ return String(a.nome).localeCompare(String(b.nome), 'pt'); });
+    $('fin-count').textContent = lista.length + (lista.length === 1 ? ' procedente' : ' procedentes');
+    body.innerHTML = lista.map(function(r){
+      var v = valorCond(r);
+      return '<tr data-ct="' + esc2(r.id) + '"><td class="nome">' + esc2(r.nome) + '</td><td class="n">' + esc2(r.processo || '—') + '</td><td class="n">' + (r.audData ? fmtShort(r.audData) + (r.audHora ? ' · ' + esc2(r.audHora) : '') : '—') + '</td>' +
+        '<td class="dir"><input class="fin-valor" type="number" min="0" step="50" inputmode="decimal" data-valor="' + esc2(r.id) + '" value="' + v + '" title="Valor da condenação deste cliente"></td>' +
+        '<td class="dir n">' + brl(v * FIN_ESCRITORIO) + '</td><td class="dir n">' + brl(v - v * FIN_ESCRITORIO) + '</td>' +
+        '<td><select class="pos-sel' + (r.pagamento === 'pago' ? ' ok' : r.pagamento && r.pagamento !== 'aguardando' ? ' blue' : '') + '" data-pos="pagamento" data-id="' + esc2(r.id) + '"><option value=""' + (!r.pagamento ? ' selected' : '') + '>Sem informação</option>' +
+        Object.keys(PAG).map(function(k){ return '<option value="' + k + '"' + (r.pagamento === k ? ' selected' : '') + '>' + esc2(PAG[k][0]) + '</option>'; }).join('') + '</select></td></tr>';
+    }).join('') || '<tr><td colspan="7" class="ct-mais small">Nenhum procedente' + (finSessao ? ' nesta audiência' : '') + ' ainda. Marque o resultado em Contestações.</td></tr>';
+  }
+  var esc2 = function(t){ return esc(t); };
+  $('fin-aud-sel').addEventListener('change', function(){ finSessao = this.value; renderFin(); });
+  $('fin-pag-sel').addEventListener('change', function(){ finPag = this.value; renderFin(); });
+  $('fin-q').addEventListener('input', function(){ finQ = this.value.trim(); renderFin(); });
+  $('fin-body').addEventListener('click', function(e){
+    if (e.target.closest('input,select')) return;
+    var tr = e.target.closest('[data-ct]'); if (!tr) return;
+    var r = state.rows.filter(function(x){ return x.id === tr.dataset.ct; })[0]; if (r) openForm(r);
+  });
+  $('fin-body').addEventListener('change', async function(e){
+    var inp = e.target.closest('[data-valor]'); if (!inp) return;
+    var r = state.rows.filter(function(x){ return x.id === inp.dataset.valor; })[0]; if (!r) return;
+    var v = Math.max(0, Number(String(inp.value).replace(',', '.')) || 0), antes = r.valorCondenacao || null;
+    try { await patchRow(r.id, { valorCondenacao: v === FIN_PADRAO ? null : v, atualizadoEm: new Date().toISOString() }); toast('Condenação de ' + (r.nome || '') + ': ' + brl(v), 'Desfazer', function(){ patchRow(r.id, { valorCondenacao: antes }).catch(function(e2){ toast(errMsg(e2)); }); }); }
+    catch(err){ inp.value = valorCond(r); toast(errMsg(err)); }
+  });
 
   function renderContest(){
     var chips = $('ct-chips'); if (!chips) return;
@@ -2801,12 +2889,13 @@ body{font-size:14px}
     } catch(err){ toast(errMsg(err)); }
     finally { $('av-save').disabled = false; }
   });
-  var VIEWS = { c: ['tab-clientes', 'view-clientes'], r: ['tab-ret', 'view-ret'], t: ['tab-ct', 'view-ct'], e: ['tab-equipe', 'view-equipe'] };
+  var VIEWS = { c: ['tab-clientes', 'view-clientes'], f: ['tab-fin', 'view-fin'], r: ['tab-ret', 'view-ret'], t: ['tab-ct', 'view-ct'], e: ['tab-equipe', 'view-equipe'] };
   var TITULOS = {
     c: ['Clientes', 'Controle geral e avisos · Ações contra a Âmbar Energia, Alvarães/AM'],
     a: ['Audiências', 'Pauta por dia, avisos e convites'],
     l: ['Clientes', 'Todos os clientes e a etapa de cada processo'],
     p: ['Pós-audiência', 'Resultados, conclusos, embargos e pagamentos'],
+    f: ['Financeiro', 'Condenações das sentenças procedentes, honorários e projeção de ganho'],
     r: ['Retorno', 'Quando cada cliente pode entrar com uma nova ação (6 meses após o protocolo)'],
     t: ['Contestações', 'Audiência, resultado, teses da Âmbar e pagamento'],
     e: ['Configurações', 'Equipe, integrações e prospectadores']
