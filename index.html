@@ -1041,26 +1041,25 @@ body{font-size:14px}
         <div class="card ct-tab"><table class="ct-tbl"><thead><tr><th>Cliente</th><th>CPF</th><th>Processo</th><th id="ct-th-aud">Audiência</th><th>Tese da contestação</th><th>Resultado na audiência</th></tr></thead><tbody id="ct-body"></tbody></table></div>
       </section>
 
-      <section id="view-ret" hidden style="display:flex;flex-direction:column;gap:18px">
-        <p class="view-desc">Data em que cada cliente pode entrar com uma nova ação, contada 6 meses após o protocolo.</p>
+      <section id="view-ret" class="vw-dash" hidden style="display:flex;flex-direction:column;gap:18px">
+        <div class="fbar">
+          <div class="search tb-busca"><svg class="i"><use href="#i-search"/></svg><input id="r-q" type="search" placeholder="Buscar cliente por nome ou CPF"></div>
+          <select id="r-f" class="tb-sel" aria-label="Situação do retorno">
+            <option value="">Todos com protocolo</option>
+            <option value="liberado">Já podem entrar de novo</option>
+            <option value="30">Liberam nos próximos 30 dias</option>
+            <option value="aguardando">Ainda aguardando</option>
+            <option value="contatado">Já contatados</option>
+          </select>
+          <span class="tb-fim" id="r-count"></span>
+        </div>
         <div class="stats three">
           <div class="card stat"><div class="stat-h"><svg class="i"><use href="#i-check"/></svg>Podem entrar de novo<span class="help" title="Já passaram 6 meses desde o protocolo e ainda não foram contatados.">?</span></div><div class="stat-v tnum" id="r-s1">0</div><div class="stat-c">aguardando nosso contato</div><div class="stat-viz" id="r-v1"></div></div>
           <div class="card stat"><div class="stat-h"><svg class="i"><use href="#i-clock"/></svg>Próximos 30 dias<span class="help" title="Clientes que completam 6 meses do protocolo nos próximos 30 dias.">?</span></div><div class="stat-v tnum" id="r-s2">0</div><div class="stat-c">liberam para nova ação</div><div class="stat-viz" id="r-v2"></div></div>
           <div class="card stat"><div class="stat-h"><svg class="i"><use href="#i-users"/></svg>Já contatados<span class="help" title="Clientes marcados como contatados para a nova ação.">?</span></div><div class="stat-v tnum" id="r-s3">0</div><div class="stat-c">para a nova ação</div><div class="stat-viz" id="r-v3"></div></div>
         </div>
         <div class="card termo" id="r-termo"></div>
-        <div class="filters">
-          <label class="sel"><svg class="i lead"><use href="#i-filter"/></svg>
-            <select id="r-f" aria-label="Situação do retorno">
-              <option value="">Todos com protocolo</option>
-              <option value="liberado">Já podem entrar de novo</option>
-              <option value="30">Liberam nos próximos 30 dias</option>
-              <option value="aguardando">Ainda aguardando</option>
-              <option value="contatado">Já contatados</option>
-            </select><svg class="i chev"><use href="#i-chev"/></svg></label>
-          <div class="search"><svg class="i"><use href="#i-search"/></svg><input id="r-q" type="search" placeholder="Nome, CPF ou telefone"></div>
-        </div>
-        <div class="sec-title" id="r-title">Clientes</div>
+        <div class="sec-title" id="r-title" hidden>Clientes</div>
         <div class="card list" id="r-list"></div>
       </section>
 
@@ -1799,6 +1798,7 @@ body{font-size:14px}
       return textMatch(r, f.q);
     }).sort(function(a, b){ return retornoEm(a).localeCompare(retornoEm(b)); });
     $('r-title').textContent = 'Clientes · ' + list.length + (f.mes ? (f.mes === 'passado' ? ' · liberados em meses anteriores' : ' · liberam em ' + mesLabel(f.mes, true)) : '');
+    $('r-count').textContent = list.length + (list.length === 1 ? ' cliente' : ' clientes') + (f.mes ? (f.mes === 'passado' ? ' · liberados antes' : ' · ' + mesLabel(f.mes, true)) : '');
     var html = '<div class="row head" style="grid-template-columns:var(--rcols)"><div>Cliente</div><div>Contato</div><div>Protocolo</div><div>Pode entrar em</div><div>Situação</div><div></div></div>';
     if (!list.length) html += '<div class="empty">' + (com.length ? 'Nenhum cliente neste filtro.' : 'Nenhum cliente tem data de protocolo cadastrada ainda. Preencha a data do protocolo no cadastro para calcular o retorno.') + '</div>';
     list.forEach(function(r){
@@ -2706,7 +2706,7 @@ body{font-size:14px}
     if (e.target.closest('#t-clear')){ state.r.mes = ''; renderRet(); return; }
     var b = e.target.closest('.tcol'); if (!b || b.disabled) return;
     state.r.mes = state.r.mes === b.dataset.mes ? '' : b.dataset.mes; renderRet();
-    $('r-title').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    $('r-list').scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
   $('r-q').addEventListener('input', function(e){ state.r.q = e.target.value.trim(); renderRet(); });
   var dlgP = $('dlg-prosp'), pEditing = null, pDelArmed = false;
