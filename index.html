@@ -925,8 +925,13 @@ body{font-size:14px}
 .fin-regra{font-size:12.5px;color:var(--ink-3);margin-top:-6px}
 .fin-regra b{color:var(--ink-2)}
 .fin-tbl th.dir,.fin-tbl td.dir{text-align:right}
-.fin-valor{width:110px;height:30px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);font:inherit;font-size:13px;text-align:right;padding:0 8px;font-variant-numeric:tabular-nums}
+.fin-valor{width:128px;height:30px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);font:inherit;font-size:13px;text-align:right;padding:0 8px;font-variant-numeric:tabular-nums}
 .fin-valor:focus{border-color:var(--blue);outline:none}
+
+.fin-sub button{padding:7px 18px;font-size:13.5px}
+.fin-sub button[aria-pressed="true"]{background:var(--primary)!important;color:var(--on-primary)!important}
+.fin-apagar{color:var(--green);font-weight:700}
+.fin-total td{font-weight:700;background:var(--soft)}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -1133,6 +1138,7 @@ body{font-size:14px}
       </section>
 
       <section id="view-fin" class="vw-dash" hidden style="display:flex;flex-direction:column;gap:18px">
+        <div class="res-rap fin-sub" role="tablist" aria-label="Parte do financeiro"><button type="button" data-fin="receita" aria-pressed="true">Receita</button><button type="button" data-fin="prosp" aria-pressed="false">Prospectadores</button></div>
         <div class="fbar">
           <div class="search tb-busca"><svg class="i"><use href="#i-search"/></svg><input id="fin-q" type="search" placeholder="Buscar cliente por nome ou CPF"></div>
           <select id="fin-aud-sel" class="tb-sel" aria-label="Audiência"></select>
@@ -1142,7 +1148,12 @@ body{font-size:14px}
         <div hidden><button type="button" id="fin-aud-ant"></button><button type="button" id="fin-aud-prox"></button><span id="fin-aud-info"></span></div>
         <div class="stats fin-stats" id="fin-stats"></div>
         <div class="fin-regra" id="fin-regra"></div>
+        <div class="fin-receita">
         <div class="card ct-tab"><table class="ct-tbl fin-tbl"><thead><tr><th>Cliente</th><th>Processo</th><th>Audiência</th><th class="dir">Condenação</th><th class="dir">Escritório</th><th class="dir">Cliente</th><th>Pagamento</th></tr></thead><tbody id="fin-body"></tbody></table></div>
+        </div>
+        <div class="fin-prosp" hidden>
+          <div class="card ct-tab"><table class="ct-tbl fin-tbl"><thead><tr><th>Prospectador</th><th class="dir">Valor por indicação</th><th class="dir">Indicações</th><th class="dir">Procedentes</th><th class="dir">Clientes já pagos</th><th class="dir">A pagar</th><th class="dir">Previsão</th></tr></thead><tbody id="fin-prosp-body"></tbody></table></div>
+        </div>
       </section>
 
       <section id="view-ret" class="vw-dash" hidden style="display:flex;flex-direction:column;gap:18px">
@@ -2234,8 +2245,13 @@ body{font-size:14px}
   /* ---------- financeiro ---------- */
   var FIN_PADRAO = 2000;      // condenação usual de uma sentença procedente (R$)
   var FIN_ESCRITORIO = 0.5;   // parte do escritório (50%); o restante é do cliente
-  var finSessao = '', finPag = '', finQ = '';
+  var finSessao = '', finPag = '', finQ = '', finParte = 'receita';
+  var FIN_INDICACAO = 80;     // o prospectador ganha R$ 80 por cliente indicado, quando o cliente recebe
   var brl = function(v){ return (Number(v) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 2 }); };
+  // campos de valor sempre em formato de dinheiro (R$ 2.000,00): o que se digita entra como centavos
+  function moedaTxt(v){ return (Number(v) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+  function moedaNum(t){ return (Number(String(t || '').replace(/\D/g, '')) || 0) / 100; }
+  document.addEventListener('input', function(e){ var el = e.target; if (!el.classList || !el.classList.contains('fin-valor')) return; el.value = moedaTxt(moedaNum(el.value)); });
   function valorCond(r){ var v = Number(r.valorCondenacao); return v > 0 ? v : FIN_PADRAO; }
   function renderFin(){
     var body = $('fin-body'); if (!body) return;
@@ -2256,6 +2272,7 @@ body{font-size:14px}
       return '<div class="card stat"><div class="stat-h"><svg class="i"><use href="#' + ico + '"/></svg>' + rot + '</div><div class="stat-v tnum' + (cls ? ' ' + cls : '') + '">' + v + '</div><div class="stat-c">' + cap + '</div>' +
         '<div class="stat-viz"><div class="bar"><span style="width:' + Math.max(0, Math.min(100, p)) + '%;background:var(' + cor + ')"></span></div></div></div>';
     };
+    if (finParte === 'prosp'){ renderFinProsp(base, card); return; }
     $('fin-stats').innerHTML =
       card('i-check', 'Procedentes', proc.length, 'ok', Math.round(taxa * 100) + '% dos julgados', taxa * 100, '--green') +
       card('i-scale', 'Condenação total', brl(tot), '', proc.length + ' × ' + brl(FIN_PADRAO) + (proc.some(function(r){ return Number(r.valorCondenacao) > 0 && Number(r.valorCondenacao) !== FIN_PADRAO; }) ? ' (com ajustes)' : ''), 100, '--blue') +
@@ -2273,13 +2290,51 @@ body{font-size:14px}
     body.innerHTML = lista.map(function(r){
       var v = valorCond(r);
       return '<tr data-ct="' + esc2(r.id) + '"><td class="nome">' + esc2(r.nome) + '</td><td class="n">' + esc2(r.processo || '—') + '</td><td class="n">' + (r.audData ? fmtShort(r.audData) + (r.audHora ? ' · ' + esc2(r.audHora) : '') : '—') + '</td>' +
-        '<td class="dir"><input class="fin-valor" type="number" min="0" step="50" inputmode="decimal" data-valor="' + esc2(r.id) + '" value="' + v + '" title="Valor da condenação deste cliente"></td>' +
+        '<td class="dir"><input class="fin-valor" type="text" inputmode="numeric" data-valor="' + esc2(r.id) + '" value="' + moedaTxt(v) + '" title="Valor da condenação deste cliente"></td>' +
         '<td class="dir n">' + brl(v * FIN_ESCRITORIO) + '</td><td class="dir n">' + brl(v - v * FIN_ESCRITORIO) + '</td>' +
         '<td><select class="pos-sel' + (r.pagamento === 'pago' ? ' ok' : r.pagamento && r.pagamento !== 'aguardando' ? ' blue' : '') + '" data-pos="pagamento" data-id="' + esc2(r.id) + '"><option value=""' + (!r.pagamento ? ' selected' : '') + '>Sem informação</option>' +
         Object.keys(PAG).map(function(k){ return '<option value="' + k + '"' + (r.pagamento === k ? ' selected' : '') + '>' + esc2(PAG[k][0]) + '</option>'; }).join('') + '</select></td></tr>';
     }).join('') || '<tr><td colspan="7" class="ct-mais small">Nenhum procedente' + (finSessao ? ' nesta audiência' : '') + ' ainda. Marque o resultado em Contestações.</td></tr>';
   }
   var esc2 = function(t){ return esc(t); };
+  function valorInd(id){ var p = prospById(id), v = Number(p && p.valorIndicacao); return v > 0 ? v : FIN_INDICACAO; }
+  function renderFinProsp(base, card){
+    var grupos = {};
+    base.forEach(function(r){ if (!r.responsavelId) return; (grupos[r.responsavelId] = grupos[r.responsavelId] || []).push(r); });
+    var linhas = Object.keys(grupos).map(function(id){
+      var g = grupos[id].filter(function(r){ return buscaCliente(r, finQ); }), p = g.filter(function(r){ return resAud(r) === 'procedente'; });
+      var pagos = p.filter(function(r){ return r.pagamento === 'pago'; }).length;
+      var v = valorInd(id);
+      return { id: id, nome: prospName(id) || 'Prospectador removido', valor: v, ind: g.length, proc: p.length, pagos: pagos, apagar: pagos * v, prev: (p.length - pagos) * v, pot: g.length * v };
+    }).filter(function(x){ return x.ind; }).sort(function(a, b){ return b.apagar - a.apagar || b.ind - a.ind || a.nome.localeCompare(b.nome, 'pt'); });
+    var soma = function(k){ return linhas.reduce(function(a, x){ return a + x[k]; }, 0); };
+    var ind = soma('ind'), apagar = soma('apagar'), prev = soma('prev'), pot = soma('pot');
+    $('fin-stats').innerHTML =
+      card('i-users', 'Indicações', ind, '', linhas.length + (linhas.length === 1 ? ' prospectador' : ' prospectadores') + ' · valor próprio de cada um', 100, '--blue') +
+      card('i-cash', 'A pagar', brl(apagar), 'ok', soma('pagos') + ' clientes já receberam', pot ? apagar / pot * 100 : 0, '--green') +
+      card('i-clock', 'Previsão', brl(prev), 'warn', 'procedentes que ainda vão receber', pot ? prev / pot * 100 : 0, '--amber') +
+      card('i-scale', 'Potencial total', brl(pot), '', 'se todos os indicados receberem', 100, '--line-2');
+    $('fin-regra').innerHTML = 'Cada prospectador tem o <b>seu valor por indicação</b> (padrão ' + brl(FIN_INDICACAO) + '; mude na coluna da tabela). Entra em <b>A pagar</b> quando o pagamento do cliente está marcado como <b>Pago</b>; os procedentes que ainda não receberam ficam em <b>Previsão</b>.';
+    $('fin-count').textContent = linhas.length + (linhas.length === 1 ? ' prospectador' : ' prospectadores');
+    $('fin-prosp-body').innerHTML = linhas.map(function(x){
+      return '<tr><td class="nome">' + esc(x.nome) + '</td><td class="dir">' + (prospById(x.id) ? '<input class="fin-valor" type="text" inputmode="numeric" data-pind="' + esc(x.id) + '" value="' + moedaTxt(x.valor) + '" title="Quanto ' + esc(x.nome) + ' ganha por cliente indicado">' : brl(x.valor)) + '</td><td class="dir n">' + x.ind + '</td><td class="dir n">' + x.proc + '</td><td class="dir n">' + x.pagos + '</td><td class="dir n fin-apagar">' + brl(x.apagar) + '</td><td class="dir n">' + brl(x.prev) + '</td></tr>';
+    }).join('') + (linhas.length ? '<tr class="fin-total"><td>Total</td><td></td><td class="dir n">' + ind + '</td><td class="dir n">' + soma('proc') + '</td><td class="dir n">' + soma('pagos') + '</td><td class="dir n fin-apagar">' + brl(apagar) + '</td><td class="dir n">' + brl(prev) + '</td></tr>' : '<tr><td colspan="7" class="ct-mais small">Nenhum cliente com prospectador' + (finSessao ? ' nesta audiência' : '') + '.</td></tr>');
+  }
+  $('fin-prosp-body').addEventListener('change', async function(e){
+    var inp = e.target.closest('[data-pind]'); if (!inp) return;
+    var p = prospById(inp.dataset.pind); if (!p) return;
+    var v = moedaNum(inp.value), antes = p.valorIndicacao || null;
+    try { if (state.db) await pcol().doc(p.id).update({ valorIndicacao: v, atualizadoEm: new Date().toISOString() }); else { p.valorIndicacao = v; renderFin(); }
+      toast(p.nome + ': ' + brl(v) + ' por indicação', 'Desfazer', function(){ if (state.db) pcol().doc(p.id).update({ valorIndicacao: antes }).catch(function(e2){ toast(errMsg(e2)); }); }); }
+    catch(err){ inp.value = moedaTxt(valorInd(p.id)); toast(errMsg(err)); }
+  });
+  document.querySelector('.fin-sub').addEventListener('click', function(e){
+    var b = e.target.closest('[data-fin]'); if (!b) return; finParte = b.dataset.fin;
+    Array.prototype.forEach.call(this.querySelectorAll('[data-fin]'), function(x){ x.setAttribute('aria-pressed', String(x === b)); });
+    document.querySelector('.fin-receita').hidden = finParte !== 'receita'; document.querySelector('.fin-prosp').hidden = finParte !== 'prosp';
+    $('fin-pag-sel').hidden = finParte !== 'receita';
+    renderFin();
+  });
   $('fin-aud-sel').addEventListener('change', function(){ finSessao = this.value; renderFin(); });
   $('fin-pag-sel').addEventListener('change', function(){ finPag = this.value; renderFin(); });
   $('fin-q').addEventListener('input', function(){ finQ = this.value.trim(); renderFin(); });
@@ -2291,9 +2346,9 @@ body{font-size:14px}
   $('fin-body').addEventListener('change', async function(e){
     var inp = e.target.closest('[data-valor]'); if (!inp) return;
     var r = state.rows.filter(function(x){ return x.id === inp.dataset.valor; })[0]; if (!r) return;
-    var v = Math.max(0, Number(String(inp.value).replace(',', '.')) || 0), antes = r.valorCondenacao || null;
+    var v = moedaNum(inp.value), antes = r.valorCondenacao || null;
     try { await patchRow(r.id, { valorCondenacao: v === FIN_PADRAO ? null : v, atualizadoEm: new Date().toISOString() }); toast('Condenação de ' + (r.nome || '') + ': ' + brl(v), 'Desfazer', function(){ patchRow(r.id, { valorCondenacao: antes }).catch(function(e2){ toast(errMsg(e2)); }); }); }
-    catch(err){ inp.value = valorCond(r); toast(errMsg(err)); }
+    catch(err){ inp.value = moedaTxt(valorCond(r)); toast(errMsg(err)); }
   });
 
   function renderContest(){
@@ -2956,6 +3011,7 @@ body{font-size:14px}
     var data = { nome: nome, telefone: $('fp-tel').value.trim(), regiao: $('fp-reg').value.trim(),
       palavrasEndereco: $('fp-pal').value.split(',').map(function(s){ return s.trim(); }).filter(Boolean),
       ativo: true, criadoEm: prev.criadoEm || new Date().toISOString(), atualizadoEm: new Date().toISOString() };
+    if (prev.valorIndicacao) data.valorIndicacao = prev.valorIndicacao;
     $('fp-save').disabled = true;
     try {
       if (state.db){ await (pEditing ? pcol().doc(pEditing) : pcol().doc()).set(data); }
