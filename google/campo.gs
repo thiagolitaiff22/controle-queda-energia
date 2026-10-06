@@ -4,9 +4,9 @@
  *
  * Instalação (uma vez, na conta Google do escritório):
  *  1. script.google.com › Novo projeto › cole este arquivo inteiro.
- *  2. Configurações do projeto (engrenagem) › Propriedades do script › adicione ANTHROPIC_KEY
- *     com a chave da API do Claude (console.anthropic.com). Sem ela, as fotos vão para o Drive
- *     do mesmo jeito, mas o nome e o CPF ficam para o escritório preencher.
+ *  2. A chave do Claude se cola no sistema: Configurações › Integrações › Claude. O script lê de lá
+ *     (com um código secreto que ele mesmo cria e registra no primeiro uso). Sem chave, as fotos vão
+ *     para o Drive do mesmo jeito, mas o nome e o CPF ficam para o escritório preencher.
  *  3. Implantar › Nova implantação › Tipo: App da Web · Executar como: Eu · Quem pode acessar: Qualquer pessoa.
  *  4. Copie o endereço que termina em /exec e cole no sistema: Configurações › Cadastro pelo celular.
  *
@@ -25,7 +25,22 @@ var NOMES = {
 };
 
 // o sistema usa esta resposta para mostrar Drive e Claude como ativados em Configurações
-function doGet(){ return saida({ ok: true, servico: 'cadastro pelo celular', claude: !!PropertiesService.getScriptProperties().getProperty('ANTHROPIC_KEY') }); }
+function doGet(){ var c = ''; try { c = chaveClaude(); } catch (x){} return saida({ ok: true, servico: 'cadastro pelo celular', claude: !!c }); }
+
+/* chave do Claude: a do sistema (Configurações › Integrações › Claude); a das propriedades do script vale como reserva */
+function chaveClaude(){
+  var props = PropertiesService.getScriptProperties(), cache = CacheService.getScriptCache();
+  var c = cache.get('claude'); if (c) return c;
+  var seg = props.getProperty('SEGREDO_SISTEMA');
+  if (!seg){ seg = Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, ''); props.setProperty('SEGREDO_SISTEMA', seg); }
+  if (!props.getProperty('registrado')){
+    if (rpc('campo_registrar_script', { p_segredo: seg }) !== true) throw new Error('Outro script já está registrado no sistema.');
+    props.setProperty('registrado', '1');
+  }
+  c = rpc('campo_chave_claude', { p_segredo: seg }) || props.getProperty('ANTHROPIC_KEY') || '';
+  if (c) cache.put('claude', c, 300);
+  return c;
+}
 
 function doPost(e){
   try {
@@ -112,7 +127,7 @@ function fechar(p, quem){
 
 /* Claude lê a procuração, o RG e o CPF (as imagens escaneadas) */
 function lerDocumentos(pasta){
-  var chave = PropertiesService.getScriptProperties().getProperty('ANTHROPIC_KEY');
+  var chave = chaveClaude();
   if (!chave) return null;
   var ordem = ['procuracao', 'rg_frente', 'rg_verso', 'cpf', 'arogo', 'luz'], imgs = [];
   var it = subpasta(pasta, 'Imagens escaneadas').getFiles(), todos = [];

@@ -999,6 +999,8 @@ body{font-size:14px}
 #dlg-integ .f-body{display:block}
 #dlg-integ .integ{max-width:none;border:0!important;box-shadow:none!important;padding:0;background:transparent}
 #dlg-integ .integ > div:first-child .integ-t{display:none}
+
+#dlg-integ .integ-form .pw input{padding-right:12px!important}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -1283,6 +1285,15 @@ body{font-size:14px}
             <div class="pw"><input id="dj-chave" type="text" class="mask" autocomplete="off" spellcheck="false" data-lpignore="true" data-1p-ignore placeholder="Cole aqui a chave que está na página do CNJ"></div>
             <div class="integ-btns"><button class="btn lh-save" type="submit" id="dj-salvar"><svg class="i"><use href="#i-save"/></svg>Salvar</button><button type="button" class="btn" id="dj-agora"><svg class="i"><use href="#i-sync"/></svg>Consultar agora</button></div>
             <small class="integ-s" id="dj-status">Verificando…</small>
+          </form>
+        </div>
+        <div class="card integ" data-painel="claude">
+          <div><p class="integ-d">Chave da API do Claude, criada em <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com › Chaves de API</a> (escolha "Expira: nunca"). Fica guardada no banco e só o script do Google consegue ler, para ler a procuração e o RG enviados pelo celular.</p></div>
+          <form id="form-cl" class="integ-form" novalidate autocomplete="off">
+            <label for="cl-chave">Chave da API</label>
+            <div class="pw"><input id="cl-chave" type="text" class="mask" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore placeholder="Cole aqui a chave (começa com sk-ant-)"></div>
+            <div class="integ-btns"><button class="btn lh-save" type="submit" id="cl-salvar"><svg class="i"><use href="#i-save"/></svg>Salvar</button><button type="button" class="btn" id="cl-testar"><svg class="i"><use href="#i-sync"/></svg>Testar</button></div>
+            <small class="integ-s" id="cl-status">Verificando…</small>
           </form>
         </div>
         <div class="card integ" data-painel="celular">
@@ -2713,7 +2724,7 @@ body{font-size:14px}
     { k: 'regua', t: 'Régua de avisos', d: 'Avisa sozinho o cliente 3 dias antes e na véspera da audiência, das 8h às 18h.', ajuda: 'Precisa do LiderHub. Liga e desliga dentro do cartão.' },
     { k: 'lembrete', t: 'Lembrete agora', d: 'Manda um lembrete único para todos com audiência num dia escolhido.', ajuda: 'Envio manual, com intervalo seguro entre as mensagens.' },
     { k: 'datajud', t: 'Tribunal (DataJud)', d: 'Consulta os processos no TJAM todo dia às 7h: audiência, sentença, alvará.', ajuda: 'Chave pública do CNJ.' },
-    { k: 'claude', t: 'Claude', d: 'IA da Anthropic. Lê a procuração e o RG enviados pelo celular e preenche o cadastro.', ajuda: 'A chave fica no script do Google (propriedade ANTHROPIC_KEY), não no sistema.', painel: 'celular' },
+    { k: 'claude', t: 'Claude', d: 'IA da Anthropic. Lê a procuração e o RG enviados pelo celular e preenche o cadastro.', ajuda: 'Clique para colar a chave da API do Claude.' },
     { k: 'drive', t: 'Google Drive', d: 'Cria a pasta de cada cliente em 1. CLIENTES e move para Protocolados quando há processo.', ajuda: 'Funciona pelo script do Google do Cadastro pelo celular.', painel: 'celular' },
     { k: 'celular', t: 'Cadastro pelo celular', d: 'O prospectador tira as fotos dos documentos e o cliente cai em Sem protocolo.', ajuda: 'O link de cada prospectador fica no cartão dele, em Prospectadores.' }
   ];
@@ -2723,15 +2734,14 @@ body{font-size:14px}
     if (k === 'regua') return /^Desligar/.test($('rg-ligar').textContent);
     if (k === 'lembrete') return !$('av-parar').hidden;
     if (k === 'datajud') return $('dj-chave').value.indexOf('•') === 0;
-    if (k === 'celular') return !!$('cp-url').value.trim();
+    if (k === 'celular') return !!(cpUrl || $('cp-url').value.trim());
     if (k === 'drive') return !!(igScript && igScript.ok);
-    if (k === 'claude') return !!(igScript && igScript.claude);
+    if (k === 'claude') return !!(igScript && igScript.claude) || clTem;
     return false;
   }
   function igRotulo(k, on){
     if (k === 'lembrete') return on ? 'Enviando' : 'Pronto';
     if (k === 'regua') return on ? 'Ligada' : 'Desligada';
-    if (k === 'claude' && !on && igScript && igScript.ok && !('claude' in igScript)) return 'Ver no script';
     return on ? 'Ativado' : 'Desativado';
   }
   function pintarInteg(){
@@ -2744,7 +2754,7 @@ body{font-size:14px}
     }).join('');
   }
   async function igTestarScript(){
-    var u = $('cp-url').value.trim(); if (!u){ igScript = null; pintarInteg(); return; }
+    var u = cpUrl || $('cp-url').value.trim(); if (!u){ igScript = null; pintarInteg(); return; }
     try { igScript = await fetch(u).then(function(r){ return r.json(); }); } catch(e){ igScript = { ok: false }; }
     pintarInteg();
   }
@@ -2753,6 +2763,7 @@ body{font-size:14px}
     var x = IG.filter(function(i){ return i.k === k; })[0]; if (!x) return;
     var p = document.querySelector('[data-painel="' + (x.painel || x.k) + '"]'); if (!p) return;
     guardarInteg(); igAberto = p;
+    if (cpUrl && !$('cp-url').value) $('cp-url').value = cpUrl;
     $('ig-dlg-logo').innerHTML = IG_LOGO[x.k]; $('ig-dlg-t').textContent = x.t;
     $('ig-dlg-body').appendChild(p);
     $('dlg-integ').showModal();
@@ -2766,7 +2777,7 @@ body{font-size:14px}
   $('ig-fechar').addEventListener('click', fecharInteg);
   $('ig-grid').addEventListener('click', function(e){ var b = e.target.closest('[data-ig]'); if (b) abrirInteg(b.dataset.ig); });
   // os status de cada integração mudam quando as verificações terminam
-  ['lh-status', 'dj-status', 'rg-status', 'cp-status', 'av-status'].forEach(function(id){
+  ['lh-status', 'dj-status', 'rg-status', 'cp-status', 'av-status', 'cl-status'].forEach(function(id){
     var el = $(id); if (el && window.MutationObserver) new MutationObserver(function(){ if (id === 'cp-status') igTestarScript(); else pintarInteg(); }).observe(el, { childList: true, characterData: true, subtree: true });
   });
   pintarInteg();
@@ -2791,11 +2802,35 @@ body{font-size:14px}
   }
   $('cp-copiar').addEventListener('click', function(){ var v = $('cp-link').value; (navigator.clipboard ? navigator.clipboard.writeText(v) : Promise.reject()).then(function(){ toast('Link copiado'); }, function(){ $('cp-link').select(); document.execCommand('copy'); toast('Link copiado'); }); });
   $('cp-novo').addEventListener('click', function(){ if (cpProsp && confirm('Gerar outro link para ' + cpProsp.nome + '? O link antigo para de funcionar.')) abrirLinkCampo(cpProsp, true); });
+  /* chave do Claude: gravada no banco como a do LiderHub; só o script do Google lê */
+  var clTem = false, cpUrl = '';
+  async function clStatus(){
+    var r = await SB.rpc('status_segredo', { p_nome: 'claude' }), d = r.data && r.data[0];
+    clTem = !!d;
+    if (d && !$('cl-chave').dataset.editando){ $('cl-chave').value = '•'.repeat(28) + d.final; $('cl-chave').classList.remove('mask'); }
+    $('cl-status').textContent = r.error ? 'Rode o arquivo supabase/10_claude.sql no Supabase.' : d ? 'Chave cadastrada (termina em ••' + d.final + ') em ' + new Date(d.atualizado_em).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) + '.' : 'Nenhuma chave cadastrada. Sem ela, o cadastro pelo celular não preenche nome e CPF sozinho.';
+  }
+  $('cl-chave').addEventListener('focus', function(){ if (this.value.indexOf('•') === 0) this.select(); });
+  $('cl-chave').addEventListener('input', function(){ this.dataset.editando = '1'; var v = this.value.replace(/•/g, '').replace(/\s+/g, ''); if (v !== this.value) this.value = v; this.classList.add('mask'); });
+  $('form-cl').addEventListener('submit', async function(e){
+    e.preventDefault(); var v = $('cl-chave').value.replace(/•/g, '').trim();
+    if (!/^sk-ant-/.test(v) || v.length < 40){ toast('Cole a chave completa do Claude (começa com sk-ant-)'); return; }
+    var r = await SB.rpc('salvar_segredo', { p_nome: 'claude', p_valor: v });
+    if (r.error){ toast('Não foi possível salvar: ' + r.error.message); return; }
+    delete $('cl-chave').dataset.editando; toast('Chave do Claude salva'); await clStatus(); setTimeout(igTestarScript, 1500);
+  });
+  $('cl-testar').addEventListener('click', async function(){
+    var u = cpUrl || $('cp-url').value.trim(); if (!u){ $('cl-status').textContent = 'Ligue primeiro o Cadastro pelo celular (endereço do script).'; return; }
+    $('cl-status').textContent = 'Testando…';
+    try { var d = await fetch(u).then(function(r){ return r.json(); }); igScript = d; pintarInteg();
+      $('cl-status').textContent = d && d.claude ? 'O script do Google encontrou a chave: leitura automática ligada.' : 'O script do Google ainda não encontrou a chave. Salve a chave e teste de novo em 1 minuto.'; }
+    catch(err){ $('cl-status').textContent = 'Não consegui falar com o script do Google.'; }
+  });
   async function cpStatus(){
     if (!isAdmin() || !SB) return;
     var r = await SB.rpc('campo_url_status');
     if (r.error){ $('cp-status').textContent = 'Rode o arquivo supabase/09_campo.sql no Supabase.'; return; }
-    $('cp-url').value = r.data || '';
+    cpUrl = r.data || ''; $('cp-url').value = cpUrl;
     $('cp-status').textContent = r.data ? 'Ligado.' : 'Ainda não ligado.';
   }
   $('form-cp').addEventListener('submit', async function(e){
@@ -4135,7 +4170,7 @@ body{font-size:14px}
     if (iniciado){ render(); return; }
     iniciado = true;
     state.db = DB;
-    if (f.data === 'admin'){ lhStatus(); rgCarregar(); djStatus(); avMontar(); cpStatus(); }
+    if (f.data === 'admin'){ lhStatus(); rgCarregar(); djStatus(); avMontar(); cpStatus(); clStatus(); }
     function carimbo(){ var n = new Date(); $('sync').textContent = 'Atualizado: ' + n.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ', ' + n.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); }
     function caiu(){ $('sync').textContent = 'Conexão interrompida'; banner('A conexão com a base foi interrompida. Recarregue a página.'); }
     watchTable('clientes', function(rows){ state.rows = rows; banner(''); carimbo(); render(); }, caiu);
