@@ -987,6 +987,9 @@ body{font-size:14px}
             <button type="button" data-p="semcontato"><i class="dot crit"></i>Sem contato <span class="n" data-np="semcontato"></span></button>
             <button type="button" data-p="semtel">Sem telefone <span class="n" data-np="semtel"></span></button>
             <button type="button" data-p="online">Online <span class="n" data-np="online"></span></button>
+            <button type="button" data-p="realizadas">Audiências realizadas <span class="n" data-np="realizadas"></span></button>
+            <button type="button" data-p="aguardaud">Aguardando audiência <span class="n" data-np="aguardaud"></span></button>
+            <button type="button" data-p="protocolar">Aguardando protocolo <span class="n" data-np="protocolar"></span></button>
             
           </div>
           <button type="button" id="cl-aud-ant"></button><button type="button" id="cl-aud-prox"></button><span id="cl-aud-info"></span>
@@ -1437,6 +1440,9 @@ body{font-size:14px}
     if (f === 'semana') return n != null && n >= 0 && n <= 7;
     if (f === 'sem') return !r.audData;
     if (f === 'online') return !!r.online;
+    if (f === 'realizadas') return n != null && n < 0;            // audiência já aconteceu
+    if (f === 'protocolar') return !String(r.processo || '').trim(); // cadastrado, aguardando o protocolo da ação
+    if (f === 'aguardaud') return !!String(r.processo || '').trim() && !r.audData; // protocolado, sem audiência marcada
     return true;
   }
   /* o overrides one group so each option can show how many clients it would list */
@@ -1590,7 +1596,10 @@ body{font-size:14px}
     avisar: { filter: 'avisar' },
     semcontato: { filter: 'semcontato' },
     semtel: { tel: 'sem' },
-    online: { aud: 'online' }
+    online: { aud: 'online' },
+    realizadas: { aud: 'realizadas' },
+    aguardaud: { aud: 'aguardaud' },
+    protocolar: { aud: 'protocolar' }
   };
   var FILTRO_PADRAO = { filter: 'todos', aud: 'todas', tel: 'todos', meio: 'todos', resp: '' };
   function presetAtual(){
@@ -1631,7 +1640,7 @@ body{font-size:14px}
     if (state.resp && state.resp !== '-' && !prospById(state.resp)) state.resp = '';
     sel.value = state.resp; sel.classList.toggle('ativo', !!state.resp); if (state.resp) avancados++;
     $('fb-badge').hidden = !avancados; $('fb-badge').textContent = avancados;
-    var NOMES_P = { todos: 'Todas as situações', avisar: 'A avisar', semcontato: 'Sem contato', semtel: 'Sem telefone', online: 'Online' };
+    var NOMES_P = { todos: 'Todas as situações', avisar: 'A avisar', semcontato: 'Sem contato', semtel: 'Sem telefone', online: 'Online', realizadas: 'Audiências realizadas', aguardaud: 'Protocolados, aguardando audiência', protocolar: 'Cadastrados, aguardando protocolo' };
     $('fb-sit').innerHTML = Array.prototype.map.call($('fb-rapido').querySelectorAll('[data-p]'), function(b){ return '<option value="' + b.dataset.p + '">' + NOMES_P[b.dataset.p] + ' · ' + b.querySelector('.n').textContent + '</option>'; }).join('') + (atual ? '' : '<option value="" selected>Filtro personalizado</option>');
     $('fb-sit').value = atual || '';
     $('fb-sit').classList.toggle('ativo', !!atual && atual !== 'todos');
