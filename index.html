@@ -1454,6 +1454,7 @@ body{font-size:14px}
     if (f === 'marcada') return n != null && n >= 0;
     if (f === 'realizadas') return n != null && n < 0;
     if (f === 'aguardaud') return proc && !r.audData;
+    if (f === 'protocolados') return proc;
     if (f === 'protocolar') return !proc;
     return true;
   }
@@ -1661,9 +1662,9 @@ body{font-size:14px}
     sel.value = state.resp; sel.classList.toggle('ativo', !!state.resp); if (state.resp) avancados++;
     $('fb-badge').hidden = !avancados; $('fb-badge').textContent = avancados;
     var CARD_ETAPA = [
-      ['realizadas', 'i-check', 'Audiências realizadas', 'audiência já aconteceu', '--purple'],
-      ['aguardaud', 'i-clock', 'Aguardando audiência', 'protocolados, sem audiência marcada', '--amber'],
-      ['protocolar', 'i-file', 'Aguardando protocolo', 'cadastrados, ainda sem processo', '--blue']
+      ['protocolar', 'i-clock', 'Sem protocolo', 'cadastrados, aguardando protocolar', '--amber'],
+      ['protocolados', 'i-file', 'Protocolados', 'com número de processo', '--blue'],
+      ['realizadas', 'i-check', 'Audiências realizadas', 'audiência já aconteceu', '--purple']
     ];
     var totE = rows.length || 1;
     $('cl-etapa').innerHTML = CARD_ETAPA.map(function(x){
