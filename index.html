@@ -7,31 +7,31 @@
 <title>Queda de Energia · Rodrigues Litaiff</title>
 <style>
 :root{
-  --bg:hsl(0 0% 100%); --panel:hsl(0 0% 100%); --soft:hsl(0 0% 96%); --hover:hsl(0 0% 95%); --active:hsl(222 47% 30% / .1);
-  --ink:hsl(222 15% 7%); --ink-2:hsl(220 12% 28%); --ink-3:hsl(220 9% 46%); --line:hsl(0 0% 90%); --line-2:hsl(0 0% 84%);
-  --primary:hsl(222 47% 30%); --on-primary:#fff;
-  --blue:hsl(218 65% 46%); --blue-soft:hsl(218 65% 46% / .1); --green:hsl(152 52% 34%); --green-soft:hsl(152 52% 34% / .1);
-  --amber:hsl(34 85% 40%); --amber-soft:hsl(34 85% 40% / .12); --red:hsl(2 62% 46%); --red-soft:hsl(2 62% 46% / .1); --purple:hsl(262 50% 52%);
-  --tile:hsl(222 47% 30% / .1); --shadow:none;
+  --bg:#ffffff; --panel:#ffffff; --soft:#f4f4f5; --hover:#f4f4f5; --active:#f4f4f5;
+  --ink:#09090b; --ink-2:#3f3f46; --ink-3:#71717a; --line:#e4e4e7; --line-2:#d4d4d8;
+  --primary:#18181b; --on-primary:#fafafa;
+  --blue:#3b82f6; --blue-soft:rgba(59,130,246,.1); --green:#10b981; --green-soft:rgba(16,185,129,.1);
+  --amber:#f59e0b; --amber-soft:rgba(245,158,11,.12); --red:#ef4444; --red-soft:rgba(239,68,68,.1); --purple:#8b5cf6;
+  --tile:#f4f4f5; --shadow:0 1px 2px rgba(0,0,0,.04);
   --font:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   color-scheme:dark;
-  --bg:#000000; --panel:#0B0B0B; --soft:#141414; --hover:#1A1A1A; --active:hsl(217 62% 60% / .14);
-  --ink:#EDEDED; --ink-2:#B5B5B5; --ink-3:#8C8C8C; --line:#232323; --line-2:#2E2E2E;
-  --primary:hsl(217 62% 60%); --on-primary:hsl(222 45% 10%);
-  --blue:hsl(218 62% 62%); --blue-soft:hsl(218 62% 54% / .16); --green:hsl(152 48% 50%); --green-soft:hsl(152 48% 42% / .16);
-  --amber:hsl(38 78% 56%); --amber-soft:hsl(38 78% 50% / .16); --red:hsl(2 62% 62%); --red-soft:hsl(2 62% 54% / .16); --purple:hsl(262 48% 68%);
-  --tile:#1A1A1A; --shadow:none;
+  --bg:#09090b; --panel:#0c0c0e; --soft:#18181b; --hover:#18181b; --active:#27272a;
+  --ink:#fafafa; --ink-2:#d4d4d8; --ink-3:#a1a1aa; --line:#27272a; --line-2:#3f3f46;
+  --primary:#fafafa; --on-primary:#18181b;
+  --blue:#60a5fa; --blue-soft:rgba(96,165,250,.14); --green:#34d399; --green-soft:rgba(52,211,153,.14);
+  --amber:#fbbf24; --amber-soft:rgba(251,191,36,.14); --red:#f87171; --red-soft:rgba(248,113,113,.14); --purple:#a78bfa;
+  --tile:#18181b; --shadow:none;
 }}
 :root[data-theme="dark"]{
   color-scheme:dark;
-  --bg:#000000; --panel:#0B0B0B; --soft:#141414; --hover:#1A1A1A; --active:hsl(217 62% 60% / .14);
-  --ink:#EDEDED; --ink-2:#B5B5B5; --ink-3:#8C8C8C; --line:#232323; --line-2:#2E2E2E;
-  --primary:hsl(217 62% 60%); --on-primary:hsl(222 45% 10%);
-  --blue:hsl(218 62% 62%); --blue-soft:hsl(218 62% 54% / .16); --green:hsl(152 48% 50%); --green-soft:hsl(152 48% 42% / .16);
-  --amber:hsl(38 78% 56%); --amber-soft:hsl(38 78% 50% / .16); --red:hsl(2 62% 62%); --red-soft:hsl(2 62% 54% / .16); --purple:hsl(262 48% 68%);
-  --tile:#1A1A1A; --shadow:none;
+  --bg:#09090b; --panel:#0c0c0e; --soft:#18181b; --hover:#18181b; --active:#27272a;
+  --ink:#fafafa; --ink-2:#d4d4d8; --ink-3:#a1a1aa; --line:#27272a; --line-2:#3f3f46;
+  --primary:#fafafa; --on-primary:#18181b;
+  --blue:#60a5fa; --blue-soft:rgba(96,165,250,.14); --green:#34d399; --green-soft:rgba(52,211,153,.14);
+  --amber:#fbbf24; --amber-soft:rgba(251,191,36,.14); --red:#f87171; --red-soft:rgba(248,113,113,.14); --purple:#a78bfa;
+  --tile:#18181b; --shadow:none;
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -742,6 +742,62 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   .f-body{grid-template-columns:1fr}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* ---------- estilo LiderHub ---------- */
+body{font-size:14px}
+.topnav{height:56px;background:var(--panel)}
+.topnav .brand .logo{background:none;color:var(--blue);width:30px;height:30px}
+.topnav .brand b{font-size:14.5px;font-weight:600}
+.topnav .nav button{border-radius:8px;padding:6px 10px;font-size:14px}
+.topnav .nav button[aria-selected="true"]{background:var(--soft);color:var(--ink);font-weight:600}
+.side-foot .av{background:#22c55e!important;color:#fff!important;width:30px;height:30px;font-size:13px}
+.btn{border-radius:8px;font-weight:500;box-shadow:var(--shadow)}
+.btn.primary{background:var(--primary);border-color:var(--primary);color:var(--on-primary)}
+.content{padding-top:28px}
+.ph{padding-bottom:18px;border-bottom:1px solid var(--line);margin-bottom:4px}
+.ph h1{font-size:22px;font-weight:700;letter-spacing:-.01em}
+.ph p{font-size:14px;color:var(--ink-3)}
+.sec-title{font-size:14px;font-weight:600;color:var(--ink-3)}
+.card{border-radius:10px;border:1px solid var(--line);box-shadow:var(--shadow)}
+/* stat cards: separate, like "Eventos por Status" */
+.vw-dash .stats{gap:12px!important;background:none!important;border:0!important;overflow:visible!important}
+.vw-dash .stats > .card{border:1px solid var(--line)!important;border-radius:10px!important;background:var(--panel)!important;box-shadow:var(--shadow)!important}
+.vw-dash .stats > .card + .card{border-left:1px solid var(--line)!important}
+.ct-stats > button.card[aria-pressed="true"]{box-shadow:0 0 0 2px var(--blue)!important;border-color:var(--blue)!important;background:var(--panel)!important}
+.stat{padding:16px 16px 0;min-height:132px}
+.stat-h{font-size:12px;letter-spacing:.04em;font-weight:500;color:var(--ink-2)}
+.stat-h svg.i{width:16px;height:16px;color:var(--ink-3)}
+.stat-v{font-size:30px;font-weight:700;margin-top:10px;letter-spacing:-.02em}
+.stat-c{font-size:12.5px;color:var(--ink-3);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:-.01em}
+.stat-c .stat-link{font-family:var(--font)}
+.stat-viz{margin-inline:-16px}
+.bar{margin:0 16px 16px;height:5px}
+/* outlined filter buttons (selects) */
+.ct-aud-bar{gap:10px}
+.ct-sep{width:1px;height:24px;background:var(--line);margin:0 6px}
+.ct-aud-bar select{min-width:240px}
+.ct-aud-bar label{font-size:12px;letter-spacing:.04em;font-weight:600;color:var(--ink-3)}
+.ct-aud-bar select,.ct-tese-sel,.fb-painel select{height:36px;border:1px solid var(--line);background-color:var(--panel);border-radius:8px;padding:0 34px 0 12px;font-size:14px;font-weight:500;color:var(--ink);box-shadow:var(--shadow);appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);background-position:calc(100% - 17px) 52%,calc(100% - 12px) 52%;background-size:5px 5px;background-repeat:no-repeat;cursor:pointer}
+.ct-aud-bar select:hover,.ct-tese-sel:hover{background-color:var(--hover)}
+.ct-tese-sel.ativo{border-color:var(--blue);color:var(--blue)}
+.ct-aud-bar .icon-btn{width:36px;height:36px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.ct-aud-bar .icon-btn:hover:not([disabled]){background:var(--hover)}
+.fb-mais,.ct-on-btn{height:36px;border-radius:8px;border:1px solid var(--line);font-weight:500}
+.search input{height:36px;border-radius:8px;border:1px solid var(--line);box-shadow:var(--shadow)}
+/* quick filters: segmented control ("Evento | Cohort") */
+.fb-rapido{display:inline-flex;flex-wrap:wrap;gap:2px;border:1px solid var(--line);border-radius:9px;padding:3px;background:var(--soft);border-bottom:1px solid var(--line)!important;width:max-content;max-width:100%}
+.fb-rapido > button{border:0!important;border-radius:6px!important;padding:5px 12px!important;margin:0!important;font-size:13.5px;font-weight:500;color:var(--ink-3);background:none}
+.fb-rapido > button:hover{color:var(--ink)}
+.fb-rapido > button[aria-pressed="true"]{background:var(--panel)!important;color:var(--ink)!important;box-shadow:0 1px 2px rgba(0,0,0,.08);font-weight:600}
+.fb-rapido .fb-fim{padding:0 6px 0 10px!important;align-self:center}
+/* lists and tables */
+.ct-tbl th,.row.head{font-size:12px!important;letter-spacing:.02em!important;text-transform:none!important;font-weight:600!important;color:var(--ink-3)!important;background:var(--soft)!important}
+.ct-tbl td{padding:10px 14px}
+.ct-ctl{border-radius:8px;border-color:var(--line)}
+.ct-ctl button{padding:5px 10px;font-size:12.5px}
+.modo-sel,.pos-sel{border-radius:8px!important}
+.ct-bars-box,.bc{border-radius:10px}
+.bc-campo input{height:40px}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -940,8 +996,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
           <button type="button" class="icon-btn" id="ct-aud-prox" aria-label="Próxima audiência" title="Próxima audiência"><svg class="i"><use href="#i-chev"/></svg></button>
           <span class="ct-aud-info" id="ct-aud-info"></span>
           <button type="button" class="linkbtn" id="ct-geral" hidden>Ver geral (todas as audiências)</button>
-        </div>
-        <div class="ct-aud-bar">
+          <span class="ct-sep"></span>
           <label for="ct-tese-sel">Tese</label>
           <select id="ct-tese-sel" class="ct-tese-sel"></select>
         </div>
