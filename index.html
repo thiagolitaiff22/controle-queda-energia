@@ -516,7 +516,14 @@ header.top h1{margin:4px 0 0;font-size:32px;line-height:1.1;font-weight:800;lett
 .more{display:flex;justify-content:center;padding:12px;border-top:1px solid var(--line)}
 
 .ct-res-box{padding:0;overflow-x:auto}
-.ct-bars-box{padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.ct-bars-box{padding:12px 16px;display:flex;flex-direction:column;gap:10px}
+details.ct-bars-box > summary{cursor:pointer;list-style:none}
+details.ct-bars-box > summary::-webkit-details-marker{display:none}
+details.ct-bars-box > summary b::before{content:"▸";display:inline-block;margin-right:8px;transition:transform .15s}
+details.ct-bars-box[open] > summary b::before{transform:rotate(90deg)}
+details.ct-bars-box[open] > summary{margin-bottom:10px}
+.ct-tese-sel{border:1px solid var(--line-2);background:var(--panel);border-radius:9px;padding:8px 12px;font-size:14px;font-weight:600;min-width:280px;max-width:100%}
+.ct-tese-sel.ativo{border-color:var(--primary);color:var(--primary)}
 .ct-bars-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .ct-bars-head b{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
 .ct-bars-head span{font-size:12.5px;color:var(--ink-3)}
@@ -934,8 +941,12 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
           <span class="ct-aud-info" id="ct-aud-info"></span>
           <button type="button" class="linkbtn" id="ct-geral" hidden>Ver geral (todas as audiências)</button>
         </div>
+        <div class="ct-aud-bar">
+          <label for="ct-tese-sel">Tese</label>
+          <select id="ct-tese-sel" class="ct-tese-sel"></select>
+        </div>
         <div class="stats five ct-stats" id="ct-stats"></div>
-        <div class="card ct-bars-box"><div class="ct-bars-head"><b>Teses da contestação</b><span id="ct-bars-info"></span></div><div class="ct-bars" id="ct-chips" role="group" aria-label="Filtrar por tese"></div></div>
+        <details class="card ct-bars-box" id="ct-bars-det"><summary class="ct-bars-head"><b>Gráfico das teses</b><span id="ct-bars-info"></span></summary><div class="ct-bars" id="ct-chips" role="group" aria-label="Filtrar por tese"></div></details>
         <div class="card filterbar"><div class="fb-top">
           <div class="search"><svg class="i"><use href="#i-search"/></svg><input id="ct-q" type="search" placeholder="Buscar por nome ou CPF"></div>
           <button type="button" class="ct-on-btn" id="ct-on-btn" hidden title="Mostrar só quem faz a audiência online"></button><span class="fb-count tnum" id="ct-count"></span>
@@ -2011,6 +2022,14 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     chips.innerHTML = (umas.length ? secao('Uma tese', soma(umas)) + umas.map(function(k){ return barra(k, nomeCombo(k)); }).join('') : '') +
       (varias.length ? secao('Mais de uma tese', soma(varias)) + varias.map(function(k){ return barra(k, nomeCombo(k)); }).join('') : '') +
       (sem ? secao('Sem tese', sem) + barra('__sem', 'Sem tese registrada') : '');
+    var tsel = $('ct-tese-sel');
+    var opt = function(k, nome, n){ return '<option value="' + esc(k) + '">' + esc(nome) + ' · ' + n + (n === 1 ? ' cliente' : ' clientes') + '</option>'; };
+    tsel.innerHTML = '<option value="">Todas as teses · ' + rows.length + ' clientes</option>' +
+      (umas.length ? '<optgroup label="Uma tese">' + umas.map(function(k){ return opt(k, nomeCombo(k), cont[k]); }).join('') + '</optgroup>' : '') +
+      (varias.length ? '<optgroup label="Mais de uma tese">' + varias.map(function(k){ return opt(k, nomeCombo(k), cont[k]); }).join('') + '</optgroup>' : '') +
+      (sem ? '<optgroup label="Sem tese">' + opt('__sem', 'Sem tese registrada', sem) + '</optgroup>' : '');
+    tsel.value = ctFiltro || '';
+    tsel.classList.toggle('ativo', !!ctFiltro);
     $('ct-bars-info').innerHTML = rows.length + ' clientes · ' + (ordem.length + (sem ? 1 : 0)) + ' grupos · cada cliente aparece em um grupo só' +
       (ctFiltro ? '<button type="button" class="linkbtn" data-tese="">Mostrar todas</button>' : '');
 
@@ -2052,6 +2071,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   }
   function ctSessoes(){ var m = {}; state.rows.forEach(function(r){ if (r.audData) m[(r.audData || '') + '|' + (r.audHora || '')] = 1; }); return Object.keys(m).sort(); }
   $('ct-on-btn').addEventListener('click', function(){ ctOnline = !ctOnline; ctLimite = 200; renderContest(); });
+  $('ct-tese-sel').addEventListener('change', function(){ ctFiltro = this.value; ctLimite = 200; renderContest(); });
   $('ct-geral').addEventListener('click', function(){ ctSessao = ''; ctLimite = 200; renderContest(); });
   $('ct-aud-sel').addEventListener('change', function(){ ctSessao = this.value; ctLimite = 200; renderContest(); });
   $('ct-aud-ant').addEventListener('click', function(){ var ks = ctSessoes(), p = ks.indexOf(ctSessao); ctSessao = p > 0 ? ks[p - 1] : (p < 0 ? ks[ks.length - 1] || '' : ctSessao); ctLimite = 200; renderContest(); });
