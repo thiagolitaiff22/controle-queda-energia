@@ -928,8 +928,11 @@ body{font-size:14px}
 .fin-valor{width:128px;height:30px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);font:inherit;font-size:13px;text-align:right;padding:0 8px;font-variant-numeric:tabular-nums}
 .fin-valor:focus{border-color:var(--blue);outline:none}
 
-.fin-sub button{padding:7px 18px;font-size:13.5px}
-.fin-sub button[aria-pressed="true"]{background:var(--primary)!important;color:var(--on-primary)!important}
+.fin-sub{align-self:flex-start;display:inline-flex;gap:2px;padding:3px;border:1px solid var(--line)!important;border-radius:9px!important;background:var(--soft)!important;overflow:visible!important}
+.fin-sub button{padding:6px 16px!important;font-size:13.5px!important;font-weight:500!important;border:0!important;border-radius:6px!important;background:none!important;color:var(--ink-3)!important}
+.fin-sub button + button{border-left:0!important}
+.fin-sub button:hover{color:var(--ink)!important}
+.fin-sub button[aria-pressed="true"]{background:var(--panel)!important;color:var(--ink)!important;font-weight:600!important;box-shadow:0 1px 2px rgba(0,0,0,.12)}
 .fin-apagar{color:var(--green);font-weight:700}
 .fin-total td{font-weight:700;background:var(--soft)}
 
