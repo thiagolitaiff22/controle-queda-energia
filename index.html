@@ -932,6 +932,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
           <select id="ct-aud-sel"></select>
           <button type="button" class="icon-btn" id="ct-aud-prox" aria-label="Próxima audiência" title="Próxima audiência"><svg class="i"><use href="#i-chev"/></svg></button>
           <span class="ct-aud-info" id="ct-aud-info"></span>
+          <button type="button" class="linkbtn" id="ct-geral" hidden>Ver geral (todas as audiências)</button>
         </div>
         <div class="stats five ct-stats" id="ct-stats"></div>
         <div class="card ct-bars-box"><div class="ct-bars-head"><b>Teses da contestação</b><span id="ct-bars-info"></span></div><div class="ct-bars" id="ct-chips" role="group" aria-label="Filtrar por tese"></div></div>
@@ -1983,9 +1984,10 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
     var sess = {}; state.rows.forEach(function(r){ if (r.audData){ var k = chaveS(r); sess[k] = (sess[k] || 0) + 1; } });
     var ks = Object.keys(sess).sort();
     var hoje = iso(new Date());
-    if (ctSessao === null && ks.length){ ctSessao = ks.filter(function(k){ return k.split('|')[0] >= hoje; })[0] || ''; }
+    if (ctSessao === null) ctSessao = ''; // opens on the general view (all hearings)
     if (ctSessao && !sess[ctSessao]) ctSessao = '';
     montarSelectSessao($('ct-aud-sel'), ctSessao, $('ct-aud-info'), $('ct-aud-ant'), $('ct-aud-prox'));
+    $('ct-geral').hidden = !ctSessao;
     var nOn = state.rows.filter(function(r){ return r.online && (!ctSessao || chaveS(r) === ctSessao); }).length;
     $('ct-on-btn').hidden = !nOn && !ctOnline; $('ct-on-btn').setAttribute('aria-pressed', ctOnline); $('ct-on-btn').innerHTML = '<i class="ct-on-dot"></i>Online <b>' + nOn + '</b>';
     var rows = state.rows.filter(function(r){ return !ctSessao || chaveS(r) === ctSessao; });
@@ -2050,6 +2052,7 @@ form.f{display:flex;flex-direction:column;max-height:calc(100dvh - 34px)}
   }
   function ctSessoes(){ var m = {}; state.rows.forEach(function(r){ if (r.audData) m[(r.audData || '') + '|' + (r.audHora || '')] = 1; }); return Object.keys(m).sort(); }
   $('ct-on-btn').addEventListener('click', function(){ ctOnline = !ctOnline; ctLimite = 200; renderContest(); });
+  $('ct-geral').addEventListener('click', function(){ ctSessao = ''; ctLimite = 200; renderContest(); });
   $('ct-aud-sel').addEventListener('change', function(){ ctSessao = this.value; ctLimite = 200; renderContest(); });
   $('ct-aud-ant').addEventListener('click', function(){ var ks = ctSessoes(), p = ks.indexOf(ctSessao); ctSessao = p > 0 ? ks[p - 1] : (p < 0 ? ks[ks.length - 1] || '' : ctSessao); ctLimite = 200; renderContest(); });
   $('ct-aud-prox').addEventListener('click', function(){ var ks = ctSessoes(), p = ks.indexOf(ctSessao); ctSessao = p < 0 ? ks[0] || '' : (ks[p + 1] || ctSessao); ctLimite = 200; renderContest(); });
