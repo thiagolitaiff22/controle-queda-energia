@@ -917,7 +917,7 @@ body{font-size:14px}
 .card-filtro[aria-pressed="true"]{box-shadow:none!important;border-color:var(--blue)!important}
 
 /* cartão selecionado: contorno azul fino */
-.card-filtro[aria-pressed="true"],.cl-etapa-cards > button.card[aria-pressed="true"],.ct-stats > button.card[aria-pressed="true"]{border:1px solid var(--blue)!important;box-shadow:inset 0 0 0 0.5px var(--blue)!important;background:var(--panel)!important}
+.vw-dash .stats > .card.card-filtro[aria-pressed="true"],.vw-dash .stats.cl-etapa-cards > button.card[aria-pressed="true"],.vw-dash .stats.ct-stats > button.card[aria-pressed="true"]{border:1px solid var(--blue)!important;box-shadow:inset 0 0 0 0.5px var(--blue)!important;background:var(--panel)!important}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -1503,7 +1503,6 @@ body{font-size:14px}
       else state.etapaCl = c;
     }
     state.limit = 100; renderList();
-    var l = $('list'); if (l) l.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
   function passEtapaCl(r, f){
     if (!f) return true;
@@ -1734,7 +1733,7 @@ body{font-size:14px}
         '<div class="stat-viz"><div class="bar"><span style="width:' + p + '%;background:var(' + x[4] + ')"></span></div></div></button>';
     }).join('');
     var NOMES_P = { todos: 'Todas as situações', avisar: 'A avisar', semcontato: 'Sem contato', semtel: 'Sem telefone', online: 'Online' };
-    $('fb-sit').innerHTML = Array.prototype.map.call($('fb-rapido').querySelectorAll('[data-p]'), function(b){ return '<option value="' + b.dataset.p + '">' + NOMES_P[b.dataset.p] + ' · ' + b.querySelector('.n').textContent + '</option>'; }).join('') + (atual ? '' : '<option value="" selected>Filtro personalizado</option>');
+    $('fb-sit').innerHTML = Array.prototype.map.call($('fb-rapido').querySelectorAll('[data-p]'), function(b){ return '<option value="' + b.dataset.p + '">' + NOMES_P[b.dataset.p] + ' · ' + b.querySelector('.n').textContent + '</option>'; }).join('') + (atual ? '' : '<option value="" selected>' + (state.filter === 'pendente' ? 'Pendentes de aviso' : state.filter === 'avisadoMarc' ? 'Avisados' : 'Filtro personalizado') + '</option>');
     $('fb-sit').value = atual || '';
     $('fb-sit').classList.toggle('ativo', !!atual && atual !== 'todos');
     var dia = $('fb-dia');
