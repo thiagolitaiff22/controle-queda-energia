@@ -763,7 +763,7 @@ body{font-size:14px}
 .vw-dash .stats{gap:12px!important;background:none!important;border:0!important;overflow:visible!important}
 .vw-dash .stats > .card{border:1px solid var(--line)!important;border-radius:10px!important;background:var(--panel)!important;box-shadow:var(--shadow)!important}
 .vw-dash .stats > .card + .card{border-left:1px solid var(--line)!important}
-.ct-stats > button.card[aria-pressed="true"]{box-shadow:0 0 0 2px var(--blue)!important;border-color:var(--blue)!important;background:var(--panel)!important}
+.ct-stats > button.card[aria-pressed="true"]{box-shadow:none!important;border-color:var(--blue)!important;background:var(--panel)!important}
 .stat{padding:16px 16px 0;min-height:132px}
 .stat-h{font-size:12px;letter-spacing:.04em;font-weight:500;color:var(--ink-2)}
 .stat-h svg.i{width:16px;height:16px;color:var(--ink-3)}
@@ -880,7 +880,7 @@ body{font-size:14px}
 
 .cl-etapa-cards > button.card{text-align:left;font:inherit;color:inherit;cursor:pointer}
 .cl-etapa-cards > button.card:hover{border-color:var(--line-2)!important}
-.cl-etapa-cards > button.card[aria-pressed="true"]{box-shadow:0 0 0 2px var(--blue)!important;border-color:var(--blue)!important}
+.cl-etapa-cards > button.card[aria-pressed="true"]{box-shadow:none!important;border-color:var(--blue)!important}
 .vw-dash .stats.three{grid-template-columns:repeat(3,minmax(0,1fr))}
 
 /* ---------- cartões compactos ---------- */
@@ -914,7 +914,10 @@ body{font-size:14px}
 
 .card-filtro{cursor:pointer}
 .card-filtro:hover{border-color:var(--line-2)!important}
-.card-filtro[aria-pressed="true"]{box-shadow:0 0 0 2px var(--blue)!important;border-color:var(--blue)!important}
+.card-filtro[aria-pressed="true"]{box-shadow:none!important;border-color:var(--blue)!important}
+
+/* cartão selecionado: contorno azul fino */
+.card-filtro[aria-pressed="true"],.cl-etapa-cards > button.card[aria-pressed="true"],.ct-stats > button.card[aria-pressed="true"]{border:1px solid var(--blue)!important;box-shadow:inset 0 0 0 0.5px var(--blue)!important;background:var(--panel)!important}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
