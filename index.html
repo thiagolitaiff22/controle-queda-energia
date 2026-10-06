@@ -1003,6 +1003,33 @@ body{font-size:14px}
 #dlg-integ .integ-form .pw input{padding-right:12px!important}
 
 .ct-xlsx{height:36px;white-space:nowrap}
+
+/* ---------- pauta do PROJUDI ---------- */
+#dlg-pj{width:min(760px,calc(100vw - 32px))}
+#dlg-pj .f-head{display:flex;align-items:center;gap:10px}
+#dlg-pj .f-body{display:block;max-height:68vh;overflow:auto}
+.pj-passos{margin:0 0 12px;padding-left:20px;display:flex;flex-direction:column;gap:12px;font-size:14px;line-height:1.5}
+.pj-fav-box{margin-top:8px}
+.pj-fav{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;background:var(--blue);color:#fff!important;font-weight:700;text-decoration:none;cursor:grab}
+.pj-resumo{font-size:13px;color:var(--ink-3);margin-bottom:10px}
+.pj-tab{margin-bottom:14px}
+.pj-ok{color:var(--green);font-weight:600;font-size:12.5px}
+.pj-warn{color:var(--amber);font-weight:600;font-size:12.5px}
+.pj-sec{font-weight:700;font-size:14px;margin:16px 0 6px;display:flex;flex-direction:column;gap:2px}
+.pj-sec span{font-weight:400;font-size:12.5px;color:var(--ink-3)}
+.pj-l{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px;cursor:pointer}
+.pj-l input{width:16px;height:16px;flex:none}
+.pj-n{display:flex;flex-direction:column;flex:1;min-width:0;font-weight:600;font-size:13.5px}
+.pj-n small,.pj-i small{font-weight:400;color:var(--ink-3);font-size:12px}
+.pj-d{font-size:13px;white-space:nowrap;text-align:right}
+.pj-d s{color:var(--ink-3)}
+.pj-det{margin-top:10px;border:1px solid var(--line);border-radius:8px;padding:8px 12px}
+.pj-det summary{cursor:pointer;font-weight:600;font-size:13.5px}
+.pj-i{padding:5px 0;border-top:1px solid var(--line);font-size:13px}
+.pj-det .pj-i:first-of-type{border-top:0}
+.pj-vazio{font-size:13px;color:var(--ink-3);padding:4px 0}
+.linkish{background:none;border:0;padding:0;color:var(--blue);font:inherit;cursor:pointer;text-decoration:underline}
+#pj-foot{display:flex;align-items:center;gap:10px}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -1105,6 +1132,7 @@ body{font-size:14px}
           <div class="search tb-busca"><svg class="i"><use href="#i-search"/></svg><input id="bc-q" type="search" autocomplete="off" placeholder="Buscar cliente por nome ou CPF"></div>
           <select id="cl-aud-sel" class="tb-sel" aria-label="Audiência"></select>
           <select id="fb-sit" class="tb-sel" aria-label="Situação do aviso"></select>
+          <button type="button" class="tb-btn" id="btn-pj" title="Buscar no PROJUDI as audiências marcadas e lançar no BI"><svg class="i"><use href="#i-scale"/></svg>Pauta do PROJUDI</button>
           <button type="button" class="tb-btn fb-mais" id="fb-mais" aria-expanded="false" aria-controls="fb-painel"><svg class="i"><use href="#i-filter"/></svg>Mais filtros<span class="fb-badge" id="fb-badge" hidden></span></button>
           <span class="fb-fim tb-fim"><button type="button" class="day-chip tnum" id="fb-dia" hidden></button><span class="fb-count tnum" id="fb-count"></span><button type="button" class="fb-clear" id="fb-clear" hidden>Limpar</button></span>
         </div>
@@ -1460,6 +1488,17 @@ body{font-size:14px}
       </div>
     </div>
   </form>
+</dialog>
+
+<dialog id="dlg-pj">
+  <div class="f pj-dlg">
+    <div class="f-head"><div class="ph-tile" style="margin:0"><svg class="i"><use href="#i-scale"/></svg></div><h2 id="pj-titulo">Pauta do PROJUDI</h2><button type="button" class="btn" id="pj-fechar" style="margin-left:auto">Fechar</button></div>
+    <div class="f-body" id="pj-body"></div>
+    <div class="f-foot" id="pj-foot" hidden>
+      <span class="hint" id="pj-sel-info"></span>
+      <div class="right"><button class="btn primary" type="button" id="pj-aplicar">Lançar no BI</button></div>
+    </div>
+  </div>
 </dialog>
 
 <dialog id="dlg-rec">
@@ -2850,6 +2889,125 @@ body{font-size:14px}
     try { var d = await fetch(v).then(function(r){ return r.json(); }); $('cp-status').textContent = d && d.ok ? 'O script respondeu: funcionando.' : 'O script não respondeu como esperado.'; }
     catch(err){ $('cp-status').textContent = 'Não consegui falar com o script. Confira se a implantação está como "Qualquer pessoa".'; }
   });
+
+  /* ---------- Pauta do PROJUDI: favorito que lê a listagem logada e manda para o BI ---------- */
+  var PJ_ORIGEM = 'https://projudi.tjam.jus.br';
+  // roda dentro do PROJUDI (o login é sempre do usuário); só lê a listagem "Aguarda Realização" de audiências una
+  function pjFavorito(){
+    var BI = location.origin + location.pathname;
+    var codigo = function(){
+      (async function(){
+        var BI = '__BI__';
+        var main = window.frames['mainFrame'];
+        if (!main || location.hostname.indexOf('projudi.tjam.jus.br') < 0){ alert('Abra o PROJUDI, entre com seu login e clique de novo neste favorito.'); return; }
+        var w = main.frames['userMainFrame'];
+        if (!w || !w.document.forms['audienciaForm']){
+          var l = [].slice.call(main.document.querySelectorAll('a')).filter(function(a){ return a.textContent.trim() === 'Listagem' && /audiencia/.test(a.getAttribute('href') || ''); })[0];
+          if (!l){ alert('Não achei o menu Audiências › Listagem. Confira se você entrou no PROJUDI.'); return; }
+          l.click(); await new Promise(function(r){ setTimeout(r, 4000); }); w = main.frames['userMainFrame'];
+        }
+        var f = w.document.forms['audienciaForm']; if (!f){ alert('A listagem de audiências não abriu. Tente de novo.'); return; }
+        var antes = w.document;
+        f.querySelector('[name=idSituacaoAudiencia][value="5"]').checked = true;
+        var sel = f.elements['idTipoAudiencia']; var op = [].slice.call(sel.options).filter(function(o){ return o.text.trim() === 'Audiência Una'; })[0]; if (op) sel.value = op.value;
+        f.elements['audienciaPageSize'].value = '1000';
+        w.pesquisarAudiencia();
+        var d = null;
+        for (var i = 0; i < 60; i++){ await new Promise(function(r){ setTimeout(r, 500); }); try { var x = main.frames['userMainFrame'].document; if (x !== antes && x.readyState === 'complete' && /registro\(s\)/.test(x.body.innerText)){ d = x; break; } } catch(e){} }
+        if (!d){ alert('O PROJUDI demorou para responder. Tente de novo.'); return; }
+        var linhas = [];
+        [].slice.call(d.querySelectorAll('tr')).forEach(function(tr){
+          var tds = [].slice.call(tr.children).filter(function(c){ return c.tagName === 'TD'; }); if (tds.length < 5) return;
+          var p = (tds[0].innerText.match(/\d{7}-\d{2}\.\d{4}\.\d\.\d{2}\.\d{4}/) || [])[0];
+          var dt = tds.map(function(t){ return t.innerText; }).join(' ').match(/(\d{2})\/(\d{2})\/(\d{4}) (\d{2}:\d{2})/);
+          if (!p || !dt) return;
+          var partes = tds[1].innerText.replace(/\s+/g, ' ');
+          var autor = (partes.match(/(?:Requerente|Polo Ativo):\s*•?\s*(.+?)\s*(?:Requerido|Polo Passivo|Terceiro|$)/) || [])[1] || '';
+          linhas.push({ p: p, d: dt[3] + '-' + dt[2] + '-' + dt[1], h: dt[4], autor: autor.trim() });
+        });
+        var alvo = window.open(BI + '#projudi', 'qe_bi');
+        var ok = false, enviadoEm = new Date().toISOString();
+        window.addEventListener('message', function(e){ if (e.data && e.data.tipo === 'qe-pauta-ok') ok = true; });
+        for (var k = 0; k < 90 && !ok; k++){ try { alvo.postMessage({ tipo: 'qe-pauta', linhas: linhas, em: enviadoEm }, new URL(BI).origin); } catch(e){} await new Promise(function(r){ setTimeout(r, 1000); }); }
+        if (!ok) alert('Não consegui entregar a pauta ao BI. Deixe o BI aberto e logado e clique de novo no favorito.');
+      })();
+    };
+    return 'javascript:' + encodeURIComponent('(' + codigo.toString().replace("'__BI__'", JSON.stringify(BI)) + ')()');
+  }
+  var dlgPj = $('dlg-pj'), pjDados = null, pjMudar = [];
+  function pjInstrucoes(){
+    $('pj-titulo').textContent = 'Pauta do PROJUDI';
+    $('pj-foot').hidden = true;
+    $('pj-body').innerHTML =
+      '<ol class="pj-passos">' +
+        '<li><b>Uma vez só:</b> arraste o botão abaixo para a barra de favoritos do navegador (se a barra não aparece, aperte Ctrl+Shift+B).<div class="pj-fav-box"><a class="pj-fav" id="pj-fav" href="#">Pauta → BI</a></div></li>' +
+        '<li>Abra o <a href="https://projudi.tjam.jus.br/projudi/" target="_blank" rel="noopener">PROJUDI</a> e entre com o seu login.</li>' +
+        '<li>Já dentro do PROJUDI, clique no favorito <b>Pauta → BI</b>. Ele lê a listagem de audiências e manda para esta tela.</li>' +
+        '<li>Aqui aparece a conferência: quem ganhou audiência, quem mudou de data e quem ainda está sem pauta. Confira e clique em <b>Lançar no BI</b>.</li>' +
+      '</ol><p class="hint">O sistema não guarda nem usa a sua senha do PROJUDI: o favorito só lê a tela em que você já entrou.</p>';
+    $('pj-fav').setAttribute('href', pjFavorito());
+    $('pj-fav').addEventListener('click', function(e){ e.preventDefault(); toast('Arraste este botão para a barra de favoritos'); });
+  }
+  $('btn-pj').addEventListener('click', function(){ if (pjDados) pjRevisao(); else pjInstrucoes(); dlgPj.showModal(); });
+  $('pj-fechar').addEventListener('click', function(){ dlgPj.close(); });
+  window.addEventListener('message', function(e){
+    if (e.origin !== PJ_ORIGEM || !e.data || e.data.tipo !== 'qe-pauta' || !Array.isArray(e.data.linhas)) return;
+    try { e.source.postMessage({ tipo: 'qe-pauta-ok' }, e.origin); } catch(x){}
+    if (pjDados && pjDados.em === e.data.em) return;
+    pjDados = { em: e.data.em, linhas: e.data.linhas.filter(function(l){ return /^\d{4}-\d{2}-\d{2}$/.test(l.d) && /^\d{2}:\d{2}$/.test(l.h); }) };
+    var tentar = function(n){ if (state.rows.length || n > 60){ pjRevisao(); if (!dlgPj.open) dlgPj.showModal(); } else setTimeout(function(){ tentar(n + 1); }, 1000); };
+    tentar(0);
+  });
+  function pjRevisao(){
+    var hoje = iso(new Date());
+    var vistos = {}, repetidos = 0, pauta = [];
+    pjDados.linhas.forEach(function(l){ var k = digits(l.p) + '|' + l.d + '|' + l.h; if (vistos[k]){ repetidos++; return; } vistos[k] = 1; if (l.d >= hoje) pauta.push(l); });
+    var porProc = {}; state.rows.forEach(function(r){ var dg = digits(r.processo); if (dg.length === 20) porProc[dg] = r; });
+    var sess = {}, novas = [], mudou = [], fora = [], noPj = {};
+    pauta.forEach(function(l){
+      var k = l.d + ' ' + l.h; sess[k] = sess[k] || { pj: 0, bi: 0 }; sess[k].pj++;
+      var r = porProc[digits(l.p)]; noPj[digits(l.p)] = 1;
+      if (!r){ fora.push(l); return; }
+      if (!r.audData) novas.push({ r: r, l: l });
+      else if (r.audData !== l.d || (r.audHora || '') !== l.h) mudou.push({ r: r, l: l });
+    });
+    state.rows.forEach(function(r){ if (r.audData && r.audData >= hoje){ var k = r.audData + ' ' + (r.audHora || ''); if (sess[k]) sess[k].bi++; } });
+    var semPauta = state.rows.filter(function(r){ return String(r.processo || '').trim() && !r.audData && !r.arquivado && !noPj[digits(r.processo)]; });
+    var sumiu = state.rows.filter(function(r){ return r.audData && r.audData >= hoje && digits(r.processo).length === 20 && !noPj[digits(r.processo)] && !jaRealizada(r); });
+    pjMudar = novas.concat(mudou);
+    var dataBR = function(l){ return fmtDate(l.d) + ' às ' + l.h.replace(':00', 'h'); };
+    var linhaCli = function(x, i, extra){ return '<label class="pj-l"><input type="checkbox" data-pj="' + i + '" checked><span class="pj-n">' + esc(x.r.nome) + '<small>' + esc(x.r.processo || '') + (x.l.autor && semAcento(x.l.autor) !== semAcento(x.r.nome) ? ' · no PROJUDI: ' + esc(x.l.autor) : '') + '</small></span><span class="pj-d">' + extra + '</span></label>'; };
+    var sk = Object.keys(sess).sort();
+    var h = '<div class="pj-resumo">Lido do PROJUDI em ' + new Date(pjDados.em).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) + ' · ' + pauta.length + ' audiências de hoje em diante' + (repetidos ? ' · ' + repetidos + ' linha(s) repetida(s) na listagem ignorada(s)' : '') + '</div>';
+    h += '<table class="ct-tbl pj-tab"><thead><tr><th>Audiência</th><th class="dir">PROJUDI</th><th class="dir">BI</th><th></th></tr></thead><tbody>' + sk.map(function(k){ var x = sess[k], p = k.split(' '); var ok = x.pj === x.bi; return '<tr><td>' + fmtDate(p[0]) + ' às ' + p[1].replace(':00', 'h') + '</td><td class="dir n">' + x.pj + '</td><td class="dir n">' + x.bi + '</td><td>' + (ok ? '<span class="pj-ok">confere</span>' : '<span class="pj-warn">diferente</span>') + '</td></tr>'; }).join('') + '</tbody></table>';
+    var i = 0;
+    h += '<div class="pj-sec">Audiência nova (' + novas.length + ')<span>clientes protocolados que ainda não tinham audiência no BI</span></div>' + (novas.length ? novas.map(function(x){ return linhaCli(x, i++, dataBR(x.l)); }).join('') : '<div class="pj-vazio">Nenhum.</div>');
+    h += '<div class="pj-sec">Data diferente (' + mudou.length + ')<span>o PROJUDI tem outra data ou horário</span></div>' + (mudou.length ? mudou.map(function(x){ return linhaCli(x, i++, '<s>' + fmtDate(x.r.audData) + (x.r.audHora ? ' ' + esc(x.r.audHora) : '') + '</s> → ' + dataBR(x.l)); }).join('') : '<div class="pj-vazio">Nenhum.</div>');
+    h += '<details class="pj-det"' + (semPauta.length ? ' open' : '') + '><summary>Protocolados ainda sem audiência no PROJUDI (' + semPauta.length + ')</summary>' + (semPauta.map(function(r){ return '<div class="pj-i">' + esc(r.nome) + ' <small>' + esc(r.processo) + '</small></div>'; }).join('') || '<div class="pj-vazio">Nenhum.</div>') + '</details>';
+    h += '<details class="pj-det"><summary>No PROJUDI e não cadastrados no BI (' + fora.length + ')</summary>' + (fora.map(function(l){ return '<div class="pj-i">' + esc(l.autor || '—') + ' <small>' + esc(l.p) + ' · ' + dataBR(l) + '</small></div>'; }).join('') || '<div class="pj-vazio">Nenhum.</div>') + '</details>';
+    h += '<details class="pj-det"' + (sumiu.length ? ' open' : '') + '><summary>Com audiência no BI que não aparece no PROJUDI (' + sumiu.length + ')</summary>' + (sumiu.map(function(r){ return '<div class="pj-i">' + esc(r.nome) + ' <small>' + esc(r.processo) + ' · BI: ' + fmtDate(r.audData) + (r.audHora ? ' ' + esc(r.audHora) : '') + '</small></div>'; }).join('') || '<div class="pj-vazio">Nenhum.</div>') + '</details>';
+    $('pj-titulo').textContent = 'Conferência com o PROJUDI';
+    $('pj-body').innerHTML = h + '<p class="hint" style="margin-top:12px"><button type="button" class="linkish" id="pj-como">Como buscar de novo</button></p>';
+    $('pj-como').addEventListener('click', pjInstrucoes);
+    $('pj-foot').hidden = !pjMudar.length;
+    pjContar();
+  }
+  function pjContar(){ var n = $('pj-body').querySelectorAll('[data-pj]:checked').length; $('pj-sel-info').textContent = n + (n === 1 ? ' cliente selecionado' : ' clientes selecionados'); $('pj-aplicar').disabled = !n; }
+  $('pj-body').addEventListener('change', function(e){ if (e.target.matches('[data-pj]')) pjContar(); });
+  $('pj-aplicar').addEventListener('click', async function(){
+    var marcados = [].slice.call($('pj-body').querySelectorAll('[data-pj]:checked')).map(function(c){ return pjMudar[+c.dataset.pj]; });
+    if (!marcados.length) return;
+    var b = this; b.disabled = true; var feitos = 0, erros = 0;
+    for (var i = 0; i < marcados.length; i++){
+      var x = marcados[i]; b.textContent = 'Lançando ' + (i + 1) + ' de ' + marcados.length + '…';
+      try { await patchRow(x.r.id, { audData: x.l.d, audHora: x.l.h, audMarcadaEm: iso(new Date()), atualizadoEm: new Date().toISOString() }); feitos++; }
+      catch(err){ erros++; }
+    }
+    b.textContent = 'Lançar no BI'; b.disabled = false;
+    toast(feitos + ' audiência(s) lançada(s) no BI' + (erros ? ' · ' + erros + ' com erro' : ''));
+    pjRevisao();
+  });
+  if (location.hash === '#projudi') history.replaceState(null, '', location.pathname);
 
   function renderFinResultado(base, card, taxa){
     var hon = function(r){ return valorCond(r) * FIN_ESCRITORIO; };
