@@ -970,6 +970,9 @@ body{font-size:14px}
 .r-arq{text-align:left;font:inherit;color:inherit;cursor:pointer}
 .r-arq:hover{border-color:var(--line-2)!important}
 .r-arq[aria-pressed="true"]{border-color:var(--blue)!important}
+
+.campo-tag{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:5px;font-size:11px;font-weight:700;color:var(--amber);border:1px solid currentColor;vertical-align:1px;white-space:nowrap}
+#cp-link{width:100%;font-size:13px}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -985,6 +988,7 @@ body{font-size:14px}
   <symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5 5-5"/></symbol>
   <symbol id="i-bellx" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
   <symbol id="i-scale" viewBox="0 0 24 24"><path d="M12 3v18M7 21h10M5 7h14M5 7l-3 7a3 3 0 0 0 6 0zM19 7l-3 7a3 3 0 0 0 6 0z"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/></symbol>
   <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></symbol>
   <symbol id="i-save" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></symbol>
   <symbol id="i-sync" viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16M3 12a9 9 0 0 1 15.5-6.2L21 8M21 3v5h-5M3 21v-5h5"/></symbol>
@@ -1254,6 +1258,15 @@ body{font-size:14px}
             <small class="integ-s" id="dj-status">Verificando…</small>
           </form>
         </div>
+        <div class="card integ">
+          <div><b class="integ-t">Cadastro pelo celular</b><p class="integ-d">Script do Google que recebe as fotos dos prospectadores, cria a pasta do cliente no Drive (CLIENTES) e lê a procuração com o Claude. O código e o passo a passo estão em <a href="https://github.com/thiagolitaiff22/controle-queda-energia/blob/main/google/campo.gs" target="_blank" rel="noopener">google/campo.gs</a>. O link de cada prospectador fica no cartão dele, em Prospectadores.</p></div>
+          <form id="form-cp" class="integ-form" novalidate autocomplete="off">
+            <label for="cp-url">Endereço do script (termina em /exec)</label>
+            <input id="cp-url" type="url" autocomplete="off" spellcheck="false" placeholder="https://script.google.com/macros/s/…/exec">
+            <div class="integ-btns"><button class="btn lh-save" type="submit" id="cp-salvar"><svg class="i"><use href="#i-save"/></svg>Salvar</button><button type="button" class="btn" id="cp-testar"><svg class="i"><use href="#i-sync"/></svg>Testar</button></div>
+            <small class="integ-s" id="cp-status">Verificando…</small>
+          </form>
+        </div>
         <div class="card integ regua">
           <div><b class="integ-t">Régua de avisos automáticos</b><p class="integ-d">O sistema lembra o cliente da audiência pelo WhatsApp do Pós-venda, sozinho: 3 dias antes e na véspera. Envia poucos por vez, todos os dias das 8h às 18h (Manaus), com limite por dia.</p></div>
           <div class="regua-etapas">
@@ -1382,6 +1395,24 @@ body{font-size:14px}
 </dialog>
 
 
+
+<dialog id="dlg-campo">
+  <form class="f" method="dialog">
+    <div class="f-head"><div class="ph-tile" style="margin:0"><svg class="i"><use href="#i-phone"/></svg></div><h2 id="cp-title">Link do celular</h2></div>
+    <div class="f-body">
+      <div class="field full"><span class="hint">O prospectador abre este link no celular, tira as fotos (procuração, RG, talão de luz e o rosto do cliente) e aperta <b>Enviar</b>. O sistema cria a pasta no Drive, lê os dados com a inteligência artificial e o cliente aparece em <b>Sem protocolo</b>, já na conta deste prospectador. Não precisa de senha: quem tem o link cadastra em nome dele.</span></div>
+      <div class="field full"><label for="cp-link">Link</label><input id="cp-link" readonly></div>
+      <div class="field full" id="cp-aviso" hidden><span class="rep-aviso">O envio para o Drive ainda não está ligado: veja em Configurações › Cadastro pelo celular. Até lá, as fotos ficam guardadas no celular do prospectador.</span></div>
+    </div>
+    <div class="f-foot">
+      <button class="btn" type="button" id="cp-novo" title="O link antigo para de funcionar">Gerar outro link</button>
+      <div class="right">
+        <a class="btn" id="cp-whats" target="_blank" rel="noopener">Abrir no WhatsApp</a>
+        <button class="btn primary" type="button" id="cp-copiar">Copiar link</button>
+      </div>
+    </div>
+  </form>
+</dialog>
 
 <dialog id="dlg-rec">
   <form class="f" id="form-rec" novalidate>
@@ -2125,7 +2156,7 @@ body{font-size:14px}
         '<div class="prosp-nums"><div><b>' + mine.length + '</b><span>clientes</span></div><div><b>' + av + '</b><span>avisados</span></div><div><b>' + aAvisar + '</b><span>a avisar</span></div><div><b>' + sc + '</b><span>sem contato</span></div></div>' +
         pautaProsp(p, fut) +
         ((p.palavrasEndereco || []).length ? '<div class="small">Endereços com: ' + p.palavrasEndereco.map(function(k){ return '<span class="tag-kw">' + esc(k) + '</span>'; }).join('') + '</div>' : '') +
-        '<div class="prosp-actions"><button type="button" class="btn" data-pact="ver" data-id="' + esc(p.id) + '">Ver clientes</button><button type="button" class="btn" data-pact="edit" data-id="' + esc(p.id) + '">Editar</button>' +
+        '<div class="prosp-actions"><button type="button" class="btn" data-pact="ver" data-id="' + esc(p.id) + '">Ver clientes</button>' + (isAdmin() ? '<button type="button" class="btn" data-pact="link" data-id="' + esc(p.id) + '"><svg class="i"><use href="#i-phone"/></svg>Link do celular</button>' : '') + '<button type="button" class="btn" data-pact="edit" data-id="' + esc(p.id) + '">Editar</button>' +
           (soltos ? '<button type="button" class="btn" data-pact="aplicar" data-id="' + esc(p.id) + '">Atribuir ' + soltos + ' cliente(s) do endereço</button>' : '') + '</div>' +
       '</div>';
     }).join('');
@@ -2195,7 +2226,7 @@ body{font-size:14px}
       (lista.length ? '' : '<div class="empty">Nenhum cliente encontrado.</div>') +
       lista.map(function(r){
         return '<div class="row">' +
-          '<div class="c-name"><div class="name"><span>' + esc(r.nome) + '</span>' + pastaIco(r) + '</div><div class="addr">' + esc(r.endereco || 'Endereço não informado') + '</div></div>' +
+          '<div class="c-name"><div class="name"><span>' + esc(r.nome) + '</span>' + pastaIco(r) + (r.conferirDados ? '<span class="campo-tag" title="Cadastrado pelo celular do prospectador. Confira nome, CPF e endereço com os documentos da pasta e salve o cadastro.">Celular · conferir</span>' : '') + '</div><div class="addr">' + esc(r.endereco || 'Endereço não informado') + '</div></div>' +
           '<div><span class="lbl">CPF</span><div class="val">' + esc(r.cpf || '—') + '</div></div>' +
           '<div><span class="lbl">Processo</span><div class="val" style="font-size:12.5px">' + esc(r.processo || '—') + '</div></div>' +
           '<div><span class="lbl">Contato</span>' + telCell(r) + '</div>' +
@@ -2631,6 +2662,46 @@ body{font-size:14px}
     var csv = [['Data que caiu', 'Cliente', 'CPF', 'Processo', 'Valor que caiu', 'Honorários (escritório)', 'Valor do cliente', 'Pago ao cliente em', 'Forma', 'Valor repassado', 'Prospectador', 'Valor do prospectador'].map(q).join(';')]
       .concat(L.map(function(x){ var r = x.r; return [br(x.data), r.nome, r.cpf, r.processo, n2(x.valor), n2(x.hon), n2(x.valor - x.hon), br(x.pagoEm), x.forma, n2(x.repassado), prospName(r.responsavelId) || '', n2(x.prosp)].map(q).join(';'); }));
     baixarArquivo('Faturamento ' + finAno + '.csv', new Blob(['\ufeff' + csv.join('\r\n')], { type: 'text/csv;charset=utf-8' }));
+  });
+
+  /* ---------- cadastro pelo celular ---------- */
+  var cpProsp = null;
+  function linkCampo(t){ return location.origin + location.pathname.replace(/[^/]*$/, '') + 'campo.html#t=' + t; }
+  async function abrirLinkCampo(p, novo){
+    cpProsp = p;
+    try {
+      var r = await SB.rpc('campo_link', { p_prosp: p.id, p_novo: !!novo }); if (r.error) throw r.error;
+      var u = linkCampo(r.data);
+      $('cp-title').textContent = 'Link do celular · ' + p.nome;
+      $('cp-link').value = u;
+      var dig = String(p.telefone || p.contato || '').replace(/\D/g, '');
+      var txt = 'Olá, ' + String(p.nome || '').split(' ')[0] + '! Este é o seu link para cadastrar clientes pelo celular. É só abrir, tirar as fotos dos documentos e apertar Enviar:\n' + u;
+      $('cp-whats').href = 'https://wa.me/' + (dig.length >= 10 ? '55' + dig.replace(/^55/, '') : '') + '?text=' + encodeURIComponent(txt);
+      var st = await SB.rpc('campo_url_status'); $('cp-aviso').hidden = !!(st && st.data);
+      if (!$('dlg-campo').open) $('dlg-campo').showModal();
+      if (novo) toast('Link novo gerado. O antigo não funciona mais.');
+    } catch(err){ toast(errMsg(err)); }
+  }
+  $('cp-copiar').addEventListener('click', function(){ var v = $('cp-link').value; (navigator.clipboard ? navigator.clipboard.writeText(v) : Promise.reject()).then(function(){ toast('Link copiado'); }, function(){ $('cp-link').select(); document.execCommand('copy'); toast('Link copiado'); }); });
+  $('cp-novo').addEventListener('click', function(){ if (cpProsp && confirm('Gerar outro link para ' + cpProsp.nome + '? O link antigo para de funcionar.')) abrirLinkCampo(cpProsp, true); });
+  async function cpStatus(){
+    if (!isAdmin() || !SB) return;
+    var r = await SB.rpc('campo_url_status');
+    if (r.error){ $('cp-status').textContent = 'Rode o arquivo supabase/09_campo.sql no Supabase.'; return; }
+    $('cp-url').value = r.data || '';
+    $('cp-status').textContent = r.data ? 'Ligado.' : 'Ainda não ligado.';
+  }
+  $('form-cp').addEventListener('submit', async function(e){
+    e.preventDefault();
+    var v = $('cp-url').value.trim();
+    if (v && !/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(v)){ toast('O endereço deve ser https://script.google.com/macros/s/…/exec'); return; }
+    var r = await SB.rpc('campo_salvar_url', { p_url: v }); if (r.error){ toast(errMsg(r.error)); return; }
+    toast(v ? 'Cadastro pelo celular ligado' : 'Cadastro pelo celular desligado'); cpStatus();
+  });
+  $('cp-testar').addEventListener('click', async function(){
+    var v = $('cp-url').value.trim(); if (!v){ toast('Cole o endereço do script'); return; }
+    try { var d = await fetch(v).then(function(r){ return r.json(); }); $('cp-status').textContent = d && d.ok ? 'O script respondeu: funcionando.' : 'O script não respondeu como esperado.'; }
+    catch(err){ $('cp-status').textContent = 'Não consegui falar com o script. Confira se a implantação está como "Qualquer pessoa".'; }
   });
 
   function renderFinResultado(base, card, taxa){
@@ -3076,7 +3147,8 @@ body{font-size:14px}
       protocolo: $('f-protocolo').value || '', contatadoRetorno: $('f-contatado').value === 'sim' ? (prev.contatadoRetorno || iso(new Date())) : null,
       comparecimento: $('f-comp').value, motivoFalta: $('f-comp').value === 'faltou' ? $('f-falta').value.trim() : '',
       resultado: $('f-comp').value === 'faltou' && !$('f-res').value ? 'ausente' : ($('f-comp').value === 'compareceu' && $('f-res').value === 'ausente' ? '' : $('f-res').value), concluso: $('f-conc').value === 'sim', motivoConcluso: $('f-conc').value === 'sim' ? $('f-mot').value.trim() : '', embargos: $('f-rec').value, pagamento: $('f-pag').value, previsao: $('f-prev').value || '',
-      obs: $('f-obs').value.trim(), criadoEm: prev.criadoEm || new Date().toISOString(), atualizadoEm: new Date().toISOString()
+      obs: $('f-obs').value.trim(), criadoEm: prev.criadoEm || new Date().toISOString(), atualizadoEm: new Date().toISOString(),
+      conferirDados: false
     });
     var pastaCol = $('f-pasta-url') ? $('f-pasta-url').value.trim() : '';
     if (pastaCol){ var pm = pastaCol.match(/folders\/([A-Za-z0-9_-]+)/); data.pastaUrl = pastaCol; data.pastaId = pm ? pm[1] : ''; }
@@ -3395,6 +3467,7 @@ body{font-size:14px}
     var b = e.target.closest('[data-pact]'); if (!b) return;
     var p = prospById(b.dataset.id); if (!p) return;
     if (b.dataset.pact === 'edit') return openProsp(p);
+    if (b.dataset.pact === 'link') return abrirLinkCampo(p);
     if (b.dataset.pact === 'dia'){ state.resp = p.id; state.filter = 'todos'; state.aud = 'todas'; state.dia = b.dataset.dia; state.hora = ''; state.limit = 100; showTab('c'); renderPauta(); renderList(); return; }
     if (b.dataset.pact === 'ver'){ state.resp = p.id; state.filter = 'todos'; state.aud = 'todas'; state.dia = ''; state.hora = ''; state.limit = 100; showTab('c'); renderPauta(); renderList(); return; }
     if (b.dataset.pact === 'aplicar'){
@@ -3955,7 +4028,7 @@ body{font-size:14px}
     if (iniciado){ render(); return; }
     iniciado = true;
     state.db = DB;
-    if (f.data === 'admin'){ lhStatus(); rgCarregar(); djStatus(); avMontar(); }
+    if (f.data === 'admin'){ lhStatus(); rgCarregar(); djStatus(); avMontar(); cpStatus(); }
     function carimbo(){ var n = new Date(); $('sync').textContent = 'Atualizado: ' + n.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ', ' + n.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); }
     function caiu(){ $('sync').textContent = 'Conexão interrompida'; banner('A conexão com a base foi interrompida. Recarregue a página.'); }
     watchTable('clientes', function(rows){ state.rows = rows; banner(''); carimbo(); render(); }, caiu);

@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0b0c">
+<meta name="robots" content="noindex">
+<title>Cadastro de cliente</title>
+<link rel="manifest" href="campo.webmanifest">
+<style>
+:root{--bg:#f4f4f5;--card:#fff;--ink:#111;--ink2:#555;--line:#e3e3e6;--ok:#16a34a;--okbg:#e8f7ee;--warn:#d97706;--red:#dc2626;--pri:#111;--onpri:#fff}
+@media (prefers-color-scheme:dark){:root{--bg:#0b0b0c;--card:#17171a;--ink:#f2f2f3;--ink2:#a1a1aa;--line:#2a2a2e;--okbg:#0f2a19;--pri:#f2f2f3;--onpri:#111}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.35 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:560px;margin:0 auto;padding:16px 16px calc(120px + env(safe-area-inset-bottom))}
+header{display:flex;align-items:center;gap:12px;margin:4px 0 16px}
+.ava{width:44px;height:44px;border-radius:50%;background:var(--pri);color:var(--onpri);display:grid;place-items:center;font-weight:700;font-size:18px;flex:none}
+header b{display:block;font-size:18px}
+header span{font-size:14px;color:var(--ink2)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.doc{position:relative;border:2px dashed var(--line);background:var(--card);border-radius:16px;min-height:150px;padding:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;cursor:pointer;color:inherit;font:inherit;overflow:hidden}
+.doc.req{border-color:#9ca3af}
+.doc svg{width:44px;height:44px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.doc .t{font-weight:700;font-size:15px}
+.doc .s{font-size:12.5px;color:var(--ink2)}
+.doc.feito{border:2px solid var(--ok);background:var(--okbg)}
+.doc .thumbs{position:absolute;inset:0;display:flex}
+.doc .thumbs img{flex:1;min-width:0;object-fit:cover;opacity:.9}
+.doc .marca{position:absolute;left:8px;right:8px;bottom:8px;background:rgba(0,0,0,.72);color:#fff;border-radius:10px;padding:6px 8px;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.doc .marca svg{width:18px;height:18px;stroke:#4ade80;stroke-width:3}
+.doc .apagar{position:absolute;top:6px;right:6px;width:34px;height:34px;border-radius:50%;border:0;background:rgba(0,0,0,.65);color:#fff;font-size:20px;line-height:34px;z-index:2}
+.doc .estrela{position:absolute;top:8px;left:10px;color:var(--red);font-weight:800;font-size:20px}
+.fone{margin:16px 0 0;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;display:flex;align-items:center;gap:10px}
+.fone svg{width:30px;height:30px;stroke:currentColor;fill:none;stroke-width:1.8;flex:none}
+.fone input{flex:1;min-width:0;border:0;background:transparent;color:inherit;font:inherit;font-size:20px;letter-spacing:.5px;outline:none}
+.barra{position:fixed;left:0;right:0;bottom:0;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:linear-gradient(transparent,var(--bg) 30%)}
+.enviar{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;max-width:528px;margin:0 auto;height:64px;border:0;border-radius:18px;background:var(--ok);color:#fff;font:inherit;font-size:20px;font-weight:800}
+.enviar svg{width:28px;height:28px;stroke:#fff;fill:none;stroke-width:2.4}
+.enviar[disabled]{background:#9ca3af}
+.sec{margin:26px 0 10px;font-weight:700;font-size:15px;color:var(--ink2);display:flex;align-items:center;gap:8px}
+.lista{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.lista div{display:flex;align-items:center;gap:10px;padding:12px 14px;border-top:1px solid var(--line);font-size:15px}
+.lista div:first-child{border-top:0}
+.lista i{width:12px;height:12px;border-radius:50%;flex:none;background:#9ca3af}
+.lista i.ok{background:var(--ok)}.lista i.warn{background:var(--warn)}.lista i.blue{background:#2563eb}
+.lista small{margin-left:auto;color:var(--ink2);font-size:13px;white-space:nowrap}
+.aviso{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;text-align:center}
+.aviso b{display:block;font-size:19px;margin-bottom:6px}
+.som{border:1px solid var(--line);background:var(--card);color:inherit;border-radius:50%;width:44px;height:44px;margin-left:auto;display:grid;place-items:center}
+.som svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2}
+.tela{position:fixed;inset:0;background:rgba(0,0,0,.6);display:grid;place-items:center;padding:20px;z-index:10}
+.tela > div{background:var(--card);border-radius:20px;padding:24px;max-width:420px;width:100%;text-align:center}
+.tela svg{width:64px;height:64px;fill:none;stroke-width:2}
+.tela b{display:block;font-size:21px;margin:10px 0 6px}
+.tela p{margin:0 0 16px;color:var(--ink2)}
+.tela button{width:100%;height:56px;border:0;border-radius:14px;font:inherit;font-size:18px;font-weight:700;background:var(--pri);color:var(--onpri);margin-top:8px}
+.tela button.sec2{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.prog{height:10px;border-radius:6px;background:var(--line);overflow:hidden;margin:12px 0 4px}
+.prog span{display:block;height:100%;background:var(--ok);width:0;transition:width .3s}
+input[type=file]{display:none}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/><path d="M8 9h2"/></symbol>
+  <symbol id="i-pena" viewBox="0 0 24 24"><path d="M3 21l3-1 11-11-2-2L4 18z"/><path d="M14 6l2-2 4 4-2 2"/><path d="M3 21h18"/></symbol>
+  <symbol id="i-id" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="11" r="2.4"/><path d="M4.8 16.5c.6-1.6 1.8-2.4 3.2-2.4s2.6.8 3.2 2.4M14 10h5M14 13h4"/></symbol>
+  <symbol id="i-idv" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M6 9h12M6 12h12M6 15h7"/></symbol>
+  <symbol id="i-luz" viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></symbol>
+  <symbol id="i-dedo" viewBox="0 0 24 24"><path d="M12 3a7 7 0 0 0-7 7v2M19 10a7 7 0 0 0-3-5.7M8.5 21c1-2 1.5-4.5 1.5-7.5a2 2 0 0 1 4 0c0 3-.5 5.5-1.5 7.5M5 15.5c.7-1 1-2.3 1-4a6 6 0 0 1 12 0c0 2.5-.3 5-1 7"/></symbol>
+  <symbol id="i-mais" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M12 8v8M8 12h8"/></symbol>
+  <symbol id="i-pessoa" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></symbol>
+  <symbol id="i-fone" viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.9 2z"/></symbol>
+  <symbol id="i-env" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></symbol>
+  <symbol id="i-ok" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></symbol>
+  <symbol id="i-som" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></symbol>
+  <symbol id="i-nuvem" viewBox="0 0 24 24"><path d="M17.5 19a4.5 4.5 0 1 0-1.4-8.8A6 6 0 1 0 6 16.9"/><path d="M12 12v9M8.5 15.5L12 12l3.5 3.5"/></symbol>
+</svg>
+
+<div class="wrap" id="app">
+  <div class="aviso" id="carregando"><b>Abrindo…</b></div>
+</div>
+<input type="file" id="foto" accept="image/*" capture="environment">
+
+<script src="vendor/jspdf.umd.min.js"></script>
+<script>
+(function(){
+  'use strict';
+  var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
+  var DOCS = [
+    { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
+    { k: 'rg_frente', arq: 'RG - frente', t: 'RG', s: 'frente (com a foto)', ic: 'i-id', req: true, fala: 'Tire a foto da frente do RG, o lado com a foto.' },
+    { k: 'rg_verso', arq: 'RG - verso', t: 'RG', s: 'verso', ic: 'i-idv', fala: 'Agora o verso do RG.' },
+    { k: 'luz', arq: 'Conta de luz', t: 'Talão de luz', s: 'conta de energia', ic: 'i-luz', req: true, fala: 'Tire a foto do talão de luz.' },
+    { k: 'cpf', arq: 'CPF', t: 'CPF', s: 'se for separado do RG', ic: 'i-id', fala: 'Foto do CPF, se for separado do RG.' },
+    { k: 'arogo', arq: 'Documento a rogo', t: 'A rogo', s: 'se o cliente não assina', ic: 'i-dedo', fala: 'Se o cliente não sabe assinar, tire a foto do documento a rogo, com a digital e as testemunhas.', multi: true },
+    { k: 'outro', arq: 'Outro documento', t: 'Outros', s: 'outros documentos', ic: 'i-mais', fala: 'Foto de outro documento.', multi: true },
+    { k: 'cliente', arq: 'Foto do cliente', t: 'Foto do cliente', s: 'rosto, na casa dele', ic: 'i-pessoa', req: true, fala: 'Tire uma foto do rosto do cliente, de frente.' }
+  ];
+  var $ = function(id){ return document.getElementById(id); };
+  var esc = function(t){ return String(t == null ? '' : t).replace(/[&<>"']/g, function(c){ return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  var token = (location.hash.match(/t=([A-Za-z0-9_-]+)/) || [])[1] || lsGet('campo_token');
+  var quem = null, fotos = {}, atual = null, local = null, falandoOk = 'speechSynthesis' in window;
+
+  function lsGet(k){ try { return localStorage.getItem(k) || ''; } catch(e){ return ''; } }
+  function lsSet(k, v){ try { localStorage.setItem(k, v); } catch(e){} }
+  function falar(t){ if (!falandoOk || !t) return; try { speechSynthesis.cancel(); var u = new SpeechSynthesisUtterance(t); u.lang = 'pt-BR'; u.rate = 0.95; speechSynthesis.speak(u); } catch(e){} }
+
+  /* ---------- fila guardada no celular (funciona sem internet) ---------- */
+  var dbP = null;
+  function db(){
+    return dbP = dbP || new Promise(function(ok, erro){
+      var r = indexedDB.open('campo', 1);
+      r.onupgradeneeded = function(){ r.result.createObjectStore('envios', { keyPath: 'id' }); };
+      r.onsuccess = function(){ ok(r.result); }; r.onerror = function(){ erro(r.error); };
+    });
+  }
+  function tx(modo, f){ return db().then(function(d){ return new Promise(function(ok, erro){ var t = d.transaction('envios', modo), s = t.objectStore('envios'), res = f(s); t.oncomplete = function(){ ok(res && res.result !== undefined ? res.result : res); }; t.onerror = function(){ erro(t.error); }; }); }); }
+  var filaTodos = function(){ return tx('readonly', function(s){ return s.getAll(); }); };
+  var filaPor = function(e){ return tx('readwrite', function(s){ s.put(e); }); };
+  var filaTira = function(id){ return tx('readwrite', function(s){ s.delete(id); }); };
+
+  /* ---------- foto → imagem "escaneada" (fundo branco, texto escuro) ---------- */
+  function carregar(arq){
+    return new Promise(function(ok, erro){
+      var u = URL.createObjectURL(arq), im = new Image();
+      im.onload = function(){ URL.revokeObjectURL(u); ok(im); }; im.onerror = function(){ URL.revokeObjectURL(u); erro(new Error('foto inválida')); };
+      im.src = u;
+    });
+  }
+  function tratar(im, escanear){
+    var max = escanear ? 1800 : 1200, k = Math.min(1, max / Math.max(im.naturalWidth, im.naturalHeight));
+    var w = Math.round(im.naturalWidth * k), h = Math.round(im.naturalHeight * k);
+    var c = document.createElement('canvas'); c.width = w; c.height = h;
+    var x = c.getContext('2d'); x.drawImage(im, 0, 0, w, h);
+    if (escanear){
+      // fundo estimado com uma versão pequena e borrada da foto; dividir por ele tira sombra e deixa o papel branco
+      var bw = Math.max(8, Math.round(w / 24)), bh = Math.max(8, Math.round(h / 24));
+      var b = document.createElement('canvas'); b.width = bw; b.height = bh;
+      var bx = b.getContext('2d'); bx.filter = 'blur(2px)'; bx.drawImage(c, 0, 0, bw, bh);
+      var g = document.createElement('canvas'); g.width = w; g.height = h;
+      var gx = g.getContext('2d'); gx.imageSmoothingQuality = 'high'; gx.drawImage(b, 0, 0, w, h);
+      var px = x.getImageData(0, 0, w, h), fd = gx.getImageData(0, 0, w, h).data, d = px.data;
+      for (var i = 0; i < d.length; i += 4){
+        for (var j = 0; j < 3; j++){
+          var v = d[i + j] / Math.max(40, fd[i + j]) * 255;
+          v = (v - 40) * 1.25;                      // contraste
+          d[i + j] = v < 0 ? 0 : v > 255 ? 255 : v;
+        }
+      }
+      x.putImageData(px, 0, 0);
+    }
+    return new Promise(function(ok){ c.toBlob(function(bl){ ok({ blob: bl, w: w, h: h }); }, 'image/jpeg', escanear ? 0.72 : 0.8); });
+  }
+  function b64(blob){ return new Promise(function(ok){ var r = new FileReader(); r.onload = function(){ ok(String(r.result).split(',')[1]); }; r.readAsDataURL(blob); }); }
+  function dataUrl(blob){ return new Promise(function(ok){ var r = new FileReader(); r.onload = function(){ ok(r.result); }; r.readAsDataURL(blob); }); }
+
+  function pdfDe(paginas){
+    var doc = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4' }), W = 210, H = 297, M = 8;
+    return paginas.reduce(function(p, pg, i){
+      return p.then(function(){
+        return dataUrl(pg.blob).then(function(u){
+          if (i) doc.addPage();
+          var k = Math.min((W - 2 * M) / pg.w, (H - 2 * M) / pg.h), w = pg.w * k, h = pg.h * k;
+          doc.addImage(u, 'JPEG', (W - w) / 2, (H - h) / 2, w, h);
+        });
+      });
+    }, Promise.resolve()).then(function(){ return doc.output('blob'); });
+  }
+
+  /* ---------- telas ---------- */
+  function telaInicial(){
+    var n = Object.keys(fotos).length;
+    var falta = DOCS.filter(function(d){ return d.req && !fotos[d.k]; });
+    $('app').innerHTML =
+      '<header><div class="ava">' + esc((quem.nome || 'P').trim().charAt(0).toUpperCase()) + '</div><div><b>' + esc(quem.nome || 'Prospectador') + '</b><span>Novo cliente: tire as fotos</span></div>' +
+        (falandoOk ? '<button class="som" id="som" aria-label="Ouvir instruções"><svg><use href="#i-som"/></svg></button>' : '') + '</header>' +
+      '<div class="grid">' + DOCS.map(function(d){
+        var f = fotos[d.k];
+        if (f && f.length) return '<button class="doc feito" data-k="' + d.k + '"><div class="thumbs">' + f.slice(0, 3).map(function(x){ return '<img alt="" src="' + x.url + '">'; }).join('') + '</div>' +
+          '<span class="apagar" data-apagar="' + d.k + '" aria-label="Apagar">×</span><div class="marca"><svg viewBox="0 0 24 24"><use href="#i-ok"/></svg>' + esc(d.t) + (f.length > 1 ? ' · ' + f.length : '') + (d.multi ? ' · + foto' : '') + '</div></button>';
+        return '<button class="doc' + (d.req ? ' req' : '') + '" data-k="' + d.k + '">' + (d.req ? '<span class="estrela">*</span>' : '') + '<svg><use href="#' + d.ic + '"/></svg><span class="t">' + esc(d.t) + '</span><span class="s">' + esc(d.s) + '</span></button>';
+      }).join('') + '</div>' +
+      '<label class="fone"><svg viewBox="0 0 24 24"><use href="#i-fone"/></svg><input id="fone" inputmode="tel" placeholder="Telefone (se tiver)" value="' + esc(lsGet('campo_fone')) + '"></label>' +
+      '<div id="fila"></div><div id="meus"></div>' +
+      '<div class="barra"><button class="enviar" id="enviar"' + (n ? '' : ' disabled') + '><svg viewBox="0 0 24 24"><use href="#i-env"/></svg>Enviar cadastro</button></div>';
+    $('fone').addEventListener('input', function(){ lsSet('campo_fone', this.value); });
+    if ($('som')) $('som').addEventListener('click', function(){ falar(falta.length ? 'Toque em cada quadro e tire a foto. Faltam: ' + falta.map(function(d){ return d.t; }).join(', ') + '. Quando terminar, aperte o botão verde, enviar.' : 'Tudo pronto. Aperte o botão verde, enviar.'); });
+    Array.prototype.forEach.call(document.querySelectorAll('.doc'), function(b){
+      b.addEventListener('click', function(e){
+        var ap = e.target.closest('[data-apagar]');
+        if (ap){ e.stopPropagation(); if (confirm('Apagar as fotos de ' + DOCS.filter(function(d){ return d.k === ap.dataset.apagar; })[0].t + '?')){ delete fotos[ap.dataset.apagar]; telaInicial(); } return; }
+        var d = DOCS.filter(function(x){ return x.k === b.dataset.k; })[0];
+        if (fotos[d.k] && !d.multi && !confirm('Tirar a foto de novo?')) return;
+        atual = d; falar(d.fala);
+        $('foto').setAttribute('capture', d.k === 'cliente' ? 'user' : 'environment');
+        if (d.k === 'cliente') pegarLocal();
+        $('foto').click();
+      });
+    });
+    $('enviar').addEventListener('click', enviar);
+    mostrarFila(); mostrarMeus();
+  }
+  function pegarLocal(){
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(function(p){ local = { lat: +p.coords.latitude.toFixed(6), lng: +p.coords.longitude.toFixed(6), prec: Math.round(p.coords.accuracy) }; }, function(){}, { enableHighAccuracy: true, timeout: 20000, maximumAge: 60000 });
+  }
+  $('foto').addEventListener('change', function(){
+    var arq = this.files && this.files[0]; this.value = ''; if (!arq || !atual) return;
+    var d = atual;
+    carregar(arq).then(function(im){ return tratar(im, d.k !== 'cliente'); }).then(function(r){
+      r.url = URL.createObjectURL(r.blob);
+      fotos[d.k] = d.multi ? (fotos[d.k] || []).concat([r]) : [r];
+      telaInicial();
+      falar(d.multi ? 'Pronto. Se tiver outra folha, toque de novo.' : 'Pronto.');
+    }).catch(function(){ alert('Não deu para usar esta foto. Tire de novo.'); });
+  });
+
+  function tela(html){ var t = document.createElement('div'); t.className = 'tela'; t.innerHTML = '<div>' + html + '</div>'; document.body.appendChild(t); return t; }
+
+  function enviar(){
+    var falta = DOCS.filter(function(d){ return d.req && !fotos[d.k]; });
+    if (falta.length){
+      falar('Está faltando: ' + falta.map(function(d){ return d.t; }).join(', ') + '. Quer enviar assim mesmo?');
+      var t = tela('<svg viewBox="0 0 24 24" style="stroke:var(--warn)"><use href="#i-doc"/></svg><b>Faltam fotos</b><p>' + falta.map(function(d){ return esc(d.t); }).join(', ') + '</p><button id="t-voltar">Voltar e tirar</button><button class="sec2" id="t-mesmo">Enviar assim mesmo</button>');
+      t.querySelector('#t-voltar').onclick = function(){ t.remove(); };
+      t.querySelector('#t-mesmo').onclick = function(){ t.remove(); montar(falta); };
+      return;
+    }
+    montar([]);
+  }
+  function montar(falta){
+    var t = tela('<svg viewBox="0 0 24 24" style="stroke:var(--ok)"><use href="#i-nuvem"/></svg><b>Preparando…</b><p>Montando os documentos</p>');
+    var id = Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+    var arquivos = [], todas = [];
+    var p = Promise.resolve();
+    DOCS.forEach(function(d){
+      var f = fotos[d.k]; if (!f) return;
+      f.forEach(function(x, i){ arquivos.push({ nome: d.arq + (f.length > 1 ? ' ' + (i + 1) : '') + '.jpg', mime: 'image/jpeg', blob: x.blob }); });
+      if (d.k !== 'cliente'){
+        todas = todas.concat(f);
+        p = p.then(function(){ return pdfDe(f).then(function(pdf){ arquivos.push({ nome: d.arq + '.pdf', mime: 'application/pdf', blob: pdf }); }); });
+      }
+    });
+    p.then(function(){ return todas.length ? pdfDe(todas).then(function(pdf){ arquivos.push({ nome: '00 - Documentos completos.pdf', mime: 'application/pdf', blob: pdf }); }) : null; })
+     .then(function(){
+       var envio = { id: id, token: token, criado: new Date().toISOString(), contato: ($('fone') || {}).value || '', local: local, faltam: falta.map(function(d){ return d.k; }),
+         docs: DOCS.filter(function(d){ return fotos[d.k]; }).map(function(d){ return d.k; }), arquivos: arquivos.map(function(a){ return { nome: a.nome, mime: a.mime, blob: a.blob, ok: false }; }) };
+       return filaPor(envio).then(function(){ return envio; });
+     })
+     .then(function(envio){
+       fotos = {}; local = null; lsSet('campo_fone', '');
+       t.remove(); telaInicial();
+       if (!quem.envioUrl){ falar('O cadastro ficou guardado no celular.'); mostrarFila(); return; }
+       mandar(envio);
+     })
+     .catch(function(e){ t.remove(); alert('Erro ao preparar: ' + (e && e.message || e)); });
+  }
+
+  /* ---------- envio (repete sozinho quando a internet volta) ---------- */
+  var enviando = false;
+  function post(corpo){
+    return fetch(quem.envioUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(corpo) })
+      .then(function(r){ return r.json(); }).then(function(d){ if (!d || !d.ok) throw new Error(d && d.erro || 'falhou'); return d; });
+  }
+  function mandar(envio){
+    if (enviando || !quem || !quem.envioUrl) return Promise.resolve();
+    enviando = true;
+    var tot = envio.arquivos.length + 1, feitos = envio.arquivos.filter(function(a){ return a.ok; }).length;
+    var t = tela('<svg viewBox="0 0 24 24" style="stroke:var(--ok)"><use href="#i-nuvem"/></svg><b>Enviando…</b><p>Não feche esta tela</p><div class="prog"><span id="t-prog"></span></div><small id="t-txt"></small>');
+    var barra = function(){ var e = t.querySelector('#t-prog'); if (e) e.style.width = Math.round(feitos / tot * 100) + '%'; var x = t.querySelector('#t-txt'); if (x) x.textContent = feitos + ' de ' + tot; };
+    barra();
+    var p = Promise.resolve();
+    envio.arquivos.forEach(function(a){
+      if (a.ok) return;
+      p = p.then(function(){ return b64(a.blob); }).then(function(dados){ return post({ acao: 'arquivo', token: envio.token, envio: envio.id, nome: a.nome, mime: a.mime, b64: dados }); })
+           .then(function(){ a.ok = true; feitos++; barra(); return filaPor(envio); });
+    });
+    return p.then(function(){ t.querySelector('b').textContent = 'Lendo os documentos…'; t.querySelector('p').textContent = 'A inteligência artificial está lendo a procuração';
+        return post({ acao: 'fechar', token: envio.token, envio: envio.id, contato: envio.contato, local: envio.local, docs: envio.docs, faltam: envio.faltam }); })
+      .then(function(d){
+        return filaTira(envio.id).then(function(){
+          t.remove(); enviando = false;
+          falar('Cadastro enviado. Obrigado.' + (d.nome ? ' Cliente ' + d.nome + '.' : ''));
+          var ok = tela('<svg viewBox="0 0 24 24" style="stroke:var(--ok)"><use href="#i-ok"/></svg><b>Cadastro enviado!</b><p>' + (d.nome ? esc(d.nome) : 'O escritório vai conferir os dados') + '</p><button id="t-ok">Cadastrar outro cliente</button>');
+          ok.querySelector('#t-ok').onclick = function(){ ok.remove(); atualizarQuem().then(telaInicial); };
+          return proximo();
+        });
+      })
+      .catch(function(){
+        t.remove(); enviando = false;
+        falar('Sem internet agora. O cadastro ficou guardado no celular e vai ser enviado quando a internet voltar.');
+        var e = tela('<svg viewBox="0 0 24 24" style="stroke:var(--warn)"><use href="#i-nuvem"/></svg><b>Ficou guardado no celular</b><p>Sem internet agora. Quando o sinal voltar, abra esta página que o envio continua sozinho.</p><button id="t-ok">Entendi</button>');
+        e.querySelector('#t-ok').onclick = function(){ e.remove(); telaInicial(); };
+      });
+  }
+  function proximo(){ return filaTodos().then(function(l){ var e = l.filter(function(x){ return x.token === token; })[0]; if (e) return mandar(e); }); }
+  window.addEventListener('online', function(){ proximo(); });
+
+  function mostrarFila(){
+    filaTodos().then(function(l){
+      l = l.filter(function(x){ return x.token === token; });
+      if (!$('fila')) return;
+      $('fila').innerHTML = l.length ? '<div class="sec">Guardados no celular, esperando internet</div><div class="lista">' + l.map(function(e){
+        var f = e.arquivos.filter(function(a){ return a.ok; }).length;
+        return '<div><i class="warn"></i>' + new Date(e.criado).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + '<small>' + f + ' de ' + e.arquivos.length + ' enviados</small></div>';
+      }).join('') + '</div><div class="barra" style="position:static;padding:10px 0 0;background:none"><button class="enviar" id="reenviar" style="background:var(--warn)">Tentar enviar agora</button></div>' : '';
+      if ($('reenviar')) $('reenviar').onclick = proximo;
+    }).catch(function(){});
+  }
+  function mostrarMeus(){
+    var l = (quem && quem.cadastros) || [];
+    if (!$('meus') || !l.length) return;
+    var ET = { sem_protocolo: ['warn', 'Preparando a ação'], protocolado: ['blue', 'Ação protocolada'], audiencia: ['ok', 'Audiência marcada'] };
+    $('meus').innerHTML = '<div class="sec">Meus clientes cadastrados · ' + l.length + '</div><div class="lista">' + l.slice(0, 30).map(function(c){
+      var e = ET[c.etapa] || ET.sem_protocolo;
+      return '<div><i class="' + e[0] + '"></i>' + esc(c.nome) + '<small>' + e[1] + '</small></div>';
+    }).join('') + '</div>';
+  }
+
+  function atualizarQuem(){
+    return fetch(CFG.url + '/rest/v1/rpc/campo_quem', { method: 'POST', headers: { apikey: CFG.key, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_token: token }) })
+      .then(function(r){ return r.json(); }).then(function(d){ if (d && d.prospId){ quem = d; lsSet('campo_quem', JSON.stringify(d)); } else if (d === null){ quem = null; lsSet('campo_quem', ''); } return quem; })
+      .catch(function(){ return quem; });
+  }
+
+  if (!token){ $('app').innerHTML = '<div class="aviso"><b>Link incompleto</b>Peça ao escritório o seu link de cadastro.</div>'; return; }
+  lsSet('campo_token', token);
+  if (location.hash) history.replaceState(null, '', location.pathname);
+  try { quem = JSON.parse(lsGet('campo_quem') || 'null'); } catch(e){}
+  atualizarQuem().then(function(q){
+    if (!q){ $('app').innerHTML = '<div class="aviso"><b>Link cancelado</b>Este link não vale mais. Peça um novo ao escritório.</div>'; return; }
+    telaInicial();
+    if (!q.envioUrl){ tela('<b>Quase pronto</b><p>O escritório ainda está ligando o envio para o Drive. Você já pode tirar as fotos: elas ficam guardadas no celular.</p><button onclick="this.closest(\'.tela\').remove()">Entendi</button>'); }
+    else proximo();
+  });
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('campo-sw.js').catch(function(){});
+})();
+</script>
+</body>
+</html>
