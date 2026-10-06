@@ -1660,7 +1660,9 @@ body{font-size:14px}
   function passTel(r, f){ if (!f || f === 'todos') return true; if (f === 'novo') return !!(r.contato && r.telefoneAdicionadoEm); if (f === 'prosp') return pelaProsp(r); if (f === 'via') return !!clienteVia(r); if (f === 'sem') return !temContato(r) && !pelaProsp(r); return temTelefone(r); }
   function passResp(r, f){ if (!f) return true; if (f === '-') return !prospName(r.responsavelId); return r.responsavelId === f; }
   function fmtAny(s){ if (!s) return ''; return /^\d{4}-\d{2}-\d{2}$/.test(s) ? fmtDate(s) : new Date(s).toLocaleDateString('pt-BR'); }
-  function isFuture(r){ var n = daysUntil(r.audData); return n != null && n >= 0; }
+  // audiência de hoje com resultado lançado já conta como realizada (sai de marcadas e dos avisos)
+  function jaRealizada(r){ var n = daysUntil(r.audData); return n != null && (n < 0 || (n === 0 && !!(r.resultado || r.concluso || r.comparecimento))); }
+  function isFuture(r){ var n = daysUntil(r.audData); return n != null && n >= 0 && !jaRealizada(r); }
 
   /* smooth area sparkline, same look as the reference cards */
   function spark(values, color){
@@ -1698,10 +1700,10 @@ body{font-size:14px}
   }
   function passAviso(r, f){
     var n = daysUntil(r.audData), s = sit(r);
-    if (f === 'pendente') return !r.avisado && !!r.audData && n >= 0;
-    if (f === 'avisar') return !r.avisado && !!r.audData && n >= 0 && s !== 'sem_contato'; // still reachable, not yet notified
+    if (f === 'pendente') return !r.avisado && isFuture(r);
+    if (f === 'avisar') return !r.avisado && isFuture(r) && s !== 'sem_contato'; // still reachable, not yet notified
     if (f === 'avisado') return !!r.avisado;
-    if (f === 'avisadoMarc') return !!r.avisado && !!r.audData && n >= 0; // como no cartão Avisados
+    if (f === 'avisadoMarc') return !!r.avisado && isFuture(r); // como no cartão Avisados
     if (f === 'semcontato') return s === 'sem_contato';
     return true;
   }
@@ -1731,8 +1733,8 @@ body{font-size:14px}
     if (r.arquivado) return false;
     if (!f) return true;
     var n = daysUntil(r.audData), proc = !!String(r.processo || '').trim();
-    if (f === 'marcada') return n != null && n >= 0;
-    if (f === 'realizadas') return n != null && n < 0;
+    if (f === 'marcada') return isFuture(r);
+    if (f === 'realizadas') return jaRealizada(r);
     if (f === 'aguardaud') return proc && !r.audData;
     if (f === 'protocolados') return proc;
     if (f === 'protocolar') return !proc;
@@ -1743,7 +1745,7 @@ body{font-size:14px}
     if (f === 'semana') return n != null && n >= 0 && n <= 7;
     if (f === 'sem') return !r.audData;
     if (f === 'online') return !!r.online;
-    if (f === 'realizadas') return n != null && n < 0;            // audiência já aconteceu
+    if (f === 'realizadas') return jaRealizada(r);               // audiência já aconteceu
     if (f === 'protocolar') return !String(r.processo || '').trim(); // cadastrado, aguardando o protocolo da ação
     if (f === 'aguardaud') return !!String(r.processo || '').trim() && !r.audData; // protocolado, sem audiência marcada
     return true;
