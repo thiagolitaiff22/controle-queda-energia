@@ -995,8 +995,8 @@ body{font-size:14px}
     <nav class="nav" role="tablist" aria-orientation="horizontal">
       <button class="tab" role="tab" id="tab-clientes" aria-selected="true" type="button" title="Clientes"><svg class="i"><use href="#i-users"/></svg><span>Clientes</span></button>
       <button class="tab" role="tab" id="tab-ct" aria-selected="false" type="button" title="Contestações"><svg class="i"><use href="#i-scale"/></svg><span>Contestações</span></button>
-      <button class="tab" role="tab" id="tab-fin" aria-selected="false" type="button" title="Financeiro"><svg class="i"><use href="#i-cash"/></svg><span>Financeiro</span></button>
       <button class="tab" role="tab" id="tab-ret" aria-selected="false" type="button" title="Retorno"><svg class="i"><use href="#i-repeat"/></svg><span>Retorno</span></button>
+      <button class="tab admin-only" role="tab" id="tab-fin" aria-selected="false" type="button" title="Financeiro"><svg class="i"><use href="#i-cash"/></svg><span>Financeiro</span></button>
       <button class="tab admin-only" role="tab" id="tab-equipe" aria-selected="false" type="button" title="Configurações"><svg class="i"><use href="#i-gear"/></svg><span>Configurações</span></button>
     </nav>
     <div class="top-right">
@@ -2902,7 +2902,7 @@ body{font-size:14px}
   };
   function showTab(which){
     state.view = which;
-    if (which === 'e' && !isAdmin()) which = 'c';
+    if ((which === 'e' || which === 'f') && !isAdmin()) which = 'c';
     if (TITULOS[which]){ $('pg-tit').textContent = TITULOS[which][0]; $('pg-sub').textContent = TITULOS[which][1]; }
     $('btn-novo').hidden = which === 'e';
     Object.keys(VIEWS).forEach(function(k){ $(VIEWS[k][0]).setAttribute('aria-selected', k === which ? 'true' : 'false'); $(VIEWS[k][1]).hidden = k !== which; });
