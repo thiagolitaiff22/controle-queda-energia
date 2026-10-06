@@ -1001,6 +1001,8 @@ body{font-size:14px}
 #dlg-integ .integ > div:first-child .integ-t{display:none}
 
 #dlg-integ .integ-form .pw input{padding-right:12px!important}
+
+.ct-xlsx{height:36px;white-space:nowrap}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -1198,6 +1200,7 @@ body{font-size:14px}
           <select id="ct-tese-sel" class="tb-sel ct-tese-sel" aria-label="Tese"></select>
           <select id="ct-res-sel" class="tb-sel" aria-label="Resultado"></select>
           <button type="button" class="tb-btn ct-on-btn" id="ct-on-btn" hidden title="Mostrar só quem faz a audiência online"></button>
+          <button type="button" class="btn ct-xlsx" id="ct-xlsx" hidden title="Planilha desta audiência: nome, CPF e endereço, separados por tese"><svg class="i"><use href="#i-file"/></svg>Baixar planilha</button>
           <span class="tb-fim fb-count tnum" id="ct-count"></span>
         </div>
         <div hidden><button type="button" id="ct-aud-ant"></button><button type="button" id="ct-aud-prox"></button><span id="ct-aud-info"></span><button type="button" id="ct-geral"></button></div>
@@ -2940,7 +2943,7 @@ body{font-size:14px}
     if (ctSessao === null) ctSessao = ''; // opens on the general view (all hearings)
     if (ctSessao && !sess[ctSessao]) ctSessao = '';
     montarSelectSessao($('ct-aud-sel'), ctSessao, $('ct-aud-info'), $('ct-aud-ant'), $('ct-aud-prox'));
-    $('ct-geral').hidden = !ctSessao;
+    $('ct-geral').hidden = !ctSessao; $('ct-xlsx').hidden = !ctSessao;
     var nOn = state.rows.filter(function(r){ return r.online && (!ctSessao || chaveS(r) === ctSessao); }).length;
     $('ct-on-btn').hidden = !nOn && !ctOnline; $('ct-on-btn').setAttribute('aria-pressed', ctOnline); $('ct-on-btn').innerHTML = 'Online · ' + nOn;
     var rows = state.rows.filter(function(r){ return !ctSessao || chaveS(r) === ctSessao; });
@@ -3797,6 +3800,64 @@ body{font-size:14px}
   }
 
   var jspdfP = null;
+  var exceljsP = null;
+  function loadExcel(){
+    if (window.ExcelJS) return Promise.resolve(window.ExcelJS);
+    if (!exceljsP) exceljsP = new Promise(function(res, rej){
+      var s = document.createElement('script'); s.src = 'vendor/exceljs.min.js';
+      s.onload = function(){ window.ExcelJS ? res(window.ExcelJS) : rej(new Error('load')); };
+      s.onerror = function(){ exceljsP = null; rej(new Error('load')); };
+      document.head.appendChild(s);
+    });
+    return exceljsP;
+  }
+  /* planilha da audiência escolhida em Contestações: um bloco por tese (como na tela), nomes em ordem alfabética */
+  $('ct-xlsx').addEventListener('click', async function(){
+    if (!ctSessao) return;
+    var b = this; b.disabled = true;
+    try {
+      var X = await loadExcel();
+      var p = ctSessao.split('|'), data = p[0], hora = p[1] || '';
+      var rows = state.rows.filter(function(r){ return (r.audData || '') + '|' + (r.audHora || '') === ctSessao; });
+      var grupos = {}; rows.forEach(function(r){ var c = comboDe(r) || '__sem'; (grupos[c] = grupos[c] || []).push(r); });
+      var nT = function(c){ return c === '__sem' ? 99 : c.split('+').length; };
+      var ordem = Object.keys(grupos).sort(function(x, y){ return nT(x) - nT(y) || grupos[y].length - grupos[x].length || nomeCombo(x).localeCompare(nomeCombo(y), 'pt'); });
+      var titulo = 'Audiência de ' + fmtDate(data) + (hora ? ' às ' + hora.replace(':00', 'h') : '') + ' · ' + rows.length + ' clientes';
+      var wb = new X.Workbook(); wb.creator = 'Rodrigues Litaiff Advogados';
+      var ws = wb.addWorksheet('Por tese', { pageSetup: { paperSize: 9, orientation: 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 0, margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.5, header: 0.2, footer: 0.2 } }, views: [{ state: 'frozen', ySplit: 2 }] });
+      ws.columns = [{ width: 6 }, { width: 42 }, { width: 17 }, { width: 62 }];
+      var borda = { top: { style: 'thin', color: { argb: 'FFD9DDE3' } }, bottom: { style: 'thin', color: { argb: 'FFD9DDE3' } }, left: { style: 'thin', color: { argb: 'FFD9DDE3' } }, right: { style: 'thin', color: { argb: 'FFD9DDE3' } } };
+      ws.mergeCells('A1:D1'); ws.getCell('A1').value = 'Contestações · ' + titulo; ws.getCell('A1').font = { bold: true, size: 14 };
+      ws.getRow(1).height = 24;
+      ws.getRow(2).values = ['Nº', 'Nome', 'CPF', 'Endereço'];
+      ws.getRow(2).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      ws.getRow(2).eachCell(function(c){ c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF111827' } }; c.border = borda; });
+      var n = 0;
+      ordem.forEach(function(k){
+        var lista = grupos[k].slice().sort(function(a, c){ return String(a.nome || '').localeCompare(String(c.nome || ''), 'pt'); });
+        var t = ws.addRow([(k === '__sem' ? 'Sem tese registrada' : nomeCombo(k)).toUpperCase() + ' · ' + lista.length + (lista.length === 1 ? ' cliente' : ' clientes')]);
+        ws.mergeCells('A' + t.number + ':D' + t.number);
+        t.font = { bold: true }; t.height = 20;
+        t.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8EEF9' } }; t.getCell(1).border = borda;
+        lista.forEach(function(r){
+          n++;
+          var l = ws.addRow([n, r.nome || '', r.cpf || '', r.endereco || '']);
+          l.eachCell({ includeEmpty: true }, function(c){ c.border = borda; c.alignment = { vertical: 'top', wrapText: true }; });
+          l.getCell(1).alignment = { horizontal: 'center', vertical: 'top' };
+        });
+      });
+      var rs = wb.addWorksheet('Resumo');
+      rs.columns = [{ width: 52 }, { width: 12 }];
+      rs.addRow([titulo]).font = { bold: true, size: 13 };
+      rs.addRow(['Tese', 'Clientes']).font = { bold: true };
+      ordem.forEach(function(k){ rs.addRow([k === '__sem' ? 'Sem tese registrada' : nomeCombo(k), grupos[k].length]); });
+      rs.addRow(['Total', rows.length]).font = { bold: true };
+      var buf = await wb.xlsx.writeBuffer();
+      baixarArquivo('Contestações ' + data.split('-').reverse().join('-') + (hora ? ' ' + hora.replace(':', 'h') : '') + '.xlsx', new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+      toast('Planilha gerada: ' + rows.length + ' clientes em ' + ordem.length + ' grupos de tese');
+    } catch(err){ toast('Não foi possível gerar a planilha: ' + (err && err.message || err)); }
+    finally { b.disabled = false; }
+  });
   function loadJsPDF(){
     if (window.jspdf && window.jspdf.jsPDF) return Promise.resolve(window.jspdf.jsPDF);
     if (!jspdfP) jspdfP = new Promise(function(res, rej){
