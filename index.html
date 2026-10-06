@@ -869,6 +869,14 @@ body{font-size:14px}
 .regua-etapas .pill + .pill::before{content:'·';margin-right:6px;color:var(--ink-3)}
 .integ details > summary{cursor:pointer;font-size:13px;font-weight:500;color:var(--ink-2)}
 .prosp-card,.eq-row{border-color:var(--line)}
+
+.etp{display:inline-flex;flex-wrap:wrap;border:1px solid var(--line-2);border-radius:5px;overflow:hidden;background:var(--panel);width:max-content;max-width:100%}
+.etp button{border:0;background:none;padding:7px 14px;font:inherit;font-size:13px;font-weight:500;color:var(--ink-2);cursor:pointer;white-space:nowrap;border-radius:0;display:inline-flex;align-items:center;gap:8px}
+.etp button + button{border-left:1px solid var(--line-2)}
+.etp button:hover{background:var(--hover);color:var(--ink)}
+.etp button span{font-size:12px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.etp button[aria-pressed="true"]{background:var(--primary);color:var(--on-primary);font-weight:600}
+.etp button[aria-pressed="true"] span{color:var(--on-primary);opacity:.75}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -987,13 +995,11 @@ body{font-size:14px}
             <button type="button" data-p="semcontato"><i class="dot crit"></i>Sem contato <span class="n" data-np="semcontato"></span></button>
             <button type="button" data-p="semtel">Sem telefone <span class="n" data-np="semtel"></span></button>
             <button type="button" data-p="online">Online <span class="n" data-np="online"></span></button>
-            <button type="button" data-p="realizadas">Audiências realizadas <span class="n" data-np="realizadas"></span></button>
-            <button type="button" data-p="aguardaud">Aguardando audiência <span class="n" data-np="aguardaud"></span></button>
-            <button type="button" data-p="protocolar">Aguardando protocolo <span class="n" data-np="protocolar"></span></button>
             
           </div>
           <button type="button" id="cl-aud-ant"></button><button type="button" id="cl-aud-prox"></button><span id="cl-aud-info"></span>
         </div>
+        <div class="etp" id="cl-etapa" role="group" aria-label="Etapa do processo"></div>
         <div class="bc-res" id="bc-res" hidden></div>
         <div class="stats">
           <div class="card stat">
@@ -1435,6 +1441,17 @@ body{font-size:14px}
     if (f === 'semcontato') return s === 'sem_contato';
     return true;
   }
+  // stage of the process, chosen in the stage control of the Clientes tab
+  var ETAPA_CL = [['', 'Todos'], ['marcada', 'Audiência marcada'], ['realizadas', 'Audiências realizadas'], ['aguardaud', 'Aguardando audiência'], ['protocolar', 'Aguardando protocolo']];
+  function passEtapaCl(r, f){
+    if (!f) return true;
+    var n = daysUntil(r.audData), proc = !!String(r.processo || '').trim();
+    if (f === 'marcada') return n != null && n >= 0;
+    if (f === 'realizadas') return n != null && n < 0;
+    if (f === 'aguardaud') return proc && !r.audData;
+    if (f === 'protocolar') return !proc;
+    return true;
+  }
   function passAud(r, f){
     var n = daysUntil(r.audData);
     if (f === 'semana') return n != null && n >= 0 && n <= 7;
@@ -1452,6 +1469,7 @@ body{font-size:14px}
     if (state.hora && (r.audHora || '') !== state.hora) return false;
     if (!passAviso(r, o.aviso || state.filter)) return false;
     if (!passAud(r, o.aud || state.aud)) return false;
+    if (!passEtapaCl(r, 'etapaCl' in o ? o.etapaCl : state.etapaCl)) return false;
     if (!passResp(r, 'resp' in o ? o.resp : state.resp)) return false;
     if (!passTel(r, o.tel || state.tel)) return false;
     if (!passMeio(r, o.meio || state.meio)) return false;
@@ -1596,10 +1614,7 @@ body{font-size:14px}
     avisar: { filter: 'avisar' },
     semcontato: { filter: 'semcontato' },
     semtel: { tel: 'sem' },
-    online: { aud: 'online' },
-    realizadas: { aud: 'realizadas' },
-    aguardaud: { aud: 'aguardaud' },
-    protocolar: { aud: 'protocolar' }
+    online: { aud: 'online' }
   };
   var FILTRO_PADRAO = { filter: 'todos', aud: 'todas', tel: 'todos', meio: 'todos', resp: '' };
   function presetAtual(){
@@ -1640,7 +1655,9 @@ body{font-size:14px}
     if (state.resp && state.resp !== '-' && !prospById(state.resp)) state.resp = '';
     sel.value = state.resp; sel.classList.toggle('ativo', !!state.resp); if (state.resp) avancados++;
     $('fb-badge').hidden = !avancados; $('fb-badge').textContent = avancados;
-    var NOMES_P = { todos: 'Todas as situações', avisar: 'A avisar', semcontato: 'Sem contato', semtel: 'Sem telefone', online: 'Online', realizadas: 'Audiências realizadas', aguardaud: 'Protocolados, aguardando audiência', protocolar: 'Cadastrados, aguardando protocolo' };
+    $('cl-etapa').innerHTML = ETAPA_CL.map(function(x){ var n = rows.filter(function(r){ return matches(r, { etapaCl: x[0] }); }).length;
+      return '<button type="button" data-etapa-cl="' + x[0] + '" aria-pressed="' + ((state.etapaCl || '') === x[0]) + '">' + x[1] + '<span>' + n + '</span></button>'; }).join('');
+    var NOMES_P = { todos: 'Todas as situações', avisar: 'A avisar', semcontato: 'Sem contato', semtel: 'Sem telefone', online: 'Online' };
     $('fb-sit').innerHTML = Array.prototype.map.call($('fb-rapido').querySelectorAll('[data-p]'), function(b){ return '<option value="' + b.dataset.p + '">' + NOMES_P[b.dataset.p] + ' · ' + b.querySelector('.n').textContent + '</option>'; }).join('') + (atual ? '' : '<option value="" selected>Filtro personalizado</option>');
     $('fb-sit').value = atual || '';
     $('fb-sit').classList.toggle('ativo', !!atual && atual !== 'todos');
@@ -2539,6 +2556,7 @@ body{font-size:14px}
   $('btn-novo').addEventListener('click', function(){ openForm(null); });
   $('f-via-tirar').addEventListener('click', function(){ $('f-via-box').dataset.tirar = '1'; $('f-via-nome').textContent = 'Vínculo será removido ao salvar'; });
   $('q').addEventListener('input', function(e){ state.q = e.target.value.trim(); state.limit = 100; renderList(); });
+  $('cl-etapa').addEventListener('click', function(e){ var b = e.target.closest('[data-etapa-cl]'); if (!b) return; state.etapaCl = b.dataset.etapaCl; state.limit = 100; renderList(); });
   $('fb-sit').addEventListener('change', function(){ var b = $('fb-rapido').querySelector('[data-p="' + this.value + '"]'); if (b) b.click(); });
   $('fb-rapido').addEventListener('click', function(e){
     var b = e.target.closest('[data-p]'); if (!b) return;
@@ -2558,7 +2576,7 @@ body{font-size:14px}
   $('fb-resp').addEventListener('change', function(e){ state.resp = e.target.value; state.limit = 100; renderList(); });
   $('fb-dia').addEventListener('click', function(){ state.dia = ''; state.hora = ''; state.limit = 100; renderPauta(); renderList(); renderClSessao(); });
   $('fb-clear').addEventListener('click', function(){
-    state.filter = 'todos'; state.aud = 'todas'; state.tel = 'todos'; state.meio = 'todos'; state.dia = ''; state.hora = ''; state.q = ''; state.resp = ''; $('q').value = ''; $('bc-q').value = ''; renderBusca(); state.limit = 100;
+    state.filter = 'todos'; state.etapaCl = ''; state.aud = 'todas'; state.tel = 'todos'; state.meio = 'todos'; state.dia = ''; state.hora = ''; state.q = ''; state.resp = ''; $('q').value = ''; $('bc-q').value = ''; renderBusca(); state.limit = 100;
     renderPauta(); renderList();
   });
   $('pauta').addEventListener('click', function(e){
