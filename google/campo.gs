@@ -9,10 +9,14 @@
  *     do mesmo jeito, mas o nome e o CPF ficam para o escritório preencher.
  *  3. Implantar › Nova implantação › Tipo: App da Web · Executar como: Eu · Quem pode acessar: Qualquer pessoa.
  *  4. Copie o endereço que termina em /exec e cole no sistema: Configurações › Cadastro pelo celular.
+ *
+ * Pastas: o cliente novo entra em 1. CLIENTES › 1. PENDENTES. De hora em hora o script confere no sistema
+ * quem já tem número de processo e move a pasta para 1. CLIENTES › 2. PROTOCOLADOS.
  */
 var SUPABASE_URL = 'https://etmknidodbmtpvbzgvhp.supabase.co';
 var SUPABASE_KEY = 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r'; // chave pública do site
-var PASTA_CLIENTES = '117gYqpeBYMhLWENcpQo7eC7RoJebiTBx';
+var PASTA_CLIENTES = '1LhuCyBh-TCwgxDcQUv2BLsNjmI3zRK9t'; // 1. CLIENTES
+var PENDENTES = '1. PENDENTES', PROTOCOLADOS = '2. PROTOCOLADOS';
 var MODELO = 'claude-sonnet-5-5';
 
 var NOMES = {
@@ -24,6 +28,7 @@ function doGet(){ return saida({ ok: true, servico: 'cadastro pelo celular' }); 
 
 function doPost(e){
   try {
+    gatilho();
     var p = JSON.parse(e.postData.contents);
     var quem = validar(p.token);
     if (!/^[A-Za-z0-9_-]{8,64}$/.test(p.envio || '')) throw new Error('Envio inválido.');
@@ -65,7 +70,7 @@ function pastaDoEnvio(envio, quem){
     id = props.getProperty('pasta_' + envio);
     if (id) return DriveApp.getFolderById(id);
     var nome = 'NOVO CADASTRO - ' + (quem.nome || 'prospectador') + ' - ' + Utilities.formatDate(new Date(), 'America/Manaus', 'dd-MM-yyyy HH.mm');
-    var f = DriveApp.getFolderById(PASTA_CLIENTES).createFolder(nome);
+    var f = subpasta(DriveApp.getFolderById(PASTA_CLIENTES), PENDENTES).createFolder(nome);
     props.setProperty('pasta_' + envio, f.getId());
     return f;
   } finally { lock.releaseLock(); }
@@ -146,4 +151,22 @@ function cpfValido(c){
   c = String(c).replace(/\D/g, ''); if (c.length !== 11 || /^(\d)\1+$/.test(c)) return false;
   for (var t = 9; t < 11; t++){ var s = 0; for (var i = 0; i < t; i++) s += +c[i] * (t + 1 - i); if (((10 * s) % 11) % 10 !== +c[t]) return false; }
   return true;
+}
+
+/* de hora em hora: pastas de PENDENTES cujo cliente já foi protocolado vão para PROTOCOLADOS */
+function gatilho(){
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('gatilho_ok')) return;
+  if (!ScriptApp.getProjectTriggers().some(function(t){ return t.getHandlerFunction() === 'moverProtocolados'; }))
+    ScriptApp.newTrigger('moverProtocolados').timeBased().everyHours(1).create();
+  props.setProperty('gatilho_ok', '1');
+}
+function moverProtocolados(){
+  var raiz = DriveApp.getFolderById(PASTA_CLIENTES), pend = subpasta(raiz, PENDENTES), prot = subpasta(raiz, PROTOCOLADOS);
+  var it = pend.getFolders(), porId = {};
+  while (it.hasNext()){ var f = it.next(); porId[f.getId()] = f; }
+  var ids = Object.keys(porId); if (!ids.length) return 0;
+  var feitos = rpc('campo_pastas_protocoladas', { p_ids: ids }) || [];
+  feitos.forEach(function(id){ if (porId[id]) porId[id].moveTo(prot); });
+  return feitos.length;
 }

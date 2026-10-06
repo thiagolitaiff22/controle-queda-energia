@@ -107,3 +107,15 @@ revoke all on function public.campo_cadastrar(text, text, jsonb) from public;
 grant execute on function public.campo_cadastrar(text, text, jsonb) to anon, authenticated;
 
 select 'ok' as campo;
+
+-- script do Google: das pastas que ele tem em PENDENTES, quais clientes já têm número de processo
+create or replace function public.campo_pastas_protocoladas(p_ids text[])
+returns text[] language sql stable security definer set search_path = public as $$
+  select coalesce(array_agg(c.data ->> 'pastaId'), '{}')
+  from public.clientes c
+  where c.data ->> 'pastaId' = any(p_ids[1:500]) and coalesce(trim(c.data ->> 'processo'), '') <> ''
+$$;
+revoke all on function public.campo_pastas_protocoladas(text[]) from public;
+grant execute on function public.campo_pastas_protocoladas(text[]) to anon, authenticated;
+
+select 'ok' as campo_pastas;
