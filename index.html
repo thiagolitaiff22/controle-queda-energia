@@ -942,6 +942,34 @@ body{font-size:14px}
 .fin-custo{color:var(--red)}
 .fin-destaque td{background:var(--soft)}
 .fin-tbl .mini{white-space:normal}
+
+/* ---------- repasse ---------- */
+.rep-btn{border:1px solid var(--line-2);background:var(--panel);border-radius:6px;padding:4px 10px;font:inherit;font-size:12px;font-weight:600;color:var(--ink);cursor:pointer;white-space:nowrap}
+.rep-btn:hover{background:var(--hover)}
+.rep-st{font-size:12px;font-weight:600;white-space:nowrap;border:0;background:none;padding:0;font-family:inherit}
+.rep-st.ok{color:var(--green);cursor:pointer}
+.rep-st.ok:hover{text-decoration:underline}
+.rep-st.warn{color:var(--amber)}
+.rep-cli{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--soft)}
+.rep-cli span{font-size:12.5px;color:var(--ink-3)}
+.rep-conta{display:flex;flex-direction:column;gap:6px}
+.rep-conta div{display:flex;justify-content:space-between;font-size:13.5px;border-bottom:1px solid var(--line);padding-bottom:6px}
+.rep-in{width:100%!important;height:36px!important;text-align:left!important}
+.rep-aviso{font-size:12.5px;color:var(--amber);margin-bottom:8px}
+.rep-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px}
+.rep-grid label{display:block;font-size:12.5px;font-weight:600;color:var(--ink-2);margin-bottom:4px}
+.rep-grid input{width:100%}
+@media (max-width:640px){ .rep-grid{grid-template-columns:1fr} }
+#dlg-rec .f-foot,#dlg-rep .f-foot{gap:8px;flex-wrap:wrap}
+
+.btn.danger-txt{color:var(--red)}
+#fin-ano-csv{height:36px}
+
+.vw-dash .r-stats.stats.three{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:1100px){ .vw-dash .r-stats.stats.three{grid-template-columns:repeat(2,minmax(0,1fr))} }
+.r-arq{text-align:left;font:inherit;color:inherit;cursor:pointer}
+.r-arq:hover{border-color:var(--line-2)!important}
+.r-arq[aria-pressed="true"]{border-color:var(--blue)!important}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -1148,18 +1176,23 @@ body{font-size:14px}
       </section>
 
       <section id="view-fin" class="vw-dash" hidden style="display:flex;flex-direction:column;gap:18px">
-        <div class="res-rap fin-sub" role="tablist" aria-label="Parte do financeiro"><button type="button" data-fin="receita" aria-pressed="true">Receita</button><button type="button" data-fin="prosp" aria-pressed="false">Prospectadores</button><button type="button" data-fin="resultado" aria-pressed="false">Resultado</button></div>
+        <div class="res-rap fin-sub" role="tablist" aria-label="Parte do financeiro"><button type="button" data-fin="receita" aria-pressed="true">Receita</button><button type="button" data-fin="prosp" aria-pressed="false">Prospectadores</button><button type="button" data-fin="resultado" aria-pressed="false">Resultado</button><button type="button" data-fin="anual" aria-pressed="false">Faturamento anual</button></div>
         <div class="fbar">
           <div class="search tb-busca"><svg class="i"><use href="#i-search"/></svg><input id="fin-q" type="search" placeholder="Buscar cliente por nome ou CPF"></div>
           <select id="fin-aud-sel" class="tb-sel" aria-label="Audiência"></select>
           <select id="fin-pag-sel" class="tb-sel" aria-label="Pagamento"></select>
+          <select id="fin-ano-sel" class="tb-sel" aria-label="Ano" hidden></select>
+          <button type="button" class="btn" id="fin-ano-csv" hidden><svg class="i"><use href="#i-file"/></svg>Baixar planilha do ano</button>
           <span class="tb-fim" id="fin-count"></span>
         </div>
         <div hidden><button type="button" id="fin-aud-ant"></button><button type="button" id="fin-aud-prox"></button><span id="fin-aud-info"></span></div>
         <div class="stats fin-stats" id="fin-stats"></div>
         <div class="fin-regra" id="fin-regra"></div>
+        <div class="fin-anual" hidden>
+          <div class="card ct-tab"><table class="ct-tbl fin-tbl"><thead><tr><th>Mês</th><th class="dir">Processos recebidos</th><th class="dir">Valor que caiu</th><th class="dir">Faturamento (honorários)</th><th class="dir">Repassado aos clientes</th><th class="dir">Prospectadores</th><th class="dir">Líquido</th></tr></thead><tbody id="fin-ano-body"></tbody></table></div>
+        </div>
         <div class="fin-receita">
-        <div class="card ct-tab"><table class="ct-tbl fin-tbl"><thead><tr><th>Cliente</th><th>Processo</th><th>Audiência</th><th class="dir">Condenação</th><th class="dir">Escritório</th><th class="dir">Cliente</th><th>Pagamento</th></tr></thead><tbody id="fin-body"></tbody></table></div>
+        <div class="card ct-tab"><table class="ct-tbl fin-tbl"><thead><tr><th>Cliente</th><th>Processo</th><th>Audiência</th><th class="dir">Condenação</th><th class="dir">Escritório</th><th class="dir">Cliente</th><th>Pagamento</th><th>Repasse ao cliente</th></tr></thead><tbody id="fin-body"></tbody></table></div>
         </div>
         <div class="fin-resultado" hidden>
           <div class="card ct-tab"><table class="ct-tbl fin-tbl"><thead><tr><th>Cenário</th><th class="dir">Processos</th><th class="dir">Faturamento do escritório</th><th class="dir">Gasto com prospectadores</th><th class="dir">Resultado líquido</th></tr></thead><tbody id="fin-res-body"></tbody></table></div>
@@ -1178,13 +1211,15 @@ body{font-size:14px}
             <option value="30">Liberam nos próximos 30 dias</option>
             <option value="aguardando">Ainda aguardando</option>
             <option value="contatado">Já contatados</option>
+            <option value="arquivado">Arquivados (pagos)</option>
           </select>
           <span class="tb-fim" id="r-count"></span>
         </div>
-        <div class="stats three">
+        <div class="stats three r-stats">
           <div class="card stat"><div class="stat-h"><svg class="i"><use href="#i-check"/></svg>Podem entrar de novo<span class="help" title="Já passaram 6 meses desde o protocolo e ainda não foram contatados.">?</span></div><div class="stat-v tnum" id="r-s1">0</div><div class="stat-c">aguardando nosso contato</div><div class="stat-viz" id="r-v1"></div></div>
           <div class="card stat"><div class="stat-h"><svg class="i"><use href="#i-clock"/></svg>Próximos 30 dias<span class="help" title="Clientes que completam 6 meses do protocolo nos próximos 30 dias.">?</span></div><div class="stat-v tnum" id="r-s2">0</div><div class="stat-c">liberam para nova ação</div><div class="stat-viz" id="r-v2"></div></div>
           <div class="card stat"><div class="stat-h"><svg class="i"><use href="#i-users"/></svg>Já contatados<span class="help" title="Clientes marcados como contatados para a nova ação.">?</span></div><div class="stat-v tnum" id="r-s3">0</div><div class="stat-c">para a nova ação</div><div class="stat-viz" id="r-v3"></div></div>
+          <button type="button" class="card stat r-arq" id="r-arq" title="Mostrar só os arquivados"><div class="stat-h"><svg class="i"><use href="#i-file"/></svg>Arquivados<span class="help" title="Processos encerrados: o cliente já recebeu o dinheiro. Saem do fluxo de Clientes e ficam aqui, prontos para a nova ação.">?</span></div><div class="stat-v tnum" id="r-s4">0</div><div class="stat-c" id="r-s4-c">&nbsp;</div><div class="stat-viz"></div></button>
         </div>
         <div class="card termo" id="r-termo"></div>
         <div class="sec-title" id="r-title" hidden>Clientes</div>
@@ -1347,6 +1382,65 @@ body{font-size:14px}
 </dialog>
 
 
+
+<dialog id="dlg-rec">
+  <form class="f" id="form-rec" novalidate>
+    <div class="f-head"><div class="ph-tile" style="margin:0"><svg class="i"><use href="#i-cash"/></svg></div><h2>Caiu na conta</h2></div>
+    <div class="f-body">
+      <div class="field full"><div class="rep-cli" id="rec-cli"></div></div>
+      <div class="field"><label for="rec-data">Data em que caiu</label><input id="rec-data" type="date"></div>
+      <div class="field"><label for="rec-valor">Valor que caiu (condenação)</label><input id="rec-valor" class="fin-valor rep-in" type="text" inputmode="numeric"></div>
+      <div class="field full"><label for="rec-obs">Observação</label><input id="rec-obs" autocomplete="off" placeholder="Ex.: alvará nº, banco, conta"></div>
+      <div class="field full"><div class="rep-conta" id="rec-conta"></div></div>
+    </div>
+    <div class="f-foot">
+      <button class="btn" type="button" id="rec-pdf"><svg class="i"><use href="#i-file"/></svg>Prestação de contas (PDF)</button>
+      <div class="right">
+        <button class="btn" type="button" id="rec-cancel">Cancelar</button>
+        <button class="btn primary" type="submit" id="rec-save">Salvar</button>
+      </div>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-rep">
+  <form class="f" id="form-rep" novalidate>
+    <div class="f-head"><div class="ph-tile" style="margin:0"><svg class="i"><use href="#i-check"/></svg></div><h2>Pagar o cliente</h2></div>
+    <div class="f-body">
+      <div class="field full"><div class="rep-cli" id="rep-cli"></div></div>
+      <div class="field"><label for="rep-data">Data do pagamento</label><input id="rep-data" type="date"></div>
+      <div class="field"><label for="rep-valor">Valor pago ao cliente</label><input id="rep-valor" class="fin-valor rep-in" type="text" inputmode="numeric"></div>
+      <div class="field full"><label for="rep-forma">Forma de pagamento</label>
+        <select id="rep-forma">
+          <option value="pix_cliente">Pix na conta do próprio cliente</option>
+          <option value="pix_terceiro">Pix para outra pessoa (parente)</option>
+          <option value="dinheiro">Dinheiro em mãos</option>
+          <option value="transferencia">Transferência bancária</option>
+        </select>
+      </div>
+      <div class="field full" id="rep-pix-box"><label for="rep-pix">Chave Pix usada</label><input id="rep-pix" autocomplete="off" placeholder="CPF, telefone, e-mail ou chave aleatória"></div>
+      <div class="rep-terceiro field full" id="rep-terc-box" hidden>
+        <div class="rep-aviso">Para pagar outra pessoa, o cliente assina antes o <b>termo de autorização</b> (botão abaixo).</div>
+        <div class="rep-grid">
+          <div><label for="rep-tnome">Nome de quem recebe</label><input id="rep-tnome" autocomplete="off"></div>
+          <div><label for="rep-tcpf">CPF de quem recebe</label><input id="rep-tcpf" inputmode="numeric" autocomplete="off"></div>
+          <div><label for="rep-tpar">Parentesco</label><input id="rep-tpar" autocomplete="off" placeholder="Ex.: filha, irmão"></div>
+        </div>
+      </div>
+      <div class="field full" id="rep-test-box" hidden><label for="rep-test">Testemunha</label><input id="rep-test" autocomplete="off" placeholder="Nome de quem presenciou a entrega do dinheiro"></div>
+      <div class="field full"><span class="hint">Depois de pagar, guarde o recibo assinado (foto ou PDF) e o comprovante do Pix na pasta do cliente no Drive.</span></div>
+    </div>
+    <div class="f-foot">
+      <button class="btn" type="button" id="rep-termo" hidden><svg class="i"><use href="#i-file"/></svg>Termo de autorização</button>
+      <button class="btn" type="button" id="rep-recibo"><svg class="i"><use href="#i-file"/></svg>Recibo de quitação</button>
+      <div class="right">
+        <button class="btn danger-txt" type="button" id="rep-desfazer" hidden>Desfazer pagamento</button>
+        <button class="btn" type="button" id="rep-cancel">Cancelar</button>
+        <button class="btn primary" type="submit" id="rep-save">Registrar pagamento</button>
+      </div>
+    </div>
+  </form>
+</dialog>
 
 <dialog id="dlg-aviso">
   <form class="f" id="form-aviso" novalidate>
@@ -1551,7 +1645,11 @@ body{font-size:14px}
     }
     state.limit = 100; renderList();
   }
+  // arquivado: processo pago ao cliente e encerrado; sai do fluxo e fica só em Arquivados
+  function naoArquivado(r){ return !r.arquivado; }
   function passEtapaCl(r, f){
+    if (f === 'arquivados') return !!r.arquivado;
+    if (r.arquivado) return false;
     if (!f) return true;
     var n = daysUntil(r.audData), proc = !!String(r.processo || '').trim();
     if (f === 'marcada') return n != null && n >= 0;
@@ -1648,7 +1746,7 @@ body{font-size:14px}
   }
 
   function renderStats(){
-    var rows = state.rows, fut = rows.filter(isFuture);
+    var rows = state.rows.filter(naoArquivado), fut = rows.filter(isFuture);
     var comProc = rows.filter(function(r){ return r.processo; }).length;
     var semTel = rows.filter(function(r){ return !temContato(r) && !pelaProsp(r); }).length, viaProsp = rows.filter(pelaProsp).length, viaCli = rows.filter(function(r){ return !!clienteVia(r); }).length;
     var avis = fut.filter(function(r){ return r.avisado; });
@@ -1740,7 +1838,7 @@ body{font-size:14px}
     'fb-tel': ['tel', 'tel', [['todos', 'Todos'], ['com', 'Com telefone'], ['sem', 'Sem telefone'], ['via', 'Via outro cliente'], ['prosp', 'Pelo prospectador'], ['novo', 'Preenchidos agora']]]
   };
   function renderFilters(shown){
-    var rows = state.rows, conta = function(o){ return rows.filter(function(r){ return matches(r, o); }).length; };
+    var rows = state.rows.filter(naoArquivado), conta = function(o){ return rows.filter(function(r){ return matches(r, o); }).length; };
     // quick views
     var atual = presetAtual();
     Array.prototype.forEach.call($('fb-rapido').querySelectorAll('[data-p]'), function(b){
@@ -1773,7 +1871,7 @@ body{font-size:14px}
     ];
     var totE = rows.length || 1;
     $('cl-etapa').innerHTML = CARD_ETAPA.map(function(x){
-      var n = rows.filter(function(r){ return passEtapaCl(r, x[0]); }).length, p = Math.round(n / totE * 100);
+      var n = state.rows.filter(function(r){ return passEtapaCl(r, x[0]); }).length, p = Math.round(n / totE * 100);
       return '<button type="button" class="card stat" data-etapa-cl="' + x[0] + '" aria-pressed="' + (state.etapaCl === x[0]) + '" title="' + (state.etapaCl === x[0] ? 'Clique de novo para ver todos' : 'Mostrar só: ' + x[2].toLowerCase()) + '">' +
         '<div class="stat-h"><svg class="i"><use href="#' + x[1] + '"/></svg>' + x[2] + '</div>' +
         '<div class="stat-v tnum">' + n + '</div><div class="stat-c">' + p + '% · ' + x[3] + '</div>' +
@@ -1959,10 +2057,14 @@ body{font-size:14px}
   }
   function renderRet(){
     var f = state.r, hoje = iso(today());
-    var com = state.rows.filter(function(r){ return r.protocolo; });
+    var com = state.rows.filter(function(r){ return r.protocolo || r.arquivado; });
+    var arq = state.rows.filter(function(r){ return r.arquivado; });
+    $('r-s4').textContent = arq.length;
+    $('r-s4-c').textContent = arq.length ? 'pagos · ' + arq.filter(function(r){ return !r.contatadoRetorno; }).length + ' ainda não chamados' : 'nenhum processo pago ainda';
     var lib = com.filter(function(r){ return retornoEm(r) <= hoje && !r.contatadoRetorno; });
     var em30 = com.filter(function(r){ var n = daysUntil(retornoEm(r)); return n > 0 && n <= 30 && !r.contatadoRetorno; });
     var cont = com.filter(function(r){ return r.contatadoRetorno; });
+    $('r-arq').setAttribute('aria-pressed', String(f.f === 'arquivado'));
     $('r-s1').textContent = lib.length; $('r-s2').textContent = em30.length; $('r-s3').textContent = cont.length;
     renderTermo(com);
     var list = com.filter(function(r){
@@ -1971,6 +2073,7 @@ body{font-size:14px}
       if (f.f === '30' && !(n > 0 && n <= 30 && !r.contatadoRetorno)) return false;
       if (f.f === 'aguardando' && !(n > 0)) return false;
       if (f.f === 'contatado' && !r.contatadoRetorno) return false;
+      if (f.f === 'arquivado' && !r.arquivado) return false;
       if (f.mes && (f.mes === 'passado' ? retornoEm(r).slice(0, 7) >= iso(today()).slice(0, 7) : retornoEm(r).slice(0, 7) !== f.mes)) return false;
       return textMatch(r, f.q);
     }).sort(function(a, b){ return retornoEm(a).localeCompare(retornoEm(b)); });
@@ -1980,7 +2083,7 @@ body{font-size:14px}
     if (!list.length) html += '<div class="empty">' + (com.length ? 'Nenhum cliente neste filtro.' : 'Nenhum cliente tem data de protocolo cadastrada ainda. Preencha a data do protocolo no cadastro para calcular o retorno.') + '</div>';
     list.forEach(function(r){
       var ret = retornoEm(r), n = daysUntil(ret);
-      var st = r.contatadoRetorno ? '<span class="pill ok">Contatado</span>' : (n <= 0 ? '<span class="pill crit">Liberado ' + (n === 0 ? 'hoje' : 'há ' + (-n) + ' dias') + '</span>' : '<span class="pill ' + (n <= 30 ? 'warn' : 'muted') + '">em ' + n + ' dias</span>');
+      var st = (r.arquivado ? '<span class="pill ok">Arquivado · pago' + (r.arquivadoEm ? ' ' + fmtShort(r.arquivadoEm) : '') + '</span>' : '') + (r.contatadoRetorno ? '<span class="pill ok">Contatado</span>' : !ret ? '' : (n <= 0 ? '<span class="pill crit">Liberado ' + (n === 0 ? 'hoje' : 'há ' + (-n) + ' dias') + '</span>' : '<span class="pill ' + (n <= 30 ? 'warn' : 'muted') + '">em ' + n + ' dias</span>'));
       html += '<div class="row" style="grid-template-columns:var(--rcols)">' + nameCell(r) +
         '<div><span class="lbl">Contato</span><div class="val">' + esc(r.contato || '—') + '</div></div>' +
         '<div><span class="lbl">Protocolo</span><div class="val">' + fmtDate(r.protocolo) + '</div></div>' +
@@ -2287,11 +2390,12 @@ body{font-size:14px}
     };
     if (finParte === 'prosp'){ renderFinProsp(base, card); return; }
     if (finParte === 'resultado'){ renderFinResultado(base, card, taxa); return; }
+    if (finParte === 'anual'){ renderFinAnual(card); return; }
     $('fin-stats').innerHTML =
       card('i-check', 'Procedentes', proc.length, 'ok', Math.round(taxa * 100) + '% dos julgados', taxa * 100, '--green') +
       card('i-scale', 'Condenação total', brl(tot), '', proc.length + ' × ' + brl(FIN_PADRAO) + (proc.some(function(r){ return Number(r.valorCondenacao) > 0 && Number(r.valorCondenacao) !== FIN_PADRAO; }) ? ' (com ajustes)' : ''), 100, '--blue') +
       card('i-cash', 'Escritório', brl(esc), 'ok', Math.round(FIN_ESCRITORIO * 100) + '% da condenação · recebido ' + brl(recebido), esc ? recebido / esc * 100 : 0, '--green') +
-      card('i-users', 'Clientes', brl(cli), '', Math.round((1 - FIN_ESCRITORIO) * 100) + '% da condenação', 100, '--line-2') +
+      card('i-users', 'Clientes', brl(cli), '', 'repassado ' + brl(proc.reduce(function(a, r){ return a + (r.repasse && r.repasse.valor ? r.repasse.valor : 0); }, 0)) + ' · falta repassar ' + proc.filter(function(r){ return r.recebimento && !r.repasse; }).length, cli ? proc.reduce(function(a, r){ return a + (r.repasse && r.repasse.valor ? r.repasse.valor : 0); }, 0) / cli * 100 : 0, '--blue') +
       card('i-clock', 'Projeção de ganho', brl(proj), 'warn', (concl + semRes) + ' aguardando sentença · taxa ' + Math.round(taxa * 100) + '%', esc + proj ? proj / (esc + proj) * 100 : 0, '--amber');
     $('fin-regra').innerHTML = 'Cada procedente vale <b>' + brl(FIN_PADRAO) + '</b> de condenação: <b>' + brl(FIN_PADRAO * FIN_ESCRITORIO) + '</b> para o escritório e <b>' + brl(FIN_PADRAO * (1 - FIN_ESCRITORIO)) + '</b> para o cliente. A projeção aplica a taxa de procedência atual aos ' + (concl + semRes) + ' processos ainda sem sentença' + (futuras ? '; com as ' + futuras + ' audiências que ainda vão acontecer, somaria mais ' + brl(projFut) : '') + '.';
     // pagamento filter
@@ -2307,11 +2411,228 @@ body{font-size:14px}
         '<td class="dir"><input class="fin-valor" type="text" inputmode="numeric" data-valor="' + esc2(r.id) + '" value="' + moedaTxt(v) + '" title="Valor da condenação deste cliente"></td>' +
         '<td class="dir n">' + brl(v * FIN_ESCRITORIO) + '</td><td class="dir n">' + brl(v - v * FIN_ESCRITORIO) + '</td>' +
         '<td><select class="pos-sel' + (r.pagamento === 'pago' ? ' ok' : r.pagamento && r.pagamento !== 'aguardando' ? ' blue' : '') + '" data-pos="pagamento" data-id="' + esc2(r.id) + '"><option value=""' + (!r.pagamento ? ' selected' : '') + '>Sem informação</option>' +
-        Object.keys(PAG).map(function(k){ return '<option value="' + k + '"' + (r.pagamento === k ? ' selected' : '') + '>' + esc2(PAG[k][0]) + '</option>'; }).join('') + '</select></td></tr>';
-    }).join('') || '<tr><td colspan="7" class="ct-mais small">Nenhum procedente' + (finSessao ? ' nesta audiência' : '') + ' ainda. Marque o resultado em Contestações.</td></tr>';
+        Object.keys(PAG).map(function(k){ return '<option value="' + k + '"' + (r.pagamento === k ? ' selected' : '') + '>' + esc2(PAG[k][0]) + '</option>'; }).join('') + '</select></td><td>' + repasseCell(r) + '</td></tr>';
+    }).join('') || '<tr><td colspan="8" class="ct-mais small">Nenhum procedente' + (finSessao ? ' nesta audiência' : '') + ' ainda. Marque o resultado em Contestações.</td></tr>';
   }
   var esc2 = function(t){ return esc(t); };
   function valorInd(id){ var p = prospById(id), v = Number(p && p.valorIndicacao); return v > 0 ? v : FIN_INDICACAO; }
+  /* ---------- repasse ao cliente: recebimento, pagamento e documentos ---------- */
+  var FORMAS = { pix_cliente: 'Pix na conta do próprio cliente', pix_terceiro: 'Pix para outra pessoa autorizada', dinheiro: 'dinheiro em mãos', transferencia: 'transferência bancária' };
+  function repasseCell(r){
+    var rc = r.recebimento, rp = r.repasse;
+    if (rp && rp.data) return '<button type="button" class="rep-st ok" data-rep="pagar" data-id="' + esc(r.id) + '" title="Ver pagamento e gerar recibo">Pago ' + fmtShort(rp.data) + ' · ' + esc((FORMAS[rp.forma] || '').split(' ')[0] || '') + '</button>';
+    if (rc && rc.data) return '<span class="rep-st warn">Caiu ' + fmtShort(rc.data) + '</span> <button type="button" class="rep-btn" data-rep="pagar" data-id="' + esc(r.id) + '">Pagar cliente</button>';
+    return '<button type="button" class="rep-btn" data-rep="caiu" data-id="' + esc(r.id) + '">Caiu na conta</button>';
+  }
+  var repCli = null;
+  var dlgRec = $('dlg-rec'), dlgRep = $('dlg-rep');
+  function repInfo(r){ return '<b>' + esc(r.nome) + '</b><span>CPF ' + esc(r.cpf || '—') + ' · Processo ' + esc(r.processo || '—') + '</span>'; }
+  function contaRec(v){ var e = v * FIN_ESCRITORIO; return '<div><span>Honorários do escritório (' + Math.round(FIN_ESCRITORIO * 100) + '%)</span><b>' + moedaTxt(e) + '</b></div><div><span>Valor do cliente</span><b>' + moedaTxt(v - e) + '</b></div>'; }
+  function abrirRec(r){
+    repCli = r; var rc = r.recebimento || {};
+    $('rec-cli').innerHTML = repInfo(r);
+    $('rec-data').value = rc.data || iso(new Date());
+    $('rec-valor').value = moedaTxt(rc.valor || valorCond(r));
+    $('rec-obs').value = rc.obs || '';
+    $('rec-conta').innerHTML = contaRec(moedaNum($('rec-valor').value));
+    dlgRec.showModal();
+  }
+  function abrirRep(r){
+    repCli = r; var rc = r.recebimento || {}, rp = r.repasse || {};
+    var bruto = rc.valor || valorCond(r);
+    $('rep-cli').innerHTML = repInfo(r);
+    $('rep-data').value = rp.data || iso(new Date());
+    $('rep-valor').value = moedaTxt(rp.valor || bruto * (1 - FIN_ESCRITORIO));
+    $('rep-forma').value = rp.forma || 'pix_cliente';
+    $('rep-pix').value = rp.chavePix || '';
+    $('rep-tnome').value = rp.terceiroNome || ''; $('rep-tcpf').value = rp.terceiroCpf || ''; $('rep-tpar').value = rp.terceiroParentesco || '';
+    $('rep-test').value = rp.testemunha || '';
+    $('rep-desfazer').hidden = !rp.data;
+    formaUI(); dlgRep.showModal();
+  }
+  function formaUI(){
+    var f = $('rep-forma').value;
+    $('rep-terc-box').hidden = f !== 'pix_terceiro'; $('rep-termo').hidden = f !== 'pix_terceiro';
+    $('rep-pix-box').hidden = f !== 'pix_cliente' && f !== 'pix_terceiro';
+    $('rep-test-box').hidden = f !== 'dinheiro';
+  }
+  $('rep-forma').addEventListener('change', formaUI);
+  $('rec-valor').addEventListener('input', function(){ $('rec-conta').innerHTML = contaRec(moedaNum(this.value)); });
+  $('rec-cancel').addEventListener('click', function(){ dlgRec.close(); });
+  $('rep-cancel').addEventListener('click', function(){ dlgRep.close(); });
+  $('r-arq').addEventListener('click', function(){ state.r.f = state.r.f === 'arquivado' ? '' : 'arquivado'; $('r-f').value = state.r.f; renderRet(); });
+  $('rep-desfazer').addEventListener('click', async function(){
+    if (!repCli || !confirm('Desfazer o pagamento de ' + repCli.nome + '? O processo volta para o fluxo de clientes.')) return;
+    try { await patchRow(repCli.id, { repasse: null, arquivado: false, arquivadoEm: null, pagamento: repCli.recebimento ? 'alvara_expedido' : 'aguardando', atualizadoEm: new Date().toISOString() }); dlgRep.close(); toast('Pagamento desfeito: ' + repCli.nome); }
+    catch(err){ toast(errMsg(err)); }
+  });
+  $('form-rec').addEventListener('submit', async function(e){
+    e.preventDefault(); if (!repCli) return;
+    var v = moedaNum($('rec-valor').value); if (!v){ toast('Informe o valor que caiu'); return; }
+    var dados = { recebimento: { data: $('rec-data').value || iso(new Date()), valor: v, obs: $('rec-obs').value.trim() }, atualizadoEm: new Date().toISOString() };
+    if (!repCli.pagamento || repCli.pagamento === 'aguardando') dados.pagamento = 'alvara_expedido';
+    $('rec-save').disabled = true;
+    try { await patchRow(repCli.id, dados); dlgRec.close(); toast('Registrado: caiu ' + moedaTxt(v) + ' de ' + repCli.nome); }
+    catch(err){ toast(errMsg(err)); } finally { $('rec-save').disabled = false; }
+  });
+  function lerRepasse(){
+    return { data: $('rep-data').value || iso(new Date()), valor: moedaNum($('rep-valor').value), forma: $('rep-forma').value, chavePix: $('rep-pix').value.trim(),
+      terceiroNome: $('rep-tnome').value.trim(), terceiroCpf: $('rep-tcpf').value.trim(), terceiroParentesco: $('rep-tpar').value.trim(), testemunha: $('rep-test').value.trim() };
+  }
+  $('form-rep').addEventListener('submit', async function(e){
+    e.preventDefault(); if (!repCli) return;
+    var rp = lerRepasse();
+    if (!rp.valor){ toast('Informe o valor pago'); return; }
+    if (rp.forma === 'pix_terceiro' && (!rp.terceiroNome || !rp.terceiroCpf)){ toast('Informe nome e CPF de quem recebeu'); return; }
+    var dados = { repasse: rp, pagamento: 'pago', arquivado: true, arquivadoEm: rp.data, atualizadoEm: new Date().toISOString() };
+    if (!repCli.recebimento) dados.recebimento = { data: rp.data, valor: valorCond(repCli), obs: '' };
+    $('rep-save').disabled = true;
+    try { await patchRow(repCli.id, dados); dlgRep.close(); toast('Pagamento registrado e processo arquivado: ' + repCli.nome + ' · ' + moedaTxt(rp.valor)); }
+    catch(err){ toast(errMsg(err)); } finally { $('rep-save').disabled = false; }
+  });
+  $('fin-body').addEventListener('click', function(e){
+    var b = e.target.closest('[data-rep]'); if (!b) return; e.stopPropagation();
+    var r = state.rows.filter(function(x){ return x.id === b.dataset.id; })[0]; if (!r) return;
+    if (b.dataset.rep === 'caiu') abrirRec(r); else abrirRep(r);
+  }, true);
+
+  /* valor por extenso (reais) */
+  function extenso(v){
+    var U = ['zero','um','dois','três','quatro','cinco','seis','sete','oito','nove','dez','onze','doze','treze','quatorze','quinze','dezesseis','dezessete','dezoito','dezenove'];
+    var D = ['','','vinte','trinta','quarenta','cinquenta','sessenta','setenta','oitenta','noventa'];
+    var C = ['','cento','duzentos','trezentos','quatrocentos','quinhentos','seiscentos','setecentos','oitocentos','novecentos'];
+    function ate999(n){ if (n === 100) return 'cem'; var c = Math.floor(n / 100), r = n % 100, p = []; if (c) p.push(C[c]); if (r){ if (r < 20) p.push(U[r]); else { var d = Math.floor(r / 10), u = r % 10; p.push(D[d] + (u ? ' e ' + U[u] : '')); } } return p.join(' e '); }
+    function inteiro(n){ if (!n) return 'zero'; var mi = Math.floor(n / 1e6), mil = Math.floor((n % 1e6) / 1000), r = n % 1000, p = [];
+      if (mi) p.push(mi === 1 ? 'um milhão' : ate999(mi) + ' milhões');
+      if (mil) p.push(mil === 1 ? 'mil' : ate999(mil) + ' mil');
+      if (r) p.push(ate999(r));
+      var ult = p.length > 1 && (r ? (r < 100 || r % 100 === 0) : !mil || mil < 100 || mil % 100 === 0) ? ' e ' : ' '; return p.length > 1 ? p.slice(0, -1).join(' ') + ult + p[p.length - 1] : p[0]; }
+    var reais = Math.floor(v + 1e-9), cent = Math.round((v - reais) * 100);
+    var t = reais ? inteiro(reais) + (reais === 1 ? ' real' : (reais % 1e6 === 0 ? ' de reais' : ' reais')) : '';
+    if (cent) t += (t ? ' e ' : '') + inteiro(cent) + (cent === 1 ? ' centavo' : ' centavos');
+    return t || 'zero reais';
+  }
+  function dataLongaBR(isoD){ var M = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro']; var p = String(isoD || iso(new Date())).split('-'); return (+p[2]) + ' de ' + M[+p[1] - 1] + ' de ' + p[0]; }
+
+  /* PDFs: layout comum */
+  async function docPdf(titulo, montar, nomeArq){
+    var JsPDF = await loadJsPDF(); var doc = new JsPDF({ unit: 'mm', format: 'a4' });
+    var W = 210, M = 20, y = 22;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(110); doc.text('RODRIGUES LITAIFF ADVOGADOS', M, y);
+    y += 10; doc.setFontSize(16); doc.setTextColor(0); doc.text(titulo, M, y);
+    y += 3; doc.setDrawColor(0); doc.setLineWidth(0.5); doc.line(M, y, W - M, y); y += 10;
+    var api = {
+      doc: doc, M: M, W: W,
+      p: function(txt, o){ o = o || {}; doc.setFont('helvetica', o.bold ? 'bold' : 'normal'); doc.setFontSize(o.size || 11.5); doc.setTextColor(0);
+        var linhas = doc.splitTextToSize(txt, W - 2 * M); doc.text(linhas, M, y, { lineHeightFactor: 1.5 }); y += linhas.length * (o.size || 11.5) * 0.53 + (o.gap == null ? 4 : o.gap); },
+      linha: function(rot, val){ doc.setFont('helvetica', 'normal'); doc.setFontSize(11.5); doc.text(rot, M, y); doc.setFont('helvetica', 'bold'); doc.text(val, W - M, y, { align: 'right' }); y += 3; doc.setDrawColor(210); doc.setLineWidth(0.2); doc.line(M, y, W - M, y); y += 6; },
+      espaco: function(h){ y += h; },
+      assinatura: function(nome, sub, x, w){ x = x == null ? M : x; w = w || (W - 2 * M); doc.setDrawColor(0); doc.setLineWidth(0.3); doc.line(x, y, x + w, y); doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.text(nome, x + w / 2, y + 5, { align: 'center' }); if (sub){ doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.text(sub, x + w / 2, y + 9.5, { align: 'center' }); } },
+      digital: function(x){ doc.setDrawColor(120); doc.setLineWidth(0.3); doc.rect(x, y - 30, 26, 32); doc.setFontSize(8); doc.setTextColor(110); doc.text('Digital (se não assinar)', x + 13, y + 6, { align: 'center' }); doc.setTextColor(0); },
+      y: function(v){ if (v != null) y = v; return y; }
+    };
+    montar(api);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(120); doc.text('Dr. Thiago Litaiff – Advogado – OAB/AM 19.876 · Alvarães/AM', W / 2, 287, { align: 'center' });
+    doc.save(nomeArq);
+  }
+  var nomeArq = function(tipo, r){ return tipo + ' - ' + String(r.nome || 'cliente').replace(/[\\/:*?"<>|]/g, '') + '.pdf'; };
+
+  $('rec-pdf').addEventListener('click', function(){
+    if (!repCli) return; var r = repCli, v = moedaNum($('rec-valor').value) || valorCond(r), e = v * FIN_ESCRITORIO, data = $('rec-data').value;
+    docPdf('PRESTAÇÃO DE CONTAS', function(a){
+      a.p('Cliente: ' + r.nome + (r.cpf ? ' · CPF ' + r.cpf : ''), { bold: true, gap: 1 });
+      a.p('Processo nº ' + (r.processo || '—') + ' · Ação contra a Âmbar Energia (Comarca de Alvarães/AM)', { gap: 8 });
+      a.p('Valor recebido pelo escritório em ' + dataLongaBR(data) + ', referente à condenação neste processo:', { gap: 6 });
+      a.linha('Valor da condenação recebido', moedaTxt(v));
+      a.linha('Honorários advocatícios (' + Math.round(FIN_ESCRITORIO * 100) + '%)', '− ' + moedaTxt(e));
+      a.linha('Valor a ser repassado ao cliente', moedaTxt(v - e));
+      a.espaco(4);
+      a.p('Valor do cliente por extenso: ' + extenso(v - e) + '.', { gap: 18 });
+      a.p('Alvarães/AM, ' + dataLongaBR(data) + '.', { gap: 26 });
+      var meio = (a.W - 2 * a.M - 10) / 2;
+      a.assinatura('Dr. Thiago Litaiff', 'Advogado – OAB/AM 19.876', a.M, meio);
+      a.assinatura(r.nome, 'Cliente – ciente', a.M + meio + 10, meio);
+    }, nomeArq('Prestação de contas', r));
+  });
+  $('rep-termo').addEventListener('click', function(){
+    if (!repCli) return; var r = repCli, rp = lerRepasse();
+    if (!rp.terceiroNome){ toast('Informe o nome de quem vai receber'); return; }
+    docPdf('AUTORIZAÇÃO DE PAGAMENTO A TERCEIRO', function(a){
+      a.p('Eu, ' + r.nome + (r.cpf ? ', CPF ' + r.cpf : '') + ', cliente no processo nº ' + (r.processo || '—') + ' (ação contra a Âmbar Energia, Comarca de Alvarães/AM), AUTORIZO o escritório Rodrigues Litaiff Advogados a pagar o valor que me cabe neste processo, de ' + moedaTxt(rp.valor) + ' (' + extenso(rp.valor) + '), a:', { gap: 6 });
+      a.p('Nome: ' + rp.terceiroNome, { bold: true, gap: 1 });
+      a.p('CPF: ' + (rp.terceiroCpf || '________________') + '    Parentesco: ' + (rp.terceiroParentesco || '________________'), { bold: true, gap: 1 });
+      if (rp.chavePix) a.p('Chave Pix: ' + rp.chavePix, { bold: true, gap: 1 });
+      a.espaco(5);
+      a.p('Declaro que o pagamento feito a essa pessoa vale como pagamento feito a mim, e dou ao escritório plena quitação do valor acima, nada mais tendo a receber referente a este processo.', { gap: 10 });
+      a.p('Alvarães/AM, ' + dataLongaBR(rp.data) + '.', { gap: 30 });
+      a.assinatura(r.nome, 'Cliente (autorizante)', a.M, 110); a.digital(a.W - a.M - 26);
+      a.espaco(26);
+      var meio = (a.W - 2 * a.M - 10) / 2;
+      a.assinatura('Testemunha 1', 'Nome e CPF', a.M, meio); a.assinatura('Testemunha 2', 'Nome e CPF', a.M + meio + 10, meio);
+    }, nomeArq('Autorização de pagamento', r));
+  });
+  $('rep-recibo').addEventListener('click', function(){
+    if (!repCli) return; var r = repCli, rp = lerRepasse();
+    var forma = FORMAS[rp.forma] || '';
+    if (rp.forma === 'pix_terceiro' && rp.terceiroNome) forma = 'Pix para ' + rp.terceiroNome + (rp.terceiroParentesco ? ' (' + rp.terceiroParentesco + ')' : '') + ', conforme minha autorização';
+    else if (rp.chavePix && (rp.forma === 'pix_cliente')) forma += ' (chave ' + rp.chavePix + ')';
+    docPdf('RECIBO DE QUITAÇÃO', function(a){
+      a.p('Eu, ' + r.nome + (r.cpf ? ', CPF ' + r.cpf : '') + ', declaro que RECEBI do escritório Rodrigues Litaiff Advogados a quantia de ' + moedaTxt(rp.valor) + ' (' + extenso(rp.valor) + '), referente à minha parte da condenação no processo nº ' + (r.processo || '—') + ', ação contra a Âmbar Energia, Comarca de Alvarães/AM.', { gap: 6 });
+      a.p('Forma de pagamento: ' + forma + '. Data: ' + dataLongaBR(rp.data) + '.', { gap: 6 });
+      a.p('Com o recebimento deste valor, dou ao escritório plena, geral e irrevogável quitação, nada mais tendo a receber referente a este processo.', { gap: 10 });
+      a.p('Alvarães/AM, ' + dataLongaBR(rp.data) + '.', { gap: 30 });
+      a.assinatura(r.nome, 'Cliente', a.M, 110); a.digital(a.W - a.M - 26);
+      a.espaco(26);
+      var meio = (a.W - 2 * a.M - 10) / 2;
+      a.assinatura(rp.forma === 'dinheiro' && rp.testemunha ? rp.testemunha : 'Testemunha 1', 'Nome e CPF', a.M, meio); a.assinatura('Testemunha 2', 'Nome e CPF', a.M + meio + 10, meio);
+      a.espaco(18);
+      a.p('Se o cliente não souber assinar: colher a digital no quadro acima e a assinatura de duas testemunhas (assinatura a rogo).', { size: 9, gap: 2 });
+    }, nomeArq('Recibo de quitação', r));
+  });
+
+  /* faturamento por ano: conta pelo dia em que o dinheiro caiu na conta do escritório */
+  var finAno = String(new Date().getFullYear());
+  function caiu(r){ return r.recebimento && r.recebimento.data ? r.recebimento : null; }
+  function linhasAno(ano){
+    return state.rows.filter(function(r){ var c = caiu(r); return c && c.data.slice(0, 4) === ano && buscaCliente(r, finQ); }).map(function(r){
+      var c = caiu(r), v = Number(c.valor) || valorCond(r), h = v * FIN_ESCRITORIO, rp = r.repasse && r.repasse.data ? r.repasse : null;
+      return { r: r, data: c.data, mes: +c.data.slice(5, 7), valor: v, hon: h, repassado: rp ? Number(rp.valor) || 0 : 0, pagoEm: rp ? rp.data : '', forma: rp ? (FORMAS[rp.forma] || '') : '',
+        prosp: rp && r.responsavelId ? valorInd(r.responsavelId) : 0 };
+    }).sort(function(a, b){ return a.data < b.data ? -1 : a.data > b.data ? 1 : 0; });
+  }
+  function renderFinAnual(card){
+    var anos = {}; anos[finAno] = 1; anos[String(new Date().getFullYear())] = 1;
+    state.rows.forEach(function(r){ var c = caiu(r); if (c) anos[c.data.slice(0, 4)] = 1; });
+    $('fin-ano-sel').innerHTML = Object.keys(anos).sort().reverse().map(function(a){ return '<option value="' + a + '"' + (a === finAno ? ' selected' : '') + '>' + a + '</option>'; }).join('');
+    var L = linhasAno(finAno), soma = function(k, l){ return (l || L).reduce(function(a, x){ return a + x[k]; }, 0); };
+    var hon = soma('hon'), rep = soma('repassado'), pr = soma('prosp'), deve = L.filter(function(x){ return !x.pagoEm; });
+    var devo = deve.reduce(function(a, x){ return a + (x.valor - x.hon); }, 0);
+    $('fin-stats').innerHTML =
+      card('i-cash', 'Faturamento ' + finAno, brl(hon), 'ok', L.length + (L.length === 1 ? ' processo recebido' : ' processos recebidos') + ' · caiu ' + brl(soma('valor')), 100, '--green') +
+      card('i-users', 'Repassado aos clientes', brl(rep), '', (L.length - deve.length) + ' clientes pagos', soma('valor') ? rep / soma('valor') * 100 : 0, '--blue') +
+      card('i-clock', 'Falta repassar', brl(devo), deve.length ? 'crit' : '', deve.length ? deve.length + ' cliente' + (deve.length === 1 ? '' : 's') + ' com dinheiro na conta' : 'nenhum dinheiro de cliente parado', deve.length ? 100 : 0, '--red') +
+      card('i-scale', 'Prospectadores', brl(pr), '', 'indicações dos clientes pagos', hon ? pr / hon * 100 : 0, '--amber') +
+      card('i-check', 'Líquido ' + finAno, brl(hon - pr), 'ok', 'faturamento menos prospectadores', hon ? (hon - pr) / hon * 100 : 0, '--green');
+    $('fin-regra').innerHTML = 'Conta pela <b>data em que o dinheiro caiu na conta</b> (botão <b>Caiu na conta</b> na Receita). Faturamento = ' + Math.round(FIN_ESCRITORIO * 100) + '% de honorários. Use <b>Baixar planilha do ano</b> para o fechamento anual (contador / imposto de renda).';
+    $('fin-count').textContent = L.length + (L.length === 1 ? ' processo' : ' processos');
+    var M = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    var linhas = M.map(function(nome, i){ var l = L.filter(function(x){ return x.mes === i + 1; }); return { nome: nome, l: l }; }).filter(function(m){ return m.l.length; });
+    $('fin-ano-body').innerHTML = linhas.map(function(m){
+      return '<tr><td class="nome">' + m.nome + '</td><td class="dir n">' + m.l.length + '</td><td class="dir n">' + brl(soma('valor', m.l)) + '</td><td class="dir n fin-apagar">' + brl(soma('hon', m.l)) + '</td><td class="dir n">' + brl(soma('repassado', m.l)) + '</td><td class="dir n fin-custo">− ' + brl(soma('prosp', m.l)) + '</td><td class="dir n"><b>' + brl(soma('hon', m.l) - soma('prosp', m.l)) + '</b></td></tr>';
+    }).join('') + (linhas.length ? '<tr class="fin-total"><td>Total ' + finAno + '</td><td class="dir n">' + L.length + '</td><td class="dir n">' + brl(soma('valor')) + '</td><td class="dir n fin-apagar">' + brl(hon) + '</td><td class="dir n">' + brl(rep) + '</td><td class="dir n fin-custo">− ' + brl(pr) + '</td><td class="dir n">' + brl(hon - pr) + '</td></tr>'
+      : '<tr><td colspan="7" class="ct-mais small">Nenhum dinheiro registrado em ' + finAno + '. Quando o alvará cair, use <b>Caiu na conta</b> na aba Receita.</td></tr>');
+  }
+  $('fin-ano-sel').addEventListener('change', function(){ finAno = this.value; renderFin(); });
+  $('fin-ano-csv').addEventListener('click', function(){
+    var n2 = function(v){ return (Number(v) || 0).toFixed(2).replace('.', ','); };
+    var br = function(d){ return d ? d.split('-').reverse().join('/') : ''; };
+    var q = function(t){ return '"' + String(t == null ? '' : t).replace(/"/g, '""') + '"'; };
+    var L = linhasAno(finAno);
+    var csv = [['Data que caiu', 'Cliente', 'CPF', 'Processo', 'Valor que caiu', 'Honorários (escritório)', 'Valor do cliente', 'Pago ao cliente em', 'Forma', 'Valor repassado', 'Prospectador', 'Valor do prospectador'].map(q).join(';')]
+      .concat(L.map(function(x){ var r = x.r; return [br(x.data), r.nome, r.cpf, r.processo, n2(x.valor), n2(x.hon), n2(x.valor - x.hon), br(x.pagoEm), x.forma, n2(x.repassado), prospName(r.responsavelId) || '', n2(x.prosp)].map(q).join(';'); }));
+    baixarArquivo('Faturamento ' + finAno + '.csv', new Blob(['\ufeff' + csv.join('\r\n')], { type: 'text/csv;charset=utf-8' }));
+  });
+
   function renderFinResultado(base, card, taxa){
     var hon = function(r){ return valorCond(r) * FIN_ESCRITORIO; };
     var custo = function(r){ return r.responsavelId ? valorInd(r.responsavelId) : 0; };
@@ -2374,8 +2695,9 @@ body{font-size:14px}
   document.querySelector('.fin-sub').addEventListener('click', function(e){
     var b = e.target.closest('[data-fin]'); if (!b) return; finParte = b.dataset.fin;
     Array.prototype.forEach.call(this.querySelectorAll('[data-fin]'), function(x){ x.setAttribute('aria-pressed', String(x === b)); });
-    document.querySelector('.fin-receita').hidden = finParte !== 'receita'; document.querySelector('.fin-prosp').hidden = finParte !== 'prosp'; document.querySelector('.fin-resultado').hidden = finParte !== 'resultado';
+    document.querySelector('.fin-receita').hidden = finParte !== 'receita'; document.querySelector('.fin-prosp').hidden = finParte !== 'prosp'; document.querySelector('.fin-resultado').hidden = finParte !== 'resultado'; document.querySelector('.fin-anual').hidden = finParte !== 'anual';
     $('fin-pag-sel').hidden = finParte !== 'receita';
+    $('fin-ano-sel').hidden = $('fin-ano-csv').hidden = finParte !== 'anual'; $('fin-aud-sel').hidden = finParte === 'anual';
     renderFin();
   });
   $('fin-aud-sel').addEventListener('change', function(){ finSessao = this.value; renderFin(); });
