@@ -973,6 +973,32 @@ body{font-size:14px}
 
 .campo-tag{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:5px;font-size:11px;font-weight:700;color:var(--amber);border:1px solid currentColor;vertical-align:1px;white-space:nowrap}
 #cp-link{width:100%;font-size:13px}
+
+/* ---------- integrações em cartões ---------- */
+.integ-head{display:flex;flex-direction:column;gap:4px}
+.ig-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:1000px){ .ig-grid{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media (max-width:620px){ .ig-grid{grid-template-columns:1fr} }
+.ig-card{display:flex;flex-direction:column;gap:6px;text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;font:inherit;color:inherit;cursor:pointer;min-height:150px;transition:border-color .15s}
+.ig-card:hover{border-color:var(--line-2)}
+.ig-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px}
+.ig-logo{width:40px;height:40px;flex:none}
+.ig-logo svg{width:100%;height:100%;display:block}
+.ig-logo.sm{width:30px;height:30px}
+.ig-st{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-3)}
+.ig-st.on{color:var(--green)}
+.ig-st .i{width:14px;height:14px}
+.ig-sw{width:42px;height:24px;border-radius:12px;background:var(--line-2);position:relative;margin-left:4px;transition:background .15s}
+.ig-sw span{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--panel);box-shadow:0 1px 2px rgba(0,0,0,.25);transition:left .15s}
+.ig-st.on .ig-sw{background:var(--blue)}
+.ig-st.on .ig-sw span{left:21px;background:#111827}
+.ig-t{font-weight:700;font-size:15px;display:flex;align-items:center;gap:6px}
+.ig-d{font-size:13px;color:var(--ink-3);line-height:1.45}
+#dlg-integ{width:min(780px,calc(100vw - 32px))}
+#dlg-integ .f-head{display:flex;align-items:center;gap:10px}
+#dlg-integ .f-body{display:block}
+#dlg-integ .integ{max-width:none;border:0!important;box-shadow:none!important;padding:0;background:transparent}
+#dlg-integ .integ > div:first-child .integ-t{display:none}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -1238,9 +1264,10 @@ body{font-size:14px}
           <button class="btn" id="btn-eq-novo" type="button"><svg class="i"><use href="#i-plus"/></svg>Novo funcionário</button>
         </div>
         <div class="card eq-list" id="eq-list"></div>
-        <div class="sec-title">Integrações</div>
-        <div class="integ-grid">
-        <div class="card integ">
+        <div class="integ-head"><div class="sec-title" style="margin:0">Integrações</div><p class="view-desc">Todas as integrações do escritório num só lugar. Clique no cartão para colar a chave, testar ou ajustar.</p></div>
+        <div class="ig-grid" id="ig-grid"></div>
+        <div class="integ-grid" id="ig-paineis" hidden>
+        <div class="card integ" data-painel="liderhub">
           <div><b class="integ-t">LiderHub</b><p class="integ-d">Chave do workspace Pós-venda, encontrada no LiderHub em Configurações → Credenciais API.</p></div>
           <form id="form-lh" class="integ-form" novalidate autocomplete="off">
             <label for="lh-chave">Chave da empresa</label>
@@ -1249,7 +1276,7 @@ body{font-size:14px}
             <small class="integ-s" id="lh-status">Verificando…</small>
           </form>
         </div>
-        <div class="card integ">
+        <div class="card integ" data-painel="datajud">
           <div><b class="integ-t">Tribunal (DataJud · CNJ)</b><p class="integ-d">Consulta todo dia, às 7h, os processos do TJAM e avisa quando aparece audiência designada, sentença, embargos, trânsito em julgado ou alvará. A chave é pública e fica na página do CNJ: <a href="https://datajud-wiki.cnj.jus.br/api-publica/acesso/" target="_blank" rel="noopener">DataJud · Acesso</a>.</p></div>
           <form id="form-dj" class="integ-form" novalidate autocomplete="off">
             <label for="dj-chave">Chave pública do DataJud</label>
@@ -1258,7 +1285,7 @@ body{font-size:14px}
             <small class="integ-s" id="dj-status">Verificando…</small>
           </form>
         </div>
-        <div class="card integ">
+        <div class="card integ" data-painel="celular">
           <div><b class="integ-t">Cadastro pelo celular</b><p class="integ-d">Script do Google que recebe as fotos dos prospectadores, cria a pasta do cliente no Drive (1. CLIENTES › 1. PENDENTES; vai para 2. PROTOCOLADOS quando o processo é cadastrado) e lê a procuração com o Claude. O código e o passo a passo estão em <a href="https://github.com/thiagolitaiff22/controle-queda-energia/blob/main/google/campo.gs" target="_blank" rel="noopener">google/campo.gs</a>. O link de cada prospectador fica no cartão dele, em Prospectadores.</p></div>
           <form id="form-cp" class="integ-form" novalidate autocomplete="off">
             <label for="cp-url">Endereço do script (termina em /exec)</label>
@@ -1267,7 +1294,7 @@ body{font-size:14px}
             <small class="integ-s" id="cp-status">Verificando…</small>
           </form>
         </div>
-        <div class="card integ regua">
+        <div class="card integ regua" data-painel="regua">
           <div><b class="integ-t">Régua de avisos automáticos</b><p class="integ-d">O sistema lembra o cliente da audiência pelo WhatsApp do Pós-venda, sozinho: 3 dias antes e na véspera. Envia poucos por vez, todos os dias das 8h às 18h (Manaus), com limite por dia.</p></div>
           <div class="regua-etapas">
             <span class="pill blue">3 dias antes</span><span class="pill blue">Véspera</span>
@@ -1289,7 +1316,7 @@ body{font-size:14px}
           </div>
           <small class="integ-s" id="rg-status">Verificando…</small>
         </div>
-        <div class="card integ regua" id="av-card">
+        <div class="card integ regua" id="av-card" data-painel="lembrete">
           <div><b class="integ-t">Lembrete agora</b><p class="integ-d">Manda um lembrete para todos os clientes com telefone cadastrado que têm audiência no dia escolhido. Sai um número a cada 2 a 4 minutos, sorteado, das 8h às 18h. Deixe esta página aberta até terminar. Quem já recebeu este lembrete não recebe de novo.</p></div>
           <div class="regua-campos">
             <div><label for="av-dia">Audiência do dia</label><select id="av-dia"></select></div>
@@ -1395,6 +1422,13 @@ body{font-size:14px}
 </dialog>
 
 
+
+<dialog id="dlg-integ">
+  <div class="f ig-dlg">
+    <div class="f-head"><div class="ig-logo sm" id="ig-dlg-logo"></div><h2 id="ig-dlg-t"></h2><button type="button" class="btn" id="ig-fechar" style="margin-left:auto">Fechar</button></div>
+    <div class="f-body" id="ig-dlg-body"></div>
+  </div>
+</dialog>
 
 <dialog id="dlg-campo">
   <form class="f" method="dialog">
@@ -2663,6 +2697,74 @@ body{font-size:14px}
       .concat(L.map(function(x){ var r = x.r; return [br(x.data), r.nome, r.cpf, r.processo, n2(x.valor), n2(x.hon), n2(x.valor - x.hon), br(x.pagoEm), x.forma, n2(x.repassado), prospName(r.responsavelId) || '', n2(x.prosp)].map(q).join(';'); }));
     baixarArquivo('Faturamento ' + finAno + '.csv', new Blob(['\ufeff' + csv.join('\r\n')], { type: 'text/csv;charset=utf-8' }));
   });
+
+  /* ---------- Configurações › Integrações: cartões ---------- */
+  var IG_LOGO = {
+    liderhub: '<svg viewBox="0 0 40 40"><rect width="40" height="40" rx="9" fill="#2F6BF2"/><path d="M13 27l7-14 7 14M16.5 22h7" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    regua: '<svg viewBox="0 0 40 40"><rect width="40" height="40" rx="9" fill="#16A34A"/><path d="M14 17a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S14 23 14 17M18.3 28a2 2 0 0 0 3.4 0" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    lembrete: '<svg viewBox="0 0 40 40"><rect width="40" height="40" rx="9" fill="#0F9F8F"/><path d="M29 11L18 22M29 11l-6.5 18-4.5-7-7-4.5z" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    datajud: '<svg viewBox="0 0 40 40"><rect width="40" height="40" rx="9" fill="#334155"/><path d="M20 10v20M14 30h12M11 15h18M11 15l-3 7a3 3 0 0 0 6 0zM29 15l-3 7a3 3 0 0 0 6 0z" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    claude: '<svg viewBox="0 0 40 40"><rect width="40" height="40" rx="9" fill="#D97757"/><g stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M20 9v22M9 20h22M12.2 12.2l15.6 15.6M27.8 12.2L12.2 27.8"/></g></svg>',
+    drive: '<svg viewBox="0 0 40 40"><path d="M15 6h10l11 19h-10z" fill="#FBBC04"/><path d="M15 6L4 25l5 9 11-19z" fill="#0F9D58"/><path d="M9 34h22l5-9H14z" fill="#4285F4"/></svg>',
+    celular: '<svg viewBox="0 0 40 40"><rect width="40" height="40" rx="9" fill="#7C3AED"/><rect x="14" y="9" width="12" height="22" rx="2.5" fill="none" stroke="#fff" stroke-width="2.4"/><path d="M18.5 26.5h3" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>'
+  };
+  var IG = [
+    { k: 'liderhub', t: 'LiderHub', d: 'WhatsApp do Pós-venda. É por ele que saem os avisos de audiência aos clientes.', ajuda: 'Chave do workspace Pós-venda, em LiderHub › Configurações › Credenciais API.' },
+    { k: 'regua', t: 'Régua de avisos', d: 'Avisa sozinho o cliente 3 dias antes e na véspera da audiência, das 8h às 18h.', ajuda: 'Precisa do LiderHub. Liga e desliga dentro do cartão.' },
+    { k: 'lembrete', t: 'Lembrete agora', d: 'Manda um lembrete único para todos com audiência num dia escolhido.', ajuda: 'Envio manual, com intervalo seguro entre as mensagens.' },
+    { k: 'datajud', t: 'Tribunal (DataJud)', d: 'Consulta os processos no TJAM todo dia às 7h: audiência, sentença, alvará.', ajuda: 'Chave pública do CNJ.' },
+    { k: 'claude', t: 'Claude', d: 'IA da Anthropic. Lê a procuração e o RG enviados pelo celular e preenche o cadastro.', ajuda: 'A chave fica no script do Google (propriedade ANTHROPIC_KEY), não no sistema.', painel: 'celular' },
+    { k: 'drive', t: 'Google Drive', d: 'Cria a pasta de cada cliente em 1. CLIENTES e move para Protocolados quando há processo.', ajuda: 'Funciona pelo script do Google do Cadastro pelo celular.', painel: 'celular' },
+    { k: 'celular', t: 'Cadastro pelo celular', d: 'O prospectador tira as fotos dos documentos e o cliente cai em Sem protocolo.', ajuda: 'O link de cada prospectador fica no cartão dele, em Prospectadores.' }
+  ];
+  var igScript = null; // resposta do script do Google (Drive e Claude)
+  function igAtivo(k){
+    if (k === 'liderhub') return !!LH_PONTOS;
+    if (k === 'regua') return /^Desligar/.test($('rg-ligar').textContent);
+    if (k === 'lembrete') return !$('av-parar').hidden;
+    if (k === 'datajud') return $('dj-chave').value.indexOf('•') === 0;
+    if (k === 'celular') return !!$('cp-url').value.trim();
+    if (k === 'drive') return !!(igScript && igScript.ok);
+    if (k === 'claude') return !!(igScript && igScript.claude);
+    return false;
+  }
+  function igRotulo(k, on){
+    if (k === 'lembrete') return on ? 'Enviando' : 'Pronto';
+    if (k === 'regua') return on ? 'Ligada' : 'Desligada';
+    if (k === 'claude' && !on && igScript && igScript.ok && !('claude' in igScript)) return 'Ver no script';
+    return on ? 'Ativado' : 'Desativado';
+  }
+  function pintarInteg(){
+    var g = $('ig-grid'); if (!g) return;
+    g.innerHTML = IG.map(function(x){
+      var on = igAtivo(x.k);
+      return '<button type="button" class="ig-card" data-ig="' + x.k + '"><div class="ig-top"><div class="ig-logo">' + IG_LOGO[x.k] + '</div>' +
+        '<span class="ig-st' + (on ? ' on' : '') + '">' + (on ? '<svg class="i"><use href="#i-check"/></svg>' : '') + igRotulo(x.k, on) + '<span class="ig-sw" aria-hidden="true"><span></span></span></span></div>' +
+        '<div class="ig-t">' + x.t + ' <span class="help" title="' + esc(x.ajuda) + '">?</span></div><div class="ig-d">' + x.d + '</div></button>';
+    }).join('');
+  }
+  async function igTestarScript(){
+    var u = $('cp-url').value.trim(); if (!u){ igScript = null; pintarInteg(); return; }
+    try { igScript = await fetch(u).then(function(r){ return r.json(); }); } catch(e){ igScript = { ok: false }; }
+    pintarInteg();
+  }
+  var igAberto = null;
+  function abrirInteg(k){
+    var x = IG.filter(function(i){ return i.k === k; })[0]; if (!x) return;
+    var p = document.querySelector('[data-painel="' + (x.painel || x.k) + '"]'); if (!p) return;
+    igAberto = p;
+    $('ig-dlg-logo').innerHTML = IG_LOGO[x.k]; $('ig-dlg-t').textContent = x.t;
+    $('ig-dlg-body').appendChild(p);
+    $('dlg-integ').showModal();
+  }
+  $('dlg-integ').addEventListener('close', function(){ if (igAberto){ $('ig-paineis').appendChild(igAberto); igAberto = null; } pintarInteg(); });
+  $('ig-fechar').addEventListener('click', function(){ $('dlg-integ').close(); });
+  $('ig-grid').addEventListener('click', function(e){ var b = e.target.closest('[data-ig]'); if (b) abrirInteg(b.dataset.ig); });
+  // os status de cada integração mudam quando as verificações terminam
+  ['lh-status', 'dj-status', 'rg-status', 'cp-status', 'av-status'].forEach(function(id){
+    var el = $(id); if (el && window.MutationObserver) new MutationObserver(function(){ if (id === 'cp-status') igTestarScript(); else pintarInteg(); }).observe(el, { childList: true, characterData: true, subtree: true });
+  });
+  pintarInteg();
 
   /* ---------- cadastro pelo celular ---------- */
   var cpProsp = null;

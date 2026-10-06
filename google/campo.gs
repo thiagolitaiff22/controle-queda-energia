@@ -24,7 +24,8 @@ var NOMES = {
   luz: 'Conta de luz', arogo: 'Documento a rogo', outro: 'Outro documento', cliente: 'Foto do cliente'
 };
 
-function doGet(){ return saida({ ok: true, servico: 'cadastro pelo celular' }); }
+// o sistema usa esta resposta para mostrar Drive e Claude como ativados em Configurações
+function doGet(){ return saida({ ok: true, servico: 'cadastro pelo celular', claude: !!PropertiesService.getScriptProperties().getProperty('ANTHROPIC_KEY') }); }
 
 function doPost(e){
   try {
