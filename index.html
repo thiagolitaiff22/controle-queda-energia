@@ -935,6 +935,10 @@ body{font-size:14px}
 
 .fin-proj{color:var(--purple);font-weight:600}
 .stat-v.proj{color:var(--purple)}
+
+.fin-custo{color:var(--red)}
+.fin-destaque td{background:var(--soft)}
+.fin-tbl .mini{white-space:normal}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -1141,7 +1145,7 @@ body{font-size:14px}
       </section>
 
       <section id="view-fin" class="vw-dash" hidden style="display:flex;flex-direction:column;gap:18px">
-        <div class="res-rap fin-sub" role="tablist" aria-label="Parte do financeiro"><button type="button" data-fin="receita" aria-pressed="true">Receita</button><button type="button" data-fin="prosp" aria-pressed="false">Prospectadores</button></div>
+        <div class="res-rap fin-sub" role="tablist" aria-label="Parte do financeiro"><button type="button" data-fin="receita" aria-pressed="true">Receita</button><button type="button" data-fin="prosp" aria-pressed="false">Prospectadores</button><button type="button" data-fin="resultado" aria-pressed="false">Resultado</button></div>
         <div class="fbar">
           <div class="search tb-busca"><svg class="i"><use href="#i-search"/></svg><input id="fin-q" type="search" placeholder="Buscar cliente por nome ou CPF"></div>
           <select id="fin-aud-sel" class="tb-sel" aria-label="Audiência"></select>
@@ -1153,6 +1157,9 @@ body{font-size:14px}
         <div class="fin-regra" id="fin-regra"></div>
         <div class="fin-receita">
         <div class="card ct-tab"><table class="ct-tbl fin-tbl"><thead><tr><th>Cliente</th><th>Processo</th><th>Audiência</th><th class="dir">Condenação</th><th class="dir">Escritório</th><th class="dir">Cliente</th><th>Pagamento</th></tr></thead><tbody id="fin-body"></tbody></table></div>
+        </div>
+        <div class="fin-resultado" hidden>
+          <div class="card ct-tab"><table class="ct-tbl fin-tbl"><thead><tr><th>Cenário</th><th class="dir">Processos</th><th class="dir">Faturamento do escritório</th><th class="dir">Gasto com prospectadores</th><th class="dir">Resultado líquido</th></tr></thead><tbody id="fin-res-body"></tbody></table></div>
         </div>
         <div class="fin-prosp" hidden>
           <div class="card ct-tab"><table class="ct-tbl fin-tbl"><thead><tr><th>Prospectador</th><th class="dir">Valor por indicação</th><th class="dir">Indicações</th><th class="dir">Procedentes</th><th class="dir">Clientes já pagos</th><th class="dir">A pagar</th><th class="dir">Previsão</th><th class="dir">Se todos derem certo</th></tr></thead><tbody id="fin-prosp-body"></tbody></table></div>
@@ -2276,6 +2283,7 @@ body{font-size:14px}
         '<div class="stat-viz"><div class="bar"><span style="width:' + Math.max(0, Math.min(100, p)) + '%;background:var(' + cor + ')"></span></div></div></div>';
     };
     if (finParte === 'prosp'){ renderFinProsp(base, card); return; }
+    if (finParte === 'resultado'){ renderFinResultado(base, card, taxa); return; }
     $('fin-stats').innerHTML =
       card('i-check', 'Procedentes', proc.length, 'ok', Math.round(taxa * 100) + '% dos julgados', taxa * 100, '--green') +
       card('i-scale', 'Condenação total', brl(tot), '', proc.length + ' × ' + brl(FIN_PADRAO) + (proc.some(function(r){ return Number(r.valorCondenacao) > 0 && Number(r.valorCondenacao) !== FIN_PADRAO; }) ? ' (com ajustes)' : ''), 100, '--blue') +
@@ -2301,6 +2309,35 @@ body{font-size:14px}
   }
   var esc2 = function(t){ return esc(t); };
   function valorInd(id){ var p = prospById(id), v = Number(p && p.valorIndicacao); return v > 0 ? v : FIN_INDICACAO; }
+  function renderFinResultado(base, card, taxa){
+    var hon = function(r){ return valorCond(r) * FIN_ESCRITORIO; };
+    var custo = function(r){ return r.responsavelId ? valorInd(r.responsavelId) : 0; };
+    var soma = function(lista, f){ return lista.reduce(function(a, r){ return a + f(r); }, 0); };
+    var proc = base.filter(function(r){ return resAud(r) === 'procedente'; });
+    var pagos = proc.filter(function(r){ return r.pagamento === 'pago'; });
+    var espera = base.filter(function(r){ var k = resAud(r), n = daysUntil(r.audData); return k === 'conclusos' || (!k && n != null && n < 0); });
+    var futuras = base.filter(function(r){ var n = daysUntil(r.audData); return !resAud(r) && n != null && n >= 0; });
+    var abertos = base.filter(function(r){ var k = resAud(r); return k !== 'improcedente' && k !== 'faltou'; });
+    var cen = [
+      ['Já recebido', 'clientes com pagamento marcado como Pago', pagos.length, soma(pagos, hon), soma(pagos, custo)],
+      ['Procedentes', 'todas as sentenças procedentes, pagas ou não', proc.length, soma(proc, hon), soma(proc, custo)],
+      ['Previsão de faturamento', 'procedentes + conclusos e sem sentença pela taxa atual (' + Math.round(taxa * 100) + '%)', proc.length + espera.length, soma(proc, hon) + soma(espera, hon) * taxa, soma(proc, custo) + soma(espera, custo) * taxa],
+      ['Com as audiências futuras', 'previsão + audiências que ainda vão acontecer, pela mesma taxa', proc.length + espera.length + futuras.length, soma(proc, hon) + (soma(espera, hon) + soma(futuras, hon)) * taxa, soma(proc, custo) + (soma(espera, custo) + soma(futuras, custo)) * taxa],
+      ['Se todos derem certo', 'todos os processos ainda em aberto procedentes e pagos', abertos.length, soma(abertos, hon), soma(abertos, custo)]
+    ];
+    var prev = cen[2];
+    $('fin-stats').innerHTML =
+      card('i-cash', 'Faturamento atual', brl(cen[1][3]), 'ok', 'honorários das procedentes · recebido ' + brl(cen[0][3]), cen[1][3] ? cen[0][3] / cen[1][3] * 100 : 0, '--green') +
+      card('i-clock', 'Previsão de faturamento', brl(prev[3]), 'warn', 'com conclusos e sem sentença', prev[3] ? cen[1][3] / prev[3] * 100 : 0, '--amber') +
+      card('i-users', 'Gasto com prospectadores', brl(prev[4]), 'crit', 'na previsão · hoje ' + brl(cen[1][4]), prev[3] ? prev[4] / prev[3] * 100 : 0, '--red') +
+      card('i-check', 'Resultado líquido', brl(prev[3] - prev[4]), 'ok', 'previsão menos prospectadores', prev[3] ? (prev[3] - prev[4]) / prev[3] * 100 : 0, '--green') +
+      card('i-scale', 'Se todos derem certo', brl(cen[4][3] - cen[4][4]), 'proj', 'líquido com todos os processos em aberto', 100, '--purple');
+    $('fin-regra').innerHTML = 'Faturamento do escritório = <b>' + Math.round(FIN_ESCRITORIO * 100) + '%</b> da condenação de cada procedente. Gasto com prospectadores = valor por indicação de cada um. Resultado líquido = faturamento menos prospectadores.';
+    $('fin-count').textContent = base.length + (base.length === 1 ? ' cliente' : ' clientes');
+    $('fin-res-body').innerHTML = cen.map(function(c, i){
+      return '<tr' + (i === 2 ? ' class="fin-destaque"' : '') + '><td class="nome">' + c[0] + '<div class="mini">' + c[1] + '</div></td><td class="dir n">' + c[2] + '</td><td class="dir n">' + brl(c[3]) + '</td><td class="dir n fin-custo">− ' + brl(c[4]) + '</td><td class="dir n fin-apagar">' + brl(c[3] - c[4]) + '</td></tr>';
+    }).join('');
+  }
   function renderFinProsp(base, card){
     var grupos = {};
     base.forEach(function(r){ if (!r.responsavelId) return; (grupos[r.responsavelId] = grupos[r.responsavelId] || []).push(r); });
@@ -2334,7 +2371,7 @@ body{font-size:14px}
   document.querySelector('.fin-sub').addEventListener('click', function(e){
     var b = e.target.closest('[data-fin]'); if (!b) return; finParte = b.dataset.fin;
     Array.prototype.forEach.call(this.querySelectorAll('[data-fin]'), function(x){ x.setAttribute('aria-pressed', String(x === b)); });
-    document.querySelector('.fin-receita').hidden = finParte !== 'receita'; document.querySelector('.fin-prosp').hidden = finParte !== 'prosp';
+    document.querySelector('.fin-receita').hidden = finParte !== 'receita'; document.querySelector('.fin-prosp').hidden = finParte !== 'prosp'; document.querySelector('.fin-resultado').hidden = finParte !== 'resultado';
     $('fin-pag-sel').hidden = finParte !== 'receita';
     renderFin();
   });
