@@ -911,6 +911,10 @@ body{font-size:14px}
 #cl-etapa > [data-etapa-cl="realizadas"]{order:7}
 @media (max-width:1100px){ .cl-cards{grid-template-columns:repeat(2,minmax(0,1fr))} }
 @media (max-width:560px){ .cl-cards{grid-template-columns:minmax(0,1fr)} }
+
+.card-filtro{cursor:pointer}
+.card-filtro:hover{border-color:var(--line-2)!important}
+.card-filtro[aria-pressed="true"]{box-shadow:0 0 0 2px var(--blue)!important;border-color:var(--blue)!important}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -1036,25 +1040,25 @@ body{font-size:14px}
         <div class="bc-res" id="bc-res" hidden></div>
         <div class="cl-cards">
         <div class="stats">
-          <div class="card stat">
+          <div class="card stat card-filtro" data-card="todos" role="button" tabindex="0">
             <div class="stat-h"><svg class="i"><use href="#i-users"/></svg>Clientes<span class="help" data-p-help="semtel" data-p-rot="Ver quem está sem telefone" title="Todos os clientes cadastrados. &quot;Com nº de processo&quot; são os que já foram protocolados.|Com telefone: tem número próprio cadastrado.|Via outro cliente: é avisado pelo número de outro cliente (parente ou vizinho).|Prospectador: o contato é feito pelo prospectador da comunidade.|Sem telefone: nenhum meio de contato cadastrado.">?</span></div>
             <div class="stat-v tnum" id="s-total">0</div>
             <div class="stat-c" id="s-total-c">&nbsp;</div>
             <div class="stat-viz" id="v-total"></div>
           </div>
-          <div class="card stat">
+          <div class="card stat card-filtro" data-card="marcada" role="button" tabindex="0">
             <div class="stat-h"><svg class="i"><use href="#i-cal"/></svg>Audiências marcadas<span class="help" data-p-help="todos" data-p-rot="Ver a pauta completa" title="Audiências de hoje em diante, com o período da pauta e quantos dias faltam para a próxima.|Com prospectador: clientes cujo aviso passa pelo prospectador da comunidade.|Sem prospectador: avisados diretamente pelo escritório.">?</span></div>
             <div class="stat-v tnum" id="s-aud">0</div>
             <div class="stat-c" id="s-aud-c">&nbsp;</div>
             <div class="stat-viz" id="v-aud"></div>
           </div>
-          <div class="card stat">
+          <div class="card stat card-filtro" data-card="avisado" role="button" tabindex="0">
             <div class="stat-h"><svg class="i"><use href="#i-check"/></svg>Avisados<span class="help" data-p-help="avisar" data-p-rot="Ver quem falta avisar" title="Clientes com audiência marcada que já foram avisados, e a porcentagem sobre o total.|WhatsApp: avisado por mensagem.|Convite: recebeu o convite impresso.|Prospectador: avisado pelo prospectador.|Faltam: ainda não avisados.">?</span></div>
             <div class="stat-v tnum" id="s-avis">0</div>
             <div class="stat-c" id="s-avis-c">&nbsp;</div>
             <div class="stat-viz" id="v-avis"></div>
           </div>
-          <div class="card stat">
+          <div class="card stat card-filtro" data-card="pendente" role="button" tabindex="0">
             <div class="stat-h"><svg class="i"><use href="#i-bellx"/></svg>Pendentes de aviso<span class="help" data-p-help="semcontato" data-p-rot="Ver quem está sem contato" title="Clientes com audiência marcada que ainda não foram avisados.|Sem contato: tentamos e não conseguimos falar; precisam do convite impresso.|Com prospectador: o aviso depende do prospectador da comunidade.">?</span></div>
             <div class="stat-v tnum" id="s-pend">0</div>
             <div class="stat-c" id="s-pend-c">&nbsp;</div>
@@ -1474,11 +1478,30 @@ body{font-size:14px}
     if (f === 'pendente') return !r.avisado && !!r.audData && n >= 0;
     if (f === 'avisar') return !r.avisado && !!r.audData && n >= 0 && s !== 'sem_contato'; // still reachable, not yet notified
     if (f === 'avisado') return !!r.avisado;
+    if (f === 'avisadoMarc') return !!r.avisado && !!r.audData && n >= 0; // como no cartão Avisados
     if (f === 'semcontato') return s === 'sem_contato';
     return true;
   }
   // stage of the process, chosen in the stage control of the Clientes tab
   var ETAPA_CL = [['', 'Todos'], ['marcada', 'Audiência marcada'], ['realizadas', 'Audiências realizadas'], ['aguardaud', 'Aguardando audiência'], ['protocolar', 'Aguardando protocolo']];
+  function cardAtivo(){
+    if (state.etapaCl === 'marcada') return 'marcada';
+    if (state.etapaCl) return state.etapaCl;
+    if (state.filter === 'avisadoMarc') return 'avisado';
+    if (state.filter === 'pendente') return 'pendente';
+    return '';
+  }
+  function aplicarCard(c){
+    var atual = cardAtivo();
+    state.filter = 'todos'; state.etapaCl = '';
+    if (c && c !== 'todos' && c !== atual){
+      if (c === 'avisado') state.filter = 'avisadoMarc';
+      else if (c === 'pendente') state.filter = c;
+      else state.etapaCl = c;
+    }
+    state.limit = 100; renderList();
+    var l = $('list'); if (l) l.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
   function passEtapaCl(r, f){
     if (!f) return true;
     var n = daysUntil(r.audData), proc = !!String(r.processo || '').trim();
@@ -1692,6 +1715,8 @@ body{font-size:14px}
     if (state.resp && state.resp !== '-' && !prospById(state.resp)) state.resp = '';
     sel.value = state.resp; sel.classList.toggle('ativo', !!state.resp); if (state.resp) avancados++;
     $('fb-badge').hidden = !avancados; $('fb-badge').textContent = avancados;
+    var ativo = cardAtivo();
+    Array.prototype.forEach.call(document.querySelectorAll('.cl-cards [data-card]'), function(c){ c.setAttribute('aria-pressed', c.dataset.card === 'todos' ? 'false' : String(c.dataset.card === ativo)); });
     var CARD_ETAPA = [
       ['protocolar', 'i-clock', 'Sem protocolo', 'cadastrados, aguardando protocolar', '--amber'],
       ['protocolados', 'i-file', 'Protocolados', 'com número de processo', '--blue'],
@@ -2604,7 +2629,12 @@ body{font-size:14px}
   $('btn-novo').addEventListener('click', function(){ openForm(null); });
   $('f-via-tirar').addEventListener('click', function(){ $('f-via-box').dataset.tirar = '1'; $('f-via-nome').textContent = 'Vínculo será removido ao salvar'; });
   $('q').addEventListener('input', function(e){ state.q = e.target.value.trim(); state.limit = 100; renderList(); });
-  $('cl-etapa').addEventListener('click', function(e){ var b = e.target.closest('[data-etapa-cl]'); if (!b) return; state.etapaCl = state.etapaCl === b.dataset.etapaCl ? '' : b.dataset.etapaCl; state.limit = 100; renderList(); });
+  $('cl-etapa').addEventListener('click', function(e){ var b = e.target.closest('[data-etapa-cl]'); if (!b) return; aplicarCard(b.dataset.etapaCl); });
+  document.querySelector('.cl-cards').addEventListener('click', function(e){
+    if (e.target.closest('.help') || e.target.closest('.stat-link')) return;
+    var c = e.target.closest('[data-card]'); if (c) aplicarCard(c.dataset.card);
+  });
+  document.querySelector('.cl-cards').addEventListener('keydown', function(e){ var c = e.target.closest('[data-card]'); if (c && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); aplicarCard(c.dataset.card); } });
   $('fb-sit').addEventListener('change', function(){ var b = $('fb-rapido').querySelector('[data-p="' + this.value + '"]'); if (b) b.click(); });
   $('fb-rapido').addEventListener('click', function(e){
     var b = e.target.closest('[data-p]'); if (!b) return;
