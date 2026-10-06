@@ -932,6 +932,9 @@ body{font-size:14px}
 .fin-sub button[aria-pressed="true"]{background:var(--primary)!important;color:var(--on-primary)!important}
 .fin-apagar{color:var(--green);font-weight:700}
 .fin-total td{font-weight:700;background:var(--soft)}
+
+.fin-proj{color:var(--purple);font-weight:600}
+.stat-v.proj{color:var(--purple)}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -1152,7 +1155,7 @@ body{font-size:14px}
         <div class="card ct-tab"><table class="ct-tbl fin-tbl"><thead><tr><th>Cliente</th><th>Processo</th><th>Audiência</th><th class="dir">Condenação</th><th class="dir">Escritório</th><th class="dir">Cliente</th><th>Pagamento</th></tr></thead><tbody id="fin-body"></tbody></table></div>
         </div>
         <div class="fin-prosp" hidden>
-          <div class="card ct-tab"><table class="ct-tbl fin-tbl"><thead><tr><th>Prospectador</th><th class="dir">Valor por indicação</th><th class="dir">Indicações</th><th class="dir">Procedentes</th><th class="dir">Clientes já pagos</th><th class="dir">A pagar</th><th class="dir">Previsão</th></tr></thead><tbody id="fin-prosp-body"></tbody></table></div>
+          <div class="card ct-tab"><table class="ct-tbl fin-tbl"><thead><tr><th>Prospectador</th><th class="dir">Valor por indicação</th><th class="dir">Indicações</th><th class="dir">Procedentes</th><th class="dir">Clientes já pagos</th><th class="dir">A pagar</th><th class="dir">Previsão</th><th class="dir">Se todos derem certo</th></tr></thead><tbody id="fin-prosp-body"></tbody></table></div>
         </div>
       </section>
 
@@ -2313,12 +2316,12 @@ body{font-size:14px}
       card('i-users', 'Indicações', ind, '', linhas.length + (linhas.length === 1 ? ' prospectador' : ' prospectadores') + ' · valor próprio de cada um', 100, '--blue') +
       card('i-cash', 'A pagar', brl(apagar), 'ok', soma('pagos') + ' clientes já receberam', pot ? apagar / pot * 100 : 0, '--green') +
       card('i-clock', 'Previsão', brl(prev), 'warn', 'procedentes que ainda vão receber', pot ? prev / pot * 100 : 0, '--amber') +
-      card('i-scale', 'Potencial total', brl(pot), '', 'se todos os indicados receberem', 100, '--line-2');
-    $('fin-regra').innerHTML = 'Cada prospectador tem o <b>seu valor por indicação</b> (padrão ' + brl(FIN_INDICACAO) + '; mude na coluna da tabela). Entra em <b>A pagar</b> quando o pagamento do cliente está marcado como <b>Pago</b>; os procedentes que ainda não receberam ficam em <b>Previsão</b>.';
+      card('i-scale', 'Se todos derem certo', brl(pot), 'proj', 'todas as indicações pagas', 100, '--purple');
+    $('fin-regra').innerHTML = 'Cada prospectador tem o <b>seu valor por indicação</b> (padrão ' + brl(FIN_INDICACAO) + '; mude na coluna da tabela). Entra em <b>A pagar</b> quando o pagamento do cliente está marcado como <b>Pago</b>; os procedentes que ainda não receberam ficam em <b>Previsão</b>; <b>Se todos derem certo</b> é o total caso todos os processos indicados por ele sejam procedentes e pagos.';
     $('fin-count').textContent = linhas.length + (linhas.length === 1 ? ' prospectador' : ' prospectadores');
     $('fin-prosp-body').innerHTML = linhas.map(function(x){
-      return '<tr><td class="nome">' + esc(x.nome) + '</td><td class="dir">' + (prospById(x.id) ? '<input class="fin-valor" type="text" inputmode="numeric" data-pind="' + esc(x.id) + '" value="' + moedaTxt(x.valor) + '" title="Quanto ' + esc(x.nome) + ' ganha por cliente indicado">' : brl(x.valor)) + '</td><td class="dir n">' + x.ind + '</td><td class="dir n">' + x.proc + '</td><td class="dir n">' + x.pagos + '</td><td class="dir n fin-apagar">' + brl(x.apagar) + '</td><td class="dir n">' + brl(x.prev) + '</td></tr>';
-    }).join('') + (linhas.length ? '<tr class="fin-total"><td>Total</td><td></td><td class="dir n">' + ind + '</td><td class="dir n">' + soma('proc') + '</td><td class="dir n">' + soma('pagos') + '</td><td class="dir n fin-apagar">' + brl(apagar) + '</td><td class="dir n">' + brl(prev) + '</td></tr>' : '<tr><td colspan="7" class="ct-mais small">Nenhum cliente com prospectador' + (finSessao ? ' nesta audiência' : '') + '.</td></tr>');
+      return '<tr><td class="nome">' + esc(x.nome) + '</td><td class="dir">' + (prospById(x.id) ? '<input class="fin-valor" type="text" inputmode="numeric" data-pind="' + esc(x.id) + '" value="' + moedaTxt(x.valor) + '" title="Quanto ' + esc(x.nome) + ' ganha por cliente indicado">' : brl(x.valor)) + '</td><td class="dir n">' + x.ind + '</td><td class="dir n">' + x.proc + '</td><td class="dir n">' + x.pagos + '</td><td class="dir n fin-apagar">' + brl(x.apagar) + '</td><td class="dir n">' + brl(x.prev) + '</td><td class="dir n fin-proj">' + brl(x.pot) + '</td></tr>';
+    }).join('') + (linhas.length ? '<tr class="fin-total"><td>Total</td><td></td><td class="dir n">' + ind + '</td><td class="dir n">' + soma('proc') + '</td><td class="dir n">' + soma('pagos') + '</td><td class="dir n fin-apagar">' + brl(apagar) + '</td><td class="dir n">' + brl(prev) + '</td><td class="dir n fin-proj">' + brl(pot) + '</td></tr>' : '<tr><td colspan="8" class="ct-mais small">Nenhum cliente com prospectador' + (finSessao ? ' nesta audiência' : '') + '.</td></tr>');
   }
   $('fin-prosp-body').addEventListener('change', async function(e){
     var inp = e.target.closest('[data-pind]'); if (!inp) return;
