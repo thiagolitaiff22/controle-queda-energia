@@ -877,6 +877,11 @@ body{font-size:14px}
 .etp button span{font-size:12px;color:var(--ink-3);font-variant-numeric:tabular-nums}
 .etp button[aria-pressed="true"]{background:var(--primary);color:var(--on-primary);font-weight:600}
 .etp button[aria-pressed="true"] span{color:var(--on-primary);opacity:.75}
+
+.cl-etapa-cards > button.card{text-align:left;font:inherit;color:inherit;cursor:pointer}
+.cl-etapa-cards > button.card:hover{border-color:var(--line-2)!important}
+.cl-etapa-cards > button.card[aria-pressed="true"]{box-shadow:0 0 0 2px var(--blue)!important;border-color:var(--blue)!important}
+.vw-dash .stats.three{grid-template-columns:repeat(3,minmax(0,1fr))}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -999,7 +1004,6 @@ body{font-size:14px}
           </div>
           <button type="button" id="cl-aud-ant"></button><button type="button" id="cl-aud-prox"></button><span id="cl-aud-info"></span>
         </div>
-        <div class="etp" id="cl-etapa" role="group" aria-label="Etapa do processo"></div>
         <div class="bc-res" id="bc-res" hidden></div>
         <div class="stats">
           <div class="card stat">
@@ -1027,6 +1031,7 @@ body{font-size:14px}
             <div class="stat-viz" id="v-pend"></div>
           </div>
         </div>
+        <div class="stats three cl-etapa-cards" id="cl-etapa" role="group" aria-label="Etapa do processo"></div>
 
         <div hidden><span class="range tnum" id="range"></span><div class="pauta" id="pauta"></div></div>
 
@@ -1655,8 +1660,19 @@ body{font-size:14px}
     if (state.resp && state.resp !== '-' && !prospById(state.resp)) state.resp = '';
     sel.value = state.resp; sel.classList.toggle('ativo', !!state.resp); if (state.resp) avancados++;
     $('fb-badge').hidden = !avancados; $('fb-badge').textContent = avancados;
-    $('cl-etapa').innerHTML = ETAPA_CL.map(function(x){ var n = rows.filter(function(r){ return matches(r, { etapaCl: x[0] }); }).length;
-      return '<button type="button" data-etapa-cl="' + x[0] + '" aria-pressed="' + ((state.etapaCl || '') === x[0]) + '">' + x[1] + '<span>' + n + '</span></button>'; }).join('');
+    var CARD_ETAPA = [
+      ['realizadas', 'i-check', 'Audiências realizadas', 'audiência já aconteceu', '--purple'],
+      ['aguardaud', 'i-clock', 'Aguardando audiência', 'protocolados, sem audiência marcada', '--amber'],
+      ['protocolar', 'i-file', 'Aguardando protocolo', 'cadastrados, ainda sem processo', '--blue']
+    ];
+    var totE = rows.length || 1;
+    $('cl-etapa').innerHTML = CARD_ETAPA.map(function(x){
+      var n = rows.filter(function(r){ return passEtapaCl(r, x[0]); }).length, p = Math.round(n / totE * 100);
+      return '<button type="button" class="card stat" data-etapa-cl="' + x[0] + '" aria-pressed="' + (state.etapaCl === x[0]) + '" title="' + (state.etapaCl === x[0] ? 'Clique de novo para ver todos' : 'Mostrar só: ' + x[2].toLowerCase()) + '">' +
+        '<div class="stat-h"><svg class="i"><use href="#' + x[1] + '"/></svg>' + x[2] + '</div>' +
+        '<div class="stat-v tnum">' + n + '</div><div class="stat-c">' + p + '% · ' + x[3] + '</div>' +
+        '<div class="stat-viz"><div class="bar"><span style="width:' + p + '%;background:var(' + x[4] + ')"></span></div></div></button>';
+    }).join('');
     var NOMES_P = { todos: 'Todas as situações', avisar: 'A avisar', semcontato: 'Sem contato', semtel: 'Sem telefone', online: 'Online' };
     $('fb-sit').innerHTML = Array.prototype.map.call($('fb-rapido').querySelectorAll('[data-p]'), function(b){ return '<option value="' + b.dataset.p + '">' + NOMES_P[b.dataset.p] + ' · ' + b.querySelector('.n').textContent + '</option>'; }).join('') + (atual ? '' : '<option value="" selected>Filtro personalizado</option>');
     $('fb-sit').value = atual || '';
@@ -2556,7 +2572,7 @@ body{font-size:14px}
   $('btn-novo').addEventListener('click', function(){ openForm(null); });
   $('f-via-tirar').addEventListener('click', function(){ $('f-via-box').dataset.tirar = '1'; $('f-via-nome').textContent = 'Vínculo será removido ao salvar'; });
   $('q').addEventListener('input', function(e){ state.q = e.target.value.trim(); state.limit = 100; renderList(); });
-  $('cl-etapa').addEventListener('click', function(e){ var b = e.target.closest('[data-etapa-cl]'); if (!b) return; state.etapaCl = b.dataset.etapaCl; state.limit = 100; renderList(); });
+  $('cl-etapa').addEventListener('click', function(e){ var b = e.target.closest('[data-etapa-cl]'); if (!b) return; state.etapaCl = state.etapaCl === b.dataset.etapaCl ? '' : b.dataset.etapaCl; state.limit = 100; renderList(); });
   $('fb-sit').addEventListener('change', function(){ var b = $('fb-rapido').querySelector('[data-p="' + this.value + '"]'); if (b) b.click(); });
   $('fb-rapido').addEventListener('click', function(e){
     var b = e.target.closest('[data-p]'); if (!b) return;
