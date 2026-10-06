@@ -3820,22 +3820,48 @@ body{font-size:14px}
       var p = ctSessao.split('|'), data = p[0], hora = p[1] || '';
       var rows = state.rows.filter(function(r){ return (r.audData || '') + '|' + (r.audHora || '') === ctSessao; });
       var lista = rows.slice().sort(function(a, c){ return String(a.nome || '').localeCompare(String(c.nome || ''), 'pt'); });
-      var titulo = 'Audiência de ' + fmtDate(data) + (hora ? ' às ' + hora.replace(':00', 'h') : '') + ' · ' + rows.length + ' clientes';
+      var nOn = lista.filter(function(r){ return r.online; }).length, nSem = lista.filter(function(r){ return !temTelefone(r); }).length;
+      var DL = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+      var titulo = 'Audiência de ' + fmtDate(data) + (hora ? ' às ' + hora.replace(':00', 'h') : '');
       var wb = new X.Workbook(); wb.creator = 'Rodrigues Litaiff Advogados';
-      var ws = wb.addWorksheet('Clientes', { pageSetup: { paperSize: 9, orientation: 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 0, margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.5, header: 0.2, footer: 0.2 } }, views: [{ state: 'frozen', ySplit: 2 }] });
-      ws.columns = [{ width: 6 }, { width: 42 }, { width: 60 }, { width: 22 }];
-      var borda = { top: { style: 'thin', color: { argb: 'FFD9DDE3' } }, bottom: { style: 'thin', color: { argb: 'FFD9DDE3' } }, left: { style: 'thin', color: { argb: 'FFD9DDE3' } }, right: { style: 'thin', color: { argb: 'FFD9DDE3' } } };
-      ws.mergeCells('A1:D1'); ws.getCell('A1').value = titulo; ws.getCell('A1').font = { bold: true, size: 14 };
-      ws.getRow(1).height = 24;
-      ws.getRow(2).values = ['Nº', 'Nome', 'Endereço', 'Celular'];
-      ws.getRow(2).font = { bold: true, color: { argb: 'FFFFFFFF' } };
-      ws.getRow(2).eachCell(function(c){ c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF111827' } }; c.border = borda; });
-      // celular em branco para quem não tem número próprio: o escritório preenche à mão
+      var ws = wb.addWorksheet('Clientes', {
+        properties: { defaultRowHeight: 20 },
+        views: [{ state: 'frozen', ySplit: 5, showGridLines: false }],
+        pageSetup: { paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0, horizontalCentered: true, printTitlesRow: '5:5',
+          margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.6, header: 0.2, footer: 0.25 } },
+        headerFooter: { oddFooter: '&L&8Rodrigues Litaiff Advogados&C&8' + titulo + '&R&8Página &P de &N' }
+      });
+      ws.columns = [{ width: 6 }, { width: 44 }, { width: 70 }, { width: 19 }];
+      var FONTE = 'Calibri', AZUL = 'FF1D4ED8', ESCURO = 'FF111827', CINZA = 'FF6B7280', LINHA = 'FFE5E7EB';
+      var fina = { style: 'thin', color: { argb: LINHA } }, borda = { top: fina, bottom: fina, left: fina, right: fina };
+      // cabeçalho do documento
+      ws.mergeCells('A1:D1'); ws.getCell('A1').value = 'RODRIGUES LITAIFF ADVOGADOS · AÇÃO CONTRA A ÂMBAR ENERGIA';
+      ws.getCell('A1').font = { name: FONTE, size: 9, bold: true, color: { argb: CINZA } };
+      ws.mergeCells('A2:D2'); ws.getCell('A2').value = titulo + ' · ' + DL[parseDate(data).getDay()];
+      ws.getCell('A2').font = { name: FONTE, size: 18, bold: true, color: { argb: ESCURO } }; ws.getRow(2).height = 30;
+      ws.mergeCells('A3:D3');
+      ws.getCell('A3').value = { richText: [
+        { text: lista.length + ' clientes  ·  ', font: { name: FONTE, size: 11, color: { argb: CINZA } } },
+        { text: nOn + ' online (nome em azul)', font: { name: FONTE, size: 11, bold: true, color: { argb: AZUL } } },
+        { text: '  ·  ' + nSem + ' sem celular para preencher', font: { name: FONTE, size: 11, color: { argb: CINZA } } }] };
+      ws.getRow(3).height = 20; ws.getRow(4).height = 8;
+      // títulos das colunas
+      var cab = ws.getRow(5); cab.values = ['Nº', 'Nome', 'Endereço', 'Celular']; cab.height = 24;
+      cab.eachCell(function(c, i){ c.font = { name: FONTE, size: 11, bold: true, color: { argb: 'FFFFFFFF' } }; c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: ESCURO } };
+        c.alignment = { vertical: 'middle', horizontal: i === 1 || i === 4 ? 'center' : 'left', indent: i === 2 || i === 3 ? 1 : 0 }; c.border = borda; });
+      ws.autoFilter = 'A5:D5';
+      // um cliente por linha; online em azul; celular em branco para quem não tem número próprio
       lista.forEach(function(r, i){
         var l = ws.addRow([i + 1, r.nome || '', r.endereco || '', temTelefone(r) ? r.contato : '']);
         l.height = 22;
-        l.eachCell({ includeEmpty: true }, function(c){ c.border = borda; c.alignment = { vertical: 'middle', wrapText: true }; });
-        l.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+        var cor = r.online ? AZUL : ESCURO, zebra = i % 2 ? 'FFF7F8FA' : 'FFFFFFFF';
+        l.eachCell({ includeEmpty: true }, function(c, k){
+          c.font = { name: FONTE, size: 11, color: { argb: k === 1 ? CINZA : cor }, bold: !!r.online && k === 2 };
+          c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: zebra } };
+          c.border = borda;
+          c.alignment = { vertical: 'middle', wrapText: k === 3, horizontal: k === 1 || k === 4 ? 'center' : 'left', indent: k === 2 || k === 3 ? 1 : 0 };
+        });
+        if (!temTelefone(r)) l.getCell(4).border = { top: fina, left: fina, right: fina, bottom: { style: 'thin', color: { argb: 'FF9CA3AF' } } };
       });
       var buf = await wb.xlsx.writeBuffer();
       baixarArquivo('Contestações ' + data.split('-').reverse().join('-') + (hora ? ' ' + hora.replace(':', 'h') : '') + '.xlsx', new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
