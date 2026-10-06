@@ -798,6 +798,46 @@ body{font-size:14px}
 .modo-sel,.pos-sel{border-radius:8px!important}
 .ct-bars-box,.bc{border-radius:10px}
 .bc-campo input{height:40px}
+
+/* ---------- minimalista ---------- */
+.fbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.fbar .tb-busca{flex:1 1 260px;max-width:none}
+.fbar .tb-busca input{height:38px}
+.tb-sel{height:38px;border:1px solid var(--line);background-color:var(--panel);border-radius:8px;padding:0 32px 0 12px;font:inherit;font-size:13.5px;font-weight:500;color:var(--ink-2);appearance:none;-webkit-appearance:none;cursor:pointer;max-width:280px;background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);background-position:calc(100% - 16px) 52%,calc(100% - 11px) 52%;background-size:5px 5px;background-repeat:no-repeat}
+.tb-sel:hover{border-color:var(--line-2);color:var(--ink)}
+.tb-sel.ativo{border-color:var(--ink-3);color:var(--ink);font-weight:600}
+.tb-sel option,.tb-sel optgroup{color:var(--ink);background:var(--panel)}
+.tb-btn{height:38px;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:0 12px;font:inherit;font-size:13.5px;font-weight:500;color:var(--ink-2);cursor:pointer;box-shadow:none}
+.tb-btn:hover{border-color:var(--line-2);color:var(--ink)}
+.tb-btn[aria-pressed="true"],.tb-btn[aria-expanded="true"]{border-color:var(--ink-3);color:var(--ink);background:var(--soft)}
+.tb-btn svg.i{width:16px;height:16px}
+.tb-fim{margin-left:auto;display:inline-flex;align-items:center;gap:10px;font-size:13px;color:var(--ink-3)}
+.fbar .day-chip{display:none!important}
+.fb-painel{border:0!important;padding:0!important}
+.bc-res{margin-top:-6px}
+.list-sum .ls-main,.list-sum .ls-parts{display:none!important}
+.list-sum{justify-content:flex-end!important;min-height:0}
+.list-sum:empty{display:none}
+.foot-note{display:none}
+.ct-on-btn .ct-on-dot{display:none}
+/* rows: plain text instead of pills */
+#list .st.acao{border:0!important;background:none!important;padding:0!important;color:var(--amber)!important;font-weight:600;box-shadow:none!important}
+#list .st.acao:hover{text-decoration:underline}
+.modo-sel{border:0!important;background-color:transparent!important;padding:0 14px 0 0!important;margin-top:2px!important;color:var(--ink-3)!important;font-weight:500!important;background-position:calc(100% - 6px) 55%,calc(100% - 3px) 55%!important}
+.modo-sel.on{color:var(--blue)!important;font-weight:600!important}
+.modo-sel:hover{color:var(--ink)!important;text-decoration:underline}
+#list .toggle,#cl-list .toggle,#list .toggle.pending{border:0!important;background:none!important;padding:0!important;color:var(--amber)!important;font-weight:600}
+#list .toggle[aria-pressed="true"]{color:var(--green)!important}
+.res-sel{appearance:none;-webkit-appearance:none;border:0;background:transparent;font:inherit;font-size:13px;font-weight:600;color:var(--ink-3);cursor:pointer;padding:2px 16px 2px 0;background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);background-position:calc(100% - 7px) 55%,calc(100% - 3px) 55%;background-size:4px 4px;background-repeat:no-repeat}
+.res-sel:hover{color:var(--ink);text-decoration:underline}
+.res-sel option{color:var(--ink);background:var(--panel);font-weight:500}
+.res-sel.r-nada{font-weight:500}
+.res-sel.r-procedente{color:var(--green)}
+.res-sel.r-conclusos{color:var(--amber)}
+.res-sel.r-faltou{color:var(--red)}
+.res-sel.r-improcedente{color:var(--purple)}
+.ct-tbl td.nome{font-weight:600}
+.ct-pills{color:var(--ink-3)}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -894,10 +934,33 @@ body{font-size:14px}
       </section>
 
       <section id="view-clientes" class="vw-dash" style="display:flex;flex-direction:column;gap:18px">
-        <div class="card bc">
-          <div class="search bc-campo"><svg class="i"><use href="#i-search"/></svg><input id="bc-q" type="search" autocomplete="off" placeholder="Onde está o cliente? Busque por nome ou CPF"></div>
-          <div class="bc-res" id="bc-res" hidden></div>
+        <div class="fbar">
+          <div class="search tb-busca"><svg class="i"><use href="#i-search"/></svg><input id="bc-q" type="search" autocomplete="off" placeholder="Buscar cliente por nome ou CPF"></div>
+          <select id="cl-aud-sel" class="tb-sel" aria-label="Audiência"></select>
+          <select id="fb-sit" class="tb-sel" aria-label="Situação do aviso"></select>
+          <button type="button" class="tb-btn fb-mais" id="fb-mais" aria-expanded="false" aria-controls="fb-painel"><svg class="i"><use href="#i-filter"/></svg>Mais filtros<span class="fb-badge" id="fb-badge" hidden></span></button>
+          <span class="fb-fim tb-fim"><button type="button" class="day-chip tnum" id="fb-dia" hidden></button><span class="fb-count tnum" id="fb-count"></span><button type="button" class="fb-clear" id="fb-clear" hidden>Limpar</button></span>
         </div>
+        <div class="fb-painel" id="fb-painel" hidden>
+            <label>Situação do aviso<select id="fb-aviso"></select></label>
+            <label>Meio do aviso<select id="fb-meio"></select></label>
+            <label>Audiência<select id="fb-aud"></select></label>
+            <label>Telefone<select id="fb-tel"></select></label>
+            <label>Responsável<select id="fb-resp"></select></label>
+          </div>
+        <div hidden>
+          <input id="q" type="search">
+          <div class="fb-rapido" id="fb-rapido" role="group" aria-label="Atalhos">
+            <button type="button" data-p="todos">Todos <span class="n" data-np="todos"></span></button>
+            <button type="button" data-p="avisar"><i class="dot warn"></i>A avisar <span class="n" data-np="avisar"></span></button>
+            <button type="button" data-p="semcontato"><i class="dot crit"></i>Sem contato <span class="n" data-np="semcontato"></span></button>
+            <button type="button" data-p="semtel">Sem telefone <span class="n" data-np="semtel"></span></button>
+            <button type="button" data-p="online">Online <span class="n" data-np="online"></span></button>
+            
+          </div>
+          <button type="button" id="cl-aud-ant"></button><button type="button" id="cl-aud-prox"></button><span id="cl-aud-info"></span>
+        </div>
+        <div class="bc-res" id="bc-res" hidden></div>
         <div class="stats">
           <div class="card stat">
             <div class="stat-h"><svg class="i"><use href="#i-users"/></svg>Clientes<span class="help" data-p-help="semtel" data-p-rot="Ver quem está sem telefone" title="Todos os clientes cadastrados. &quot;Com nº de processo&quot; são os que já foram protocolados.|Com telefone: tem número próprio cadastrado.|Via outro cliente: é avisado pelo número de outro cliente (parente ou vizinho).|Prospectador: o contato é feito pelo prospectador da comunidade.|Sem telefone: nenhum meio de contato cadastrado.">?</span></div>
@@ -925,36 +988,8 @@ body{font-size:14px}
           </div>
         </div>
 
-        <div class="ct-aud-bar">
-          <label for="cl-aud-sel">Audiência</label>
-          <button type="button" class="icon-btn" id="cl-aud-ant" aria-label="Audiência anterior" title="Audiência anterior"><svg class="i"><use href="#i-chev"/></svg></button>
-          <select id="cl-aud-sel"></select>
-          <button type="button" class="icon-btn" id="cl-aud-prox" aria-label="Próxima audiência" title="Próxima audiência"><svg class="i"><use href="#i-chev"/></svg></button>
-          <span class="ct-aud-info" id="cl-aud-info"></span>
-        </div>
         <div hidden><span class="range tnum" id="range"></span><div class="pauta" id="pauta"></div></div>
 
-        <div class="card filterbar">
-          <div class="fb-top">
-            <div class="search"><svg class="i"><use href="#i-search"/></svg><input id="q" type="search" placeholder="Buscar por nome ou CPF"></div>
-            <button type="button" class="btn fb-mais" id="fb-mais" aria-expanded="false" aria-controls="fb-painel"><svg class="i"><use href="#i-filter"/></svg>Mais filtros<span class="fb-badge" id="fb-badge" hidden></span></button>
-          </div>
-          <div class="fb-rapido" id="fb-rapido" role="group" aria-label="Atalhos">
-            <button type="button" data-p="todos">Todos <span class="n" data-np="todos"></span></button>
-            <button type="button" data-p="avisar"><i class="dot warn"></i>A avisar <span class="n" data-np="avisar"></span></button>
-            <button type="button" data-p="semcontato"><i class="dot crit"></i>Sem contato <span class="n" data-np="semcontato"></span></button>
-            <button type="button" data-p="semtel">Sem telefone <span class="n" data-np="semtel"></span></button>
-            <button type="button" data-p="online">Online <span class="n" data-np="online"></span></button>
-            <span class="fb-fim"><button type="button" class="day-chip tnum" id="fb-dia" hidden></button><span class="fb-count tnum" id="fb-count"></span><button type="button" class="fb-clear" id="fb-clear" hidden>Limpar</button></span>
-          </div>
-          <div class="fb-painel" id="fb-painel" hidden>
-            <label>Situação do aviso<select id="fb-aviso"></select></label>
-            <label>Meio do aviso<select id="fb-meio"></select></label>
-            <label>Audiência<select id="fb-aud"></select></label>
-            <label>Telefone<select id="fb-tel"></select></label>
-            <label>Responsável<select id="fb-resp"></select></label>
-          </div>
-        </div>
 
         <div class="sec-title" id="list-title">Clientes</div>
         <div class="card list-sum" id="list-sum"></div>
@@ -989,23 +1024,17 @@ body{font-size:14px}
       </section>
 
       <section id="view-ct" class="vw-dash" hidden style="display:flex;flex-direction:column;gap:14px">
-        <div class="ct-aud-bar">
-          <label for="ct-aud-sel">Audiência</label>
-          <button type="button" class="icon-btn" id="ct-aud-ant" aria-label="Audiência anterior" title="Audiência anterior"><svg class="i"><use href="#i-chev"/></svg></button>
-          <select id="ct-aud-sel"></select>
-          <button type="button" class="icon-btn" id="ct-aud-prox" aria-label="Próxima audiência" title="Próxima audiência"><svg class="i"><use href="#i-chev"/></svg></button>
-          <span class="ct-aud-info" id="ct-aud-info"></span>
-          <button type="button" class="linkbtn" id="ct-geral" hidden>Ver geral (todas as audiências)</button>
-          <span class="ct-sep"></span>
-          <label for="ct-tese-sel">Tese</label>
-          <select id="ct-tese-sel" class="ct-tese-sel"></select>
+        <div class="fbar">
+          <div class="search tb-busca"><svg class="i"><use href="#i-search"/></svg><input id="ct-q" type="search" placeholder="Buscar cliente por nome ou CPF"></div>
+          <select id="ct-aud-sel" class="tb-sel" aria-label="Audiência"></select>
+          <select id="ct-tese-sel" class="tb-sel ct-tese-sel" aria-label="Tese"></select>
+          <select id="ct-res-sel" class="tb-sel" aria-label="Resultado"></select>
+          <button type="button" class="tb-btn ct-on-btn" id="ct-on-btn" hidden title="Mostrar só quem faz a audiência online"></button>
+          <span class="tb-fim fb-count tnum" id="ct-count"></span>
         </div>
+        <div hidden><button type="button" id="ct-aud-ant"></button><button type="button" id="ct-aud-prox"></button><span id="ct-aud-info"></span><button type="button" id="ct-geral"></button></div>
         <div class="stats five ct-stats" id="ct-stats"></div>
         <details class="card ct-bars-box" id="ct-bars-det"><summary class="ct-bars-head"><b>Gráfico das teses</b><span id="ct-bars-info"></span></summary><div class="ct-bars" id="ct-chips" role="group" aria-label="Filtrar por tese"></div></details>
-        <div class="card filterbar"><div class="fb-top">
-          <div class="search"><svg class="i"><use href="#i-search"/></svg><input id="ct-q" type="search" placeholder="Buscar por nome ou CPF"></div>
-          <button type="button" class="ct-on-btn" id="ct-on-btn" hidden title="Mostrar só quem faz a audiência online"></button><span class="fb-count tnum" id="ct-count"></span>
-        </div></div>
         <div class="ct-resf" id="ct-resf" role="group" aria-label="Filtrar por resultado"></div>
         <div class="card ct-tab"><table class="ct-tbl"><thead><tr><th>Cliente</th><th>CPF</th><th>Processo</th><th id="ct-th-aud">Audiência</th><th>Tese da contestação</th><th>Resultado na audiência</th></tr></thead><tbody id="ct-body"></tbody></table></div>
       </section>
@@ -1572,6 +1601,10 @@ body{font-size:14px}
     if (state.resp && state.resp !== '-' && !prospById(state.resp)) state.resp = '';
     sel.value = state.resp; sel.classList.toggle('ativo', !!state.resp); if (state.resp) avancados++;
     $('fb-badge').hidden = !avancados; $('fb-badge').textContent = avancados;
+    var NOMES_P = { todos: 'Todas as situações', avisar: 'A avisar', semcontato: 'Sem contato', semtel: 'Sem telefone', online: 'Online' };
+    $('fb-sit').innerHTML = Array.prototype.map.call($('fb-rapido').querySelectorAll('[data-p]'), function(b){ return '<option value="' + b.dataset.p + '">' + NOMES_P[b.dataset.p] + ' · ' + b.querySelector('.n').textContent + '</option>'; }).join('') + (atual ? '' : '<option value="" selected>Filtro personalizado</option>');
+    $('fb-sit').value = atual || '';
+    $('fb-sit').classList.toggle('ativo', !!atual && atual !== 'todos');
     var dia = $('fb-dia');
     dia.hidden = !state.dia;
     if (state.dia) dia.innerHTML = 'Dia ' + fmtShort(state.dia) + (state.hora ? ' · ' + esc(state.hora) : '') + ' <span aria-hidden="true">×</span>';
@@ -1948,7 +1981,8 @@ body{font-size:14px}
       return buscaCliente(r, q);
     }).sort(function(a, b){ return String(a.nome).localeCompare(String(b.nome), 'pt'); });
     box.hidden = false;
-    if (!achados.length){ box.innerHTML = '<div class="bc-vazio">Nenhum cliente encontrado para "' + esc(q) + '".</div>'; return; }
+    if (!achados.length){ box.hidden = true; box.innerHTML = ''; return; }
+    if (achados.length > 3){ box.hidden = true; box.innerHTML = ''; return; }
     box.innerHTML = achados.slice(0, 6).map(function(r){
       var e = ETAPAS.filter(function(x){ return x[0] === etapa(r); })[0] || ['', '', '--ink-3'];
       var ks = tesesDe(r), linhas = [];
@@ -1966,7 +2000,7 @@ body{font-size:14px}
         '<button type="button" class="btn bc-acao" data-bc="' + esc(r.id) + '"><svg class="i"><use href="#i-pencil"/></svg>Abrir cadastro</button></div>';
     }).join('') + (achados.length > 6 ? '<div class="bc-vazio">Mais ' + (achados.length - 6) + ' clientes com esse nome. Digite mais para refinar.</div>' : '');
   }
-  $('bc-q').addEventListener('input', renderBusca);
+  $('bc-q').addEventListener('input', function(){ state.q = this.value.trim(); state.limit = 100; renderBusca(); renderList(); });
   $('bc-res').addEventListener('click', function(e){
     var b = e.target.closest('[data-bc]'); if (!b) return;
     var r = state.rows.filter(function(x){ return x.id === b.dataset.bc; })[0]; if (r) openForm(r);
@@ -2002,7 +2036,7 @@ body{font-size:14px}
       return DL[parseDate(p[0]).getDay()] + ', ' + fmtDate(p[0]) + (p[1] ? ' às ' + p[1].replace(':00', 'h') : '') + ' · ' + sess[k] + (sess[k] === 1 ? ' cliente' : ' clientes') + (n === 0 ? ' · hoje' : n === 1 ? ' · amanhã' : ''); };
     var grupos = {}, ordem = [];
     ks.slice().reverse().forEach(function(k){ var d = k.split('|')[0], g = MESES[+d.slice(5, 7) - 1] + ' de ' + d.slice(0, 4); if (!grupos[g]){ grupos[g] = []; ordem.push(g); } grupos[g].push(k); });
-    sel.innerHTML = '<option value="">Todas as audiências · ' + state.rows.length + ' clientes</option>' +
+    sel.innerHTML = '<option value="">Todas as audiências</option>' +
       ordem.map(function(g){ return '<optgroup label="' + g.replace(/^./, function(c){ return c.toUpperCase(); }) + '">' + grupos[g].slice().reverse().map(function(k){ return '<option value="' + esc(k) + '">' + esc(rot(k)) + '</option>'; }).join('') + '</optgroup>'; }).join('');
     sel.value = atual && sess[atual] ? atual : '';
     var pos = ks.indexOf(sel.value);
@@ -2055,7 +2089,7 @@ body{font-size:14px}
     montarSelectSessao($('ct-aud-sel'), ctSessao, $('ct-aud-info'), $('ct-aud-ant'), $('ct-aud-prox'));
     $('ct-geral').hidden = !ctSessao;
     var nOn = state.rows.filter(function(r){ return r.online && (!ctSessao || chaveS(r) === ctSessao); }).length;
-    $('ct-on-btn').hidden = !nOn && !ctOnline; $('ct-on-btn').setAttribute('aria-pressed', ctOnline); $('ct-on-btn').innerHTML = '<i class="ct-on-dot"></i>Online <b>' + nOn + '</b>';
+    $('ct-on-btn').hidden = !nOn && !ctOnline; $('ct-on-btn').setAttribute('aria-pressed', ctOnline); $('ct-on-btn').innerHTML = 'Online · ' + nOn;
     var rows = state.rows.filter(function(r){ return !ctSessao || chaveS(r) === ctSessao; });
     var cont = {}, sem = 0;
     rows.forEach(function(r){ var c = comboDe(r); if (!c) sem++; else cont[c] = (cont[c] || 0) + 1; });
@@ -2094,7 +2128,7 @@ body{font-size:14px}
     var totB = base.length, julg = base.filter(function(r){ var k = resAud(r); return k === 'procedente' || k === 'improcedente'; }).length;
     var pc = function(n, d){ return d ? Math.round(n / d * 100) : 0; };
     var card = function(k, ico, rot, n, cls, cap, parts){
-      return '<button type="button" class="card stat" data-resf="' + k + '" aria-pressed="' + (ctRes === k) + '" title="' + (k ? 'Mostrar só: ' + rot.toLowerCase() : 'Mostrar todos') + '">' +
+      return '<button type="button" class="card stat" data-resf="' + k + '" aria-pressed="' + (!!k && ctRes === k) + '" title="' + (k ? 'Mostrar só: ' + rot.toLowerCase() : 'Mostrar todos') + '">' +
         '<div class="stat-h"><svg class="i"><use href="#' + ico + '"/></svg>' + rot + '</div>' +
         '<div class="stat-v tnum' + (cls ? ' ' + cls : '') + '">' + n + '</div><div class="stat-c">' + cap + '</div>' +
         '<div class="stat-viz">' + stackBar(parts) + '</div></button>';
@@ -2108,6 +2142,8 @@ body{font-size:14px}
       card('faltou', 'i-bellx', 'Faltaram', nF, 'crit', pc(nF, totB) + '% dos clientes', [{ l: 'Faltaram', n: nF, c: cssVar('--red') }, resto(nF)]) +
       card('improcedente', 'i-gavel', 'Improcedentes', nI, 'roxo', pc(nI, julg) + '% dos julgados', [{ l: 'Improcedentes', n: nI, c: cssVar('--purple') }, resto(nI)]);
     $('ct-resf').innerHTML = '';
+    $('ct-res-sel').innerHTML = [['', 'Todos os resultados'], ['__sem', 'Sem resultado']].concat(CT_RES).map(function(x){ return '<option value="' + x[0] + '">' + x[1] + ' · ' + nRes(x[0]) + '</option>'; }).join('');
+    $('ct-res-sel').value = ctRes; $('ct-res-sel').classList.toggle('ativo', !!ctRes);
 
     var q = semAcento(ctQ), qd = ctQ.replace(/[^0-9]/g, '');
     var lista = base.filter(function(r){
@@ -2120,12 +2156,13 @@ body{font-size:14px}
     $('ct-th-aud').textContent = ctSessao ? 'Tipo' : 'Audiência';
     $('ct-body').innerHTML = lista.slice(0, ctLimite).map(function(r){
       var t = tesesDe(r);
-      return '<tr data-ct="' + esc(r.id) + '"><td class="nome' + (r.online ? ' online' : '') + '"' + (r.online ? ' title="Audiência online"' : '') + '>' + esc(r.nome) + '</td><td class="n">' + esc(r.cpf || '—') + '</td><td class="n">' + (r.processo ? '<button type="button" class="copia" data-copiar="' + esc(r.processo) + '" title="Copiar o número do processo">' + esc(r.processo) + '<svg class="i"><use href="#i-copy"/></svg></button>' : '—') + '</td><td class="n">' + (!ctSessao && r.audData ? fmtShort(r.audData) + (r.audHora ? ' · ' + esc(r.audHora) : '') : '') + (r.audData ? modoSwitch(r) : '—') + '</td><td><div class="ct-pills">' + (t.length ? t.map(function(k){ return '<span>' + esc(nomeTese(k)) + '</span>'; }).join('') : '<span>Sem tese</span>') + '</div></td><td><div class="ct-ctl" role="group" aria-label="Resultado de ' + esc(r.nome) + '">' + CT_RES.map(function(x){ return '<button type="button" data-res="' + x[0] + '" data-id="' + esc(r.id) + '" aria-pressed="' + (resAud(r) === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div></td></tr>';
+      return '<tr data-ct="' + esc(r.id) + '"><td class="nome' + (r.online ? ' online' : '') + '"' + (r.online ? ' title="Audiência online"' : '') + '>' + esc(r.nome) + '</td><td class="n">' + esc(r.cpf || '—') + '</td><td class="n">' + (r.processo ? '<button type="button" class="copia" data-copiar="' + esc(r.processo) + '" title="Copiar o número do processo">' + esc(r.processo) + '<svg class="i"><use href="#i-copy"/></svg></button>' : '—') + '</td><td class="n">' + (!ctSessao && r.audData ? fmtShort(r.audData) + (r.audHora ? ' · ' + esc(r.audHora) : '') : '') + (r.audData ? modoSwitch(r) : '—') + '</td><td><div class="ct-pills">' + (t.length ? t.map(function(k){ return '<span>' + esc(nomeTese(k)) + '</span>'; }).join('') : '<span>Sem tese</span>') + '</div></td><td><select class="res-sel r-' + (resAud(r) || 'nada') + '" data-ressel="' + esc(r.id) + '" aria-label="Resultado de ' + esc(r.nome) + '"><option value="">Sem resultado</option>' + CT_RES.map(function(x){ return '<option value="' + x[0] + '"' + (resAud(r) === x[0] ? ' selected' : '') + '>' + x[1] + '</option>'; }).join('') + '</select></td></tr>';
     }).join('') + (lista.length > ctLimite ? '<tr class="ct-mais-row"><td colspan="6" class="ct-mais"><button type="button" class="btn" id="ct-mais">Mostrar mais ' + Math.min(200, lista.length - ctLimite) + '</button></td></tr>' : '') +
       (!lista.length ? '<tr><td colspan="6" class="ct-mais small">Nenhum cliente encontrado.</td></tr>' : '');
   }
   function ctSessoes(){ var m = {}; state.rows.forEach(function(r){ if (r.audData) m[(r.audData || '') + '|' + (r.audHora || '')] = 1; }); return Object.keys(m).sort(); }
   $('ct-on-btn').addEventListener('click', function(){ ctOnline = !ctOnline; ctLimite = 200; renderContest(); });
+  $('ct-res-sel').addEventListener('change', function(){ ctRes = this.value; ctLimite = 200; renderContest(); });
   $('ct-tese-sel').addEventListener('change', function(){ ctFiltro = this.value; ctLimite = 200; renderContest(); });
   $('ct-geral').addEventListener('click', function(){ ctSessao = ''; ctLimite = 200; renderContest(); });
   $('ct-aud-sel').addEventListener('change', function(){ ctSessao = this.value; ctLimite = 200; renderContest(); });
@@ -2145,6 +2182,15 @@ body{font-size:14px}
     if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(t).catch(antigo);
     return antigo();
   }
+  document.addEventListener('change', async function(e){
+    var sel = e.target.closest && e.target.closest('select[data-ressel]'); if (!sel) return;
+    var r0 = state.rows.filter(function(x){ return x.id === sel.dataset.ressel; })[0]; if (!r0) return;
+    var antes = { resultado: r0.resultado || '', concluso: !!r0.concluso, comparecimento: r0.comparecimento || '' };
+    var k = sel.value;
+    try { await patchRow(r0.id, camposRes(k, r0)); toast((k ? CT_RES.filter(function(x){ return x[0] === k; })[0][1] + ': ' : 'Resultado apagado: ') + (r0.nome || ''), 'Desfazer', function(){ patchRow(r0.id, antes).catch(function(e2){ toast(errMsg(e2)); }); }); }
+    catch(err){ sel.value = resAud(r0); toast(errMsg(err)); }
+  });
+  document.addEventListener('click', function(e){ if (e.target.closest && e.target.closest('select[data-ressel]')) e.stopPropagation(); }, true);
   async function mudarModo(sel){
     var r = state.rows.filter(function(x){ return x.id === sel.dataset.modo; })[0]; if (!r) return;
     var on = sel.value === 'o'; if (!!r.online === on) return;
@@ -2453,6 +2499,7 @@ body{font-size:14px}
   $('btn-novo').addEventListener('click', function(){ openForm(null); });
   $('f-via-tirar').addEventListener('click', function(){ $('f-via-box').dataset.tirar = '1'; $('f-via-nome').textContent = 'Vínculo será removido ao salvar'; });
   $('q').addEventListener('input', function(e){ state.q = e.target.value.trim(); state.limit = 100; renderList(); });
+  $('fb-sit').addEventListener('change', function(){ var b = $('fb-rapido').querySelector('[data-p="' + this.value + '"]'); if (b) b.click(); });
   $('fb-rapido').addEventListener('click', function(e){
     var b = e.target.closest('[data-p]'); if (!b) return;
     Object.assign(state, FILTRO_PADRAO, PRESETS[b.dataset.p]); state.dia = ''; state.hora = ''; state.limit = 100;
@@ -2471,7 +2518,7 @@ body{font-size:14px}
   $('fb-resp').addEventListener('change', function(e){ state.resp = e.target.value; state.limit = 100; renderList(); });
   $('fb-dia').addEventListener('click', function(){ state.dia = ''; state.hora = ''; state.limit = 100; renderPauta(); renderList(); renderClSessao(); });
   $('fb-clear').addEventListener('click', function(){
-    state.filter = 'todos'; state.aud = 'todas'; state.tel = 'todos'; state.meio = 'todos'; state.dia = ''; state.hora = ''; state.q = ''; state.resp = ''; $('q').value = ''; state.limit = 100;
+    state.filter = 'todos'; state.aud = 'todas'; state.tel = 'todos'; state.meio = 'todos'; state.dia = ''; state.hora = ''; state.q = ''; state.resp = ''; $('q').value = ''; $('bc-q').value = ''; renderBusca(); state.limit = 100;
     renderPauta(); renderList();
   });
   $('pauta').addEventListener('click', function(e){
