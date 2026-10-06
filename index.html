@@ -800,14 +800,15 @@ body{font-size:14px}
 .bc-campo input{height:40px}
 
 /* ---------- minimalista ---------- */
-.res-rap{display:inline-flex;gap:2px;flex-wrap:wrap}
-.res-rap button{border:0;background:none;padding:4px 8px;border-radius:6px;font:inherit;font-size:12.5px;font-weight:500;color:var(--ink-3);cursor:pointer;white-space:nowrap}
+.res-rap{display:inline-flex;border:1px solid var(--line-2);border-radius:5px;overflow:hidden;background:var(--panel)}
+.res-rap button{border:0;background:none;padding:5px 11px;font:inherit;font-size:12.5px;font-weight:500;color:var(--ink-2);cursor:pointer;white-space:nowrap;border-radius:0}
+.res-rap button + button{border-left:1px solid var(--line-2)}
 .res-rap button:hover{background:var(--hover);color:var(--ink)}
-.res-rap button[aria-pressed="true"]{font-weight:700}
-.res-rap button.r-conclusos[aria-pressed="true"]{color:var(--amber);background:var(--amber-soft)}
-.res-rap button.r-procedente[aria-pressed="true"]{color:var(--green);background:var(--green-soft)}
-.res-rap button.r-faltou[aria-pressed="true"]{color:var(--red);background:var(--red-soft)}
-.res-rap button.r-improcedente[aria-pressed="true"]{color:var(--purple);background:rgba(139,92,246,.12)}
+.res-rap button[aria-pressed="true"]{color:#fff;font-weight:600}
+.res-rap button.r-conclusos[aria-pressed="true"]{background:var(--amber)}
+.res-rap button.r-procedente[aria-pressed="true"]{background:var(--green)}
+.res-rap button.r-faltou[aria-pressed="true"]{background:var(--red)}
+.res-imp{display:block;margin-top:4px;font-size:11.5px;font-weight:600;color:var(--purple)}
 /* modo claro igual ao LiderHub: borda cinza clara, sombra leve */
 .vw-dash .stats > .card{box-shadow:var(--shadow)!important}
 .fbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
@@ -2186,7 +2187,7 @@ body{font-size:14px}
     $('ct-th-aud').textContent = ctSessao ? 'Tipo' : 'Audiência';
     $('ct-body').innerHTML = lista.slice(0, ctLimite).map(function(r){
       var t = tesesDe(r);
-      return '<tr data-ct="' + esc(r.id) + '"><td class="nome' + (r.online ? ' online' : '') + '"' + (r.online ? ' title="Audiência online"' : '') + '>' + esc(r.nome) + '</td><td class="n">' + esc(r.cpf || '—') + '</td><td class="n">' + (r.processo ? '<button type="button" class="copia" data-copiar="' + esc(r.processo) + '" title="Copiar o número do processo">' + esc(r.processo) + '<svg class="i"><use href="#i-copy"/></svg></button>' : '—') + '</td><td class="n">' + (!ctSessao && r.audData ? fmtShort(r.audData) + (r.audHora ? ' · ' + esc(r.audHora) : '') : '') + (r.audData ? modoSwitch(r) : '—') + '</td><td><div class="ct-pills">' + (t.length ? t.map(function(k){ return '<span>' + esc(nomeTese(k)) + '</span>'; }).join('') : '<span>Sem tese</span>') + '</div></td><td><div class="res-rap" role="group" aria-label="Resultado de ' + esc(r.nome) + '">' + CT_RES.map(function(x){ return '<button type="button" class="r-' + x[0] + '" data-res="' + x[0] + '" data-id="' + esc(r.id) + '" aria-pressed="' + (resAud(r) === x[0]) + '" title="' + (resAud(r) === x[0] ? 'Clique de novo para apagar' : 'Marcar ' + x[1].toLowerCase()) + '">' + x[1] + '</button>'; }).join('') + '</div></td></tr>';
+      return '<tr data-ct="' + esc(r.id) + '"><td class="nome' + (r.online ? ' online' : '') + '"' + (r.online ? ' title="Audiência online"' : '') + '>' + esc(r.nome) + '</td><td class="n">' + esc(r.cpf || '—') + '</td><td class="n">' + (r.processo ? '<button type="button" class="copia" data-copiar="' + esc(r.processo) + '" title="Copiar o número do processo">' + esc(r.processo) + '<svg class="i"><use href="#i-copy"/></svg></button>' : '—') + '</td><td class="n">' + (!ctSessao && r.audData ? fmtShort(r.audData) + (r.audHora ? ' · ' + esc(r.audHora) : '') : '') + (r.audData ? modoSwitch(r) : '—') + '</td><td><div class="ct-pills">' + (t.length ? t.map(function(k){ return '<span>' + esc(nomeTese(k)) + '</span>'; }).join('') : '<span>Sem tese</span>') + '</div></td><td><div class="res-rap" role="group" aria-label="Resultado de ' + esc(r.nome) + '">' + CT_RES.filter(function(x){ return x[0] !== 'improcedente'; }).map(function(x){ return '<button type="button" class="r-' + x[0] + '" data-res="' + x[0] + '" data-id="' + esc(r.id) + '" aria-pressed="' + (resAud(r) === x[0]) + '" title="' + (resAud(r) === x[0] ? 'Clique de novo para apagar' : 'Marcar ' + x[1].toLowerCase()) + '">' + x[1] + '</button>'; }).join('') + '</div>' + (resAud(r) === 'improcedente' ? '<span class="res-imp">Improcedente</span>' : '') + '</td></tr>';
     }).join('') + (lista.length > ctLimite ? '<tr class="ct-mais-row"><td colspan="6" class="ct-mais"><button type="button" class="btn" id="ct-mais">Mostrar mais ' + Math.min(200, lista.length - ctLimite) + '</button></td></tr>' : '') +
       (!lista.length ? '<tr><td colspan="6" class="ct-mais small">Nenhum cliente encontrado.</td></tr>' : '');
   }
