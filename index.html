@@ -1030,6 +1030,28 @@ body{font-size:14px}
 .pj-vazio{font-size:13px;color:var(--ink-3);padding:4px 0}
 .linkish{background:none;border:0;padding:0;color:var(--blue);font:inherit;cursor:pointer;text-decoration:underline}
 #pj-foot{display:flex;align-items:center;gap:10px}
+
+/* ---------- pauta do cartório ---------- */
+.ct-cart{padding:14px 16px}
+.ct-cart-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;margin-bottom:10px}
+.ct-cart-head > span:first-of-type{font-size:12.5px;color:var(--ink-3)}
+.ct-cart-tot{font-size:13px;color:var(--ink-2);display:inline-flex;align-items:center;gap:6px}
+.ct-cart-head .ct-cart-tot:first-of-type{margin-left:auto}
+.ct-cart-tot i{width:9px;height:9px;border-radius:50%;display:inline-block}
+.ct-cart-tot i.lib,.ct-cart-tag.lib{background:var(--green)}
+.ct-cart-tot i.perm,.ct-cart-tag.perm{background:var(--amber)}
+.ct-cart-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+@media (max-width:1100px){ .ct-cart-grid{grid-template-columns:repeat(2,minmax(0,1fr))} }
+.ct-cart-g{display:grid;grid-template-columns:auto 1fr auto;grid-template-rows:auto auto;gap:4px 8px;align-items:start;text-align:left;font:inherit;color:inherit;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer}
+.ct-cart-g:hover{border-color:var(--line-2)}
+.ct-cart-g[aria-pressed="true"]{border-color:var(--blue)}
+.ct-cart-g[disabled]{opacity:.45;cursor:default}
+.ct-cart-n{width:20px;height:20px;border-radius:50%;background:var(--soft);font-size:11.5px;font-weight:700;display:grid;place-items:center;color:var(--ink-2)}
+.ct-cart-t{font-size:13px;font-weight:600;line-height:1.3;display:flex;flex-direction:column}
+.ct-cart-t small{font-weight:400;color:var(--ink-3);font-size:11.5px}
+.ct-cart-g > b{font-size:20px;line-height:1}
+.ct-cart-tag{grid-column:2 / 4;justify-self:start;font-size:11px;font-weight:700;color:#fff;border-radius:5px;padding:1px 7px}
+.ct-cart-obs{margin-top:8px;font-size:12.5px;color:var(--ink-3)}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -1233,6 +1255,7 @@ body{font-size:14px}
         </div>
         <div hidden><button type="button" id="ct-aud-ant"></button><button type="button" id="ct-aud-prox"></button><span id="ct-aud-info"></span><button type="button" id="ct-geral"></button></div>
         <div class="stats five ct-stats" id="ct-stats"></div>
+        <div class="card ct-cart" id="ct-cart"></div>
         <details class="card ct-bars-box" id="ct-bars-det"><summary class="ct-bars-head"><b>Gráfico das teses</b><span id="ct-bars-info"></span></summary><div class="ct-bars" id="ct-chips" role="group" aria-label="Filtrar por tese"></div></details>
         <div class="ct-resf" id="ct-resf" role="group" aria-label="Filtrar por resultado"></div>
         <div class="card ct-tab"><table class="ct-tbl"><thead><tr><th>Cliente</th><th>CPF</th><th>Processo</th><th id="ct-th-aud">Audiência</th><th>Tese da contestação</th><th>Resultado na audiência</th></tr></thead><tbody id="ct-body"></tbody></table></div>
@@ -2344,6 +2367,21 @@ body{font-size:14px}
     var out = TESES.filter(function(x){ return x[2].test(t); }).map(function(x){ return x[0]; });
     return out.length ? out : ['outra'];
   }
+  /* Grupos da pauta do cartório (mesma ordem da lista do juízo). Oitivas especiais: o juízo também põe
+     outros casos ali; aqui entra só quem tem coisa julgada. */
+  var GRUPOS_CART = [
+    ['geral', 'Geral / proposta diferenciada', 'contestação genérica', 'liberar'],
+    ['repetitivas', 'Só demandas repetitivas', 'aparente reiteração de demandas', 'liberar'],
+    ['devedor', 'Devedor contumaz', 'sem reiteração', 'permanecer'],
+    ['repdev', 'Demandas repetitivas + devedor contumaz', 'as duas teses', 'permanecer'],
+    ['oitivas', 'Oitivas especiais', 'coisa julgada', 'liberar']
+  ];
+  function grupoCart(r){
+    var k = tesesDe(r); if (!k.length) return '';
+    if (k.indexOf('coisa') >= 0) return 'oitivas';
+    var rei = k.indexOf('reiteracao') >= 0, dev = k.indexOf('devedor') >= 0;
+    return rei && dev ? 'repdev' : dev ? 'devedor' : rei ? 'repetitivas' : 'geral';
+  }
   function nomeTese(k){ var x = TESES.filter(function(t){ return t[0] === k; })[0]; return x ? x[1] : 'Outra tese'; }
   /* Nome curto de cada tese, para as combinações ("Reiteração + Devedor contumaz"). */
   var TESE_CURTA = { reiteracao: 'Reiteração', devedor: 'Devedor contumaz', generica: 'Contestação genérica', cortada: 'UC cortada', coisa: 'Coisa julgada', ilegitimidade: 'Ilegitimidade ativa', inconsistencia: 'Inconsistência do autor', outra: 'Outra tese' };
@@ -3074,7 +3112,7 @@ body{font-size:14px}
     /* Primeiro quem tem uma tese só, depois as combinações; dentro de cada, o maior primeiro. */
     var nT = function(c){ return c.split('+').length; };
     var ordem = Object.keys(cont).sort(function(x, y){ return nT(x) - nT(y) || cont[y] - cont[x]; });
-    if (ctFiltro && ctFiltro !== '__sem' && !cont[ctFiltro]) ctFiltro = '';
+    if (ctFiltro && ctFiltro !== '__sem' && ctFiltro.indexOf('g:') !== 0 && !cont[ctFiltro]) ctFiltro = '';
     var maior = Math.max.apply(null, ordem.map(function(k){ return cont[k]; }).concat([sem, 1]));
     var barra = function(k, nome){
       var n = k === '__sem' ? sem : cont[k], p = rows.length ? Math.round(n / rows.length * 100) : 0;
@@ -3089,9 +3127,22 @@ body{font-size:14px}
     chips.innerHTML = (umas.length ? secao('Uma tese', soma(umas)) + umas.map(function(k){ return barra(k, nomeCombo(k)); }).join('') : '') +
       (varias.length ? secao('Mais de uma tese', soma(varias)) + varias.map(function(k){ return barra(k, nomeCombo(k)); }).join('') : '') +
       (sem ? secao('Sem tese', sem) + barra('__sem', 'Sem tese registrada') : '');
+    // pauta do cartório: quantos em cada grupo, e quantos são liberados ou permanecem após a identificação
+    var gc = {}, lib = 0, perm = 0; GRUPOS_CART.forEach(function(g){ gc[g[0]] = 0; });
+    rows.forEach(function(r){ var g = grupoCart(r); if (!g) return; gc[g]++; if (GRUPOS_CART.filter(function(x){ return x[0] === g; })[0][3] === 'liberar') lib++; else perm++; });
+    $('ct-cart').innerHTML = '<div class="ct-cart-head"><b>Pauta do cartório</b><span>' + (ctSessao ? 'nesta audiência' : 'todas as audiências') + '</span>' +
+        '<span class="ct-cart-tot"><i class="lib"></i>Liberados após identificação <b>' + lib + '</b></span><span class="ct-cart-tot"><i class="perm"></i>Permanecem <b>' + perm + '</b></span></div>' +
+      '<div class="ct-cart-grid">' + GRUPOS_CART.map(function(g, i){
+        var n = gc[g[0]];
+        return '<button type="button" class="ct-cart-g" data-tese="g:' + g[0] + '" aria-pressed="' + (ctFiltro === 'g:' + g[0]) + '"' + (n ? '' : ' disabled') + '>' +
+          '<span class="ct-cart-n">' + (i + 1) + '</span><span class="ct-cart-t">' + g[1] + '<small>' + g[2] + '</small></span>' +
+          '<b class="tnum">' + n + '</b><span class="ct-cart-tag ' + (g[3] === 'liberar' ? 'lib' : 'perm') + '">' + (g[3] === 'liberar' ? 'Liberar' : 'Permanecer') + '</span></button>';
+      }).join('') + '</div>' +
+      (sem ? '<div class="ct-cart-obs">' + sem + (sem === 1 ? ' cliente sem tese registrada' : ' clientes sem tese registrada') + '</div>' : '');
     var tsel = $('ct-tese-sel');
     var opt = function(k, nome, n){ return '<option value="' + esc(k) + '">' + esc(nome) + ' · ' + n + (n === 1 ? ' cliente' : ' clientes') + '</option>'; };
     tsel.innerHTML = '<option value="">Todas as teses · ' + rows.length + ' clientes</option>' +
+      '<optgroup label="Pauta do cartório">' + GRUPOS_CART.filter(function(g){ return gc[g[0]]; }).map(function(g){ return opt('g:' + g[0], g[1] + (g[3] === 'liberar' ? ' (liberar)' : ' (permanecer)'), gc[g[0]]); }).join('') + '</optgroup>' +
       (umas.length ? '<optgroup label="Uma tese">' + umas.map(function(k){ return opt(k, nomeCombo(k), cont[k]); }).join('') + '</optgroup>' : '') +
       (varias.length ? '<optgroup label="Mais de uma tese">' + varias.map(function(k){ return opt(k, nomeCombo(k), cont[k]); }).join('') + '</optgroup>' : '') +
       (sem ? '<optgroup label="Sem tese">' + opt('__sem', 'Sem tese registrada', sem) + '</optgroup>' : '');
@@ -3100,7 +3151,7 @@ body{font-size:14px}
     $('ct-bars-info').innerHTML = rows.length + ' clientes · ' + (ordem.length + (sem ? 1 : 0)) + ' grupos · cada cliente aparece em um grupo só' +
       (ctFiltro ? '<button type="button" class="linkbtn" data-tese="">Mostrar todas</button>' : '');
 
-    var porTese = function(r){ var c = comboDe(r); return ctFiltro === '__sem' ? !c : (!ctFiltro || c === ctFiltro); };
+    var porTese = function(r){ var c = comboDe(r); if (ctFiltro.indexOf('g:') === 0) return grupoCart(r) === ctFiltro.slice(2); return ctFiltro === '__sem' ? !c : (!ctFiltro || c === ctFiltro); };
     var base = rows.filter(porTese);
     var nRes = function(k){ return base.filter(function(r){ return k === '' ? true : k === '__sem' ? !resAud(r) : resAud(r) === k; }).length; };
     var totB = base.length, julg = base.filter(function(r){ var k = resAud(r); return k === 'procedente' || k === 'improcedente'; }).length;
@@ -3146,6 +3197,7 @@ body{font-size:14px}
   $('ct-aud-sel').addEventListener('change', function(){ ctSessao = this.value; ctLimite = 200; renderContest(); });
   $('ct-aud-ant').addEventListener('click', function(){ var ks = ctSessoes(), p = ks.indexOf(ctSessao); ctSessao = p > 0 ? ks[p - 1] : (p < 0 ? ks[ks.length - 1] || '' : ctSessao); ctLimite = 200; renderContest(); });
   $('ct-aud-prox').addEventListener('click', function(){ var ks = ctSessoes(), p = ks.indexOf(ctSessao); ctSessao = p < 0 ? ks[0] || '' : (ks[p + 1] || ctSessao); ctLimite = 200; renderContest(); });
+  $('ct-cart').addEventListener('click', function(e){ var b = e.target.closest('[data-tese]'); if (!b || b.disabled) return; ctFiltro = ctFiltro === b.dataset.tese ? '' : b.dataset.tese; ctLimite = 200; renderContest(); });
   $('ct-chips').addEventListener('click', function(e){ var b = e.target.closest('[data-tese]'); if (!b) return; ctFiltro = ctFiltro === b.dataset.tese ? '' : b.dataset.tese; ctLimite = 200; renderContest(); });
   $('ct-bars-info').addEventListener('click', function(e){ if (!e.target.closest('[data-tese]')) return; ctFiltro = ''; ctLimite = 200; renderContest(); });
   $('ct-q').addEventListener('input', function(e){ ctQ = e.target.value.trim(); ctLimite = 200; renderContest(); });
