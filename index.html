@@ -2561,7 +2561,7 @@ section.vw-dash{gap:10px!important}
     ['repetitivas', 'Só demandas repetitivas', 'aparente reiteração de demandas', 'liberar'],
     ['devedor', 'Devedor contumaz', 'sem reiteração', 'permanecer'],
     ['repdev', 'Demandas repetitivas + devedor contumaz', 'as duas teses', 'permanecer'],
-    ['oitivas', 'Oitivas especiais', 'outras alegações: coisa julgada, UC cortada…', 'varia']
+    ['oitivas', 'Oitivas especiais', 'outras alegações: coisa julgada, UC cortada…', 'permanecer']
   ];
   function grupoCel(r){
     var g = grupoCart(r), x = GRUPOS_CART.filter(function(y){ return y[0] === g; })[0];
@@ -2575,7 +2575,7 @@ section.vw-dash{gap:10px!important}
   function liberaCli(r){
     var g = grupoCart(r); if (!g) return '';
     if (g !== 'oitivas') return GRUPOS_CART.filter(function(x){ return x[0] === g; })[0][3];
-    return alegacoesExtras(r).every(function(k){ return k === 'coisa'; }) ? 'liberar' : 'permanecer';
+    return 'permanecer'; // oitivas especiais sempre permanecem após a identificação
   }
   function grupoCart(r){
     var k = tesesDe(r); if (!k.length) return '';
