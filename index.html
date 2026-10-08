@@ -1168,6 +1168,10 @@ section.vw-dash{gap:10px!important}
 #ct-body td.n{white-space:nowrap}
 #ct-body .modo-sel{display:inline-block!important;vertical-align:middle;margin:0 0 0 6px!important;-webkit-appearance:none;appearance:none;height:20px!important;line-height:18px;padding:0 8px!important;font-size:11px!important;font-weight:600;background:var(--soft)!important;border:1px solid var(--line)!important;color:var(--ink-2)!important;cursor:pointer;width:auto}
 #ct-body .modo-sel.on{color:var(--blue)!important;border-color:var(--blue)!important;background:color-mix(in srgb,var(--blue) 12%,transparent)!important}
+
+#list .row[data-linha]{cursor:pointer}
+#list .row[data-linha]:hover{background:var(--hover)}
+#list .row.aberto{background:var(--soft)}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -2229,7 +2233,7 @@ section.vw-dash{gap:10px!important}
       html += '<div class="empty">' + (state.rows.length ? 'Nenhum cliente neste filtro.' : 'Nenhum cliente cadastrado ainda. Clique em <b>Novo cliente</b> para começar.') + '</div>';
     }
     list.slice(0, state.limit).forEach(function(r){
-      html += '<div class="row">' +
+      html += '<div class="row' + (clAberto[r.id] ? ' aberto' : '') + '" data-linha="' + esc(r.id) + '">' +
         '<div class="c-name"><div class="name' + (r.online ? ' online' : '') + '"' + (r.online ? ' title="Audiência online"' : '') + '><button type="button" class="nome-abrir" data-act="abrir" data-id="' + esc(r.id) + '" aria-expanded="' + !!clAberto[r.id] + '" title="Ver os dados do cliente">' + esc(r.nome) + '</button>' + pastaIco(r) + (r.cpf && !cpfValido(r.cpf) ? '<span class="cpf-ruim" title="CPF inválido: confira os dígitos">CPF inválido</span>' : '') + '</div>' +
           '<div class="addr">' + (r.cpf ? 'CPF ' + esc(r.cpf) : 'CPF não informado') + '</div></div>' +
         '<div><span class="lbl">Processo</span><div class="val proc-l">' + (r.processo ? '<button type="button" class="copia" data-copiar="' + esc(r.processo) + '" title="Copiar o número do processo">' + esc(r.processo) + '<svg class="i"><use href="#i-copy"/></svg></button>' : '—') + '</div></div>' +
@@ -3749,7 +3753,14 @@ section.vw-dash{gap:10px!important}
       catch(err){ toast('Não foi possível copiar. Selecione o número e use Ctrl+C.'); }
       return;
     }
-    var b = e.target.closest('[data-act]'); if (!b) return;
+    var b = e.target.closest('[data-act]');
+    if (!b){
+      // a linha inteira funciona como botão: abre e fecha os dados do cliente
+      var ln = e.target.closest('[data-linha]');
+      if (!ln || e.target.closest('a,button,select,input,label,.ficha')) return;
+      if (clAberto[ln.dataset.linha]) delete clAberto[ln.dataset.linha]; else clAberto[ln.dataset.linha] = 1;
+      renderList(); return;
+    }
     if (b.dataset.act === 'more'){ state.limit += 100; renderList(); return; }
     if (b.dataset.act === 'abrir'){ if (clAberto[b.dataset.id]) delete clAberto[b.dataset.id]; else clAberto[b.dataset.id] = 1; renderList(); return; }
     var r = state.rows.find(function(x){ return x.id === b.dataset.id; }); if (!r) return;
