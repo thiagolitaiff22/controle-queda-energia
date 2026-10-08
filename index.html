@@ -2215,7 +2215,7 @@ section.vw-dash{gap:10px!important}
       html += '<div class="row">' +
         '<div class="c-name"><div class="name' + (r.online ? ' online' : '') + '"' + (r.online ? ' title="Audiência online"' : '') + '><button type="button" class="nome-abrir" data-act="abrir" data-id="' + esc(r.id) + '" aria-expanded="' + !!clAberto[r.id] + '" title="Ver os dados do cliente">' + esc(r.nome) + '</button>' + pastaIco(r) + (r.cpf && !cpfValido(r.cpf) ? '<span class="cpf-ruim" title="CPF inválido: confira os dígitos">CPF inválido</span>' : '') + '</div>' +
           '<div class="addr">' + (r.cpf ? 'CPF ' + esc(r.cpf) : 'CPF não informado') + '</div></div>' +
-        '<div><span class="lbl">Processo</span><div class="val proc-l">' + esc(r.processo || '—') + '</div></div>' +
+        '<div><span class="lbl">Processo</span><div class="val proc-l">' + (r.processo ? '<button type="button" class="copia" data-copiar="' + esc(r.processo) + '" title="Copiar o número do processo">' + esc(r.processo) + '<svg class="i"><use href="#i-copy"/></svg></button>' : '—') + '</div></div>' +
         '<div><span class="lbl">Contato</span>' + telCell(r) + '</div>' +
         '<div><span class="lbl">Audiência</span>' + audLinha(r) + '</div>' +
         '<div><span class="lbl">Aviso</span>' + avisoCell(r) + '</div>' +
@@ -3721,6 +3721,12 @@ section.vw-dash{gap:10px!important}
     if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('day')){ e.preventDefault(); e.target.click(); }
   });
   async function listClick(e){
+    var cp = e.target.closest('[data-copiar]');
+    if (cp){
+      try { await copiarTexto(cp.dataset.copiar); cp.classList.add('ok'); setTimeout(function(){ cp.classList.remove('ok'); }, 1500); toast('Processo copiado: ' + cp.dataset.copiar); }
+      catch(err){ toast('Não foi possível copiar. Selecione o número e use Ctrl+C.'); }
+      return;
+    }
     var b = e.target.closest('[data-act]'); if (!b) return;
     if (b.dataset.act === 'more'){ state.limit += 100; renderList(); return; }
     if (b.dataset.act === 'abrir'){ if (clAberto[b.dataset.id]) delete clAberto[b.dataset.id]; else clAberto[b.dataset.id] = 1; renderList(); return; }
