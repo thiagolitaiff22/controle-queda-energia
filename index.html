@@ -1138,6 +1138,19 @@ section.vw-dash{gap:10px!important}
 .fc-ok .i{width:13px;height:13px}
 .fc-nao{background:var(--line);color:var(--ink-3);font-weight:700}
 .ficha-acoes{display:flex;gap:8px;margin-top:12px}
+
+/* ---------- respiro: ritmo único de espaçamento em Clientes e Contestações ---------- */
+#view-clientes,#view-ct{gap:0!important}
+#view-clientes > .sec-rot,#view-ct > .sec-rot{margin:30px 0 10px!important}
+#view-clientes > .sec-rot:first-of-type,#view-ct > .sec-rot:first-of-type{margin-top:4px!important}
+#view-clientes > .fbar,#view-ct > .fbar{margin-top:30px!important}
+#view-clientes > .fb-painel{margin-top:10px}
+#view-clientes > .list-sum:empty{display:none}
+#view-clientes > .list-sum{margin-top:0}
+#view-clientes > .list-sum:has(button:not([hidden])){margin-top:14px}
+#view-ct > .ct-cart,#view-ct > .ct-bars-box,#view-ct > .ct-resf{margin-top:14px}
+#view-ct > .ct-resf:empty{display:none}
+.cl-cards{row-gap:12px!important;column-gap:12px!important}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
