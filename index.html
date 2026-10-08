@@ -1078,19 +1078,26 @@ body{font-size:14px}
 .ct-num tbody tr[data-ct]:hover td:first-child{box-shadow:inset 3px 0 0 var(--blue)}
 .ct-num tbody tr[data-ct] td:first-child::before{content:counter(linha);position:absolute;left:18px;top:50%;transform:translateY(-50%);font-size:12.5px;font-weight:700;color:var(--ink-2);font-variant-numeric:tabular-nums}
 
-/* ---------- compacto: cartões numa linha e lista mais fina ---------- */
-@media (min-width:1200px){ .cl-cards{grid-template-columns:repeat(7,minmax(0,1fr))!important} }
-.vw-dash .card.stat{padding:10px 12px 9px!important;gap:2px!important;min-height:0!important}
-.vw-dash .card.stat .stat-h{font-size:10.5px!important;gap:6px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.vw-dash .card.stat .stat-h .i{width:13px;height:13px}
-.vw-dash .card.stat .stat-v{font-size:22px!important;margin-top:2px!important;line-height:1.15}
-.vw-dash .card.stat .stat-c{font-size:11px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:0!important}
-.vw-dash .stats{gap:8px!important}
-.cl-cards{gap:8px!important}
+/* ---------- espaço vertical menor entre os blocos (cartões no tamanho original) ---------- */
+section.vw-dash{gap:10px!important}
+.sec-rot{margin:6px 0 -4px!important;font-size:12.5px}
+.vw-dash .fbar{margin:0!important}
 .card.list .row{padding-top:7px!important;padding-bottom:7px!important}
 .card.list .row.head{padding-top:8px!important;padding-bottom:8px!important}
 .ct-num tbody td{padding-top:6px!important;padding-bottom:6px!important}
-.sec-rot{margin:0 0 -8px!important;font-size:12.5px}
+
+/* ---------- lista condensada ---------- */
+#list .row{padding-top:6px!important;padding-bottom:6px!important;min-height:44px}
+#list .c-name .name{font-size:13.5px;font-weight:700;display:flex;align-items:center;gap:6px;min-width:0}
+#list .c-name .name > span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#list .c-name .addr{font-size:12px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+#list .proc-l{font-size:12.5px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.cpf-ruim{flex:none;font-size:10.5px;font-weight:700;color:var(--red);border:1px solid currentColor;border-radius:4px;padding:0 5px}
+.aud-l{display:flex;align-items:center;gap:6px;flex-wrap:wrap;white-space:nowrap}
+.aud-l .val{font-size:12.5px}
+.aud-l .mini{font-size:11.5px}
+.aud-l .modo-sel{height:20px!important;font-size:11px!important;padding:0 18px 0 6px!important;margin:0!important;border-radius:4px!important}
+#list .row .tel-edit,#list .row .tel-add{font-size:12.5px}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -1189,34 +1196,6 @@ body{font-size:14px}
       </section>
 
       <section id="view-clientes" class="vw-dash" style="display:flex;flex-direction:column;gap:18px">
-        <div class="fbar">
-          <div class="search tb-busca"><svg class="i"><use href="#i-search"/></svg><input id="bc-q" type="search" autocomplete="off" placeholder="Buscar cliente por nome ou CPF"></div>
-          <select id="cl-aud-sel" class="tb-sel" aria-label="Audiência"></select>
-          <select id="fb-sit" class="tb-sel" aria-label="Situação do aviso"></select>
-          <button type="button" class="tb-btn" id="btn-pj" title="Buscar no PROJUDI as audiências marcadas e lançar no BI"><svg class="i"><use href="#i-scale"/></svg>Pauta do PROJUDI</button>
-          <button type="button" class="tb-btn fb-mais" id="fb-mais" aria-expanded="false" aria-controls="fb-painel"><svg class="i"><use href="#i-filter"/></svg>Mais filtros<span class="fb-badge" id="fb-badge" hidden></span></button>
-          <span class="fb-fim tb-fim"><button type="button" class="day-chip tnum" id="fb-dia" hidden></button><span class="fb-count tnum" id="fb-count"></span><button type="button" class="fb-clear" id="fb-clear" hidden>Limpar</button></span>
-        </div>
-        <div class="fb-painel" id="fb-painel" hidden>
-            <label>Situação do aviso<select id="fb-aviso"></select></label>
-            <label>Meio do aviso<select id="fb-meio"></select></label>
-            <label>Audiência<select id="fb-aud"></select></label>
-            <label>Telefone<select id="fb-tel"></select></label>
-            <label>Responsável<select id="fb-resp"></select></label>
-          </div>
-        <div hidden>
-          <input id="q" type="search">
-          <div class="fb-rapido" id="fb-rapido" role="group" aria-label="Atalhos">
-            <button type="button" data-p="todos">Todos <span class="n" data-np="todos"></span></button>
-            <button type="button" data-p="avisar"><i class="dot warn"></i>A avisar <span class="n" data-np="avisar"></span></button>
-            <button type="button" data-p="semcontato"><i class="dot crit"></i>Sem contato <span class="n" data-np="semcontato"></span></button>
-            <button type="button" data-p="semtel">Sem telefone <span class="n" data-np="semtel"></span></button>
-            <button type="button" data-p="online">Online <span class="n" data-np="online"></span></button>
-            
-          </div>
-          <button type="button" id="cl-aud-ant"></button><button type="button" id="cl-aud-prox"></button><span id="cl-aud-info"></span>
-        </div>
-        <div class="bc-res" id="bc-res" hidden></div>
         <div class="sec-rot">Resumo por status</div>
         <div class="cl-cards">
         <div class="stats">
@@ -1251,6 +1230,34 @@ body{font-size:14px}
         <div hidden><span class="range tnum" id="range"></span><div class="pauta" id="pauta"></div></div>
 
 
+        <div class="fbar">
+          <div class="search tb-busca"><svg class="i"><use href="#i-search"/></svg><input id="bc-q" type="search" autocomplete="off" placeholder="Buscar cliente por nome ou CPF"></div>
+          <select id="cl-aud-sel" class="tb-sel" aria-label="Audiência"></select>
+          <select id="fb-sit" class="tb-sel" aria-label="Situação do aviso"></select>
+          <button type="button" class="tb-btn" id="btn-pj" title="Buscar no PROJUDI as audiências marcadas e lançar no BI"><svg class="i"><use href="#i-scale"/></svg>Pauta do PROJUDI</button>
+          <button type="button" class="tb-btn fb-mais" id="fb-mais" aria-expanded="false" aria-controls="fb-painel"><svg class="i"><use href="#i-filter"/></svg>Mais filtros<span class="fb-badge" id="fb-badge" hidden></span></button>
+          <span class="fb-fim tb-fim"><button type="button" class="day-chip tnum" id="fb-dia" hidden></button><span class="fb-count tnum" id="fb-count"></span><button type="button" class="fb-clear" id="fb-clear" hidden>Limpar</button></span>
+        </div>
+        <div class="fb-painel" id="fb-painel" hidden>
+            <label>Situação do aviso<select id="fb-aviso"></select></label>
+            <label>Meio do aviso<select id="fb-meio"></select></label>
+            <label>Audiência<select id="fb-aud"></select></label>
+            <label>Telefone<select id="fb-tel"></select></label>
+            <label>Responsável<select id="fb-resp"></select></label>
+          </div>
+        <div hidden>
+          <input id="q" type="search">
+          <div class="fb-rapido" id="fb-rapido" role="group" aria-label="Atalhos">
+            <button type="button" data-p="todos">Todos <span class="n" data-np="todos"></span></button>
+            <button type="button" data-p="avisar"><i class="dot warn"></i>A avisar <span class="n" data-np="avisar"></span></button>
+            <button type="button" data-p="semcontato"><i class="dot crit"></i>Sem contato <span class="n" data-np="semcontato"></span></button>
+            <button type="button" data-p="semtel">Sem telefone <span class="n" data-np="semtel"></span></button>
+            <button type="button" data-p="online">Online <span class="n" data-np="online"></span></button>
+            
+          </div>
+          <button type="button" id="cl-aud-ant"></button><button type="button" id="cl-aud-prox"></button><span id="cl-aud-info"></span>
+        </div>
+        <div class="bc-res" id="bc-res" hidden></div>
         <div class="sec-title" id="list-title">Clientes</div>
         <div class="card list-sum" id="list-sum"></div>
         <div class="sec-rot">Clientes</div>
@@ -1285,6 +1292,12 @@ body{font-size:14px}
       </section>
 
       <section id="view-ct" class="vw-dash" hidden style="display:flex;flex-direction:column;gap:14px">
+        <div hidden><button type="button" id="ct-aud-ant"></button><button type="button" id="ct-aud-prox"></button><span id="ct-aud-info"></span><button type="button" id="ct-geral"></button></div>
+        <div class="sec-rot">Resumo por resultado</div>
+        <div class="stats five ct-stats" id="ct-stats"></div>
+        <div class="card ct-cart" id="ct-cart"></div>
+        <details class="card ct-bars-box" id="ct-bars-det"><summary class="ct-bars-head"><b>Gráfico das teses</b><span id="ct-bars-info"></span></summary><div class="ct-bars" id="ct-chips" role="group" aria-label="Filtrar por tese"></div></details>
+        <div class="ct-resf" id="ct-resf" role="group" aria-label="Filtrar por resultado"></div>
         <div class="fbar">
           <div class="search tb-busca"><svg class="i"><use href="#i-search"/></svg><input id="ct-q" type="search" placeholder="Buscar cliente por nome ou CPF"></div>
           <select id="ct-aud-sel" class="tb-sel" aria-label="Audiência"></select>
@@ -1294,12 +1307,6 @@ body{font-size:14px}
           <button type="button" class="btn ct-xlsx" id="ct-xlsx" hidden title="Planilha desta audiência: nome, endereço e celular, em ordem alfabética"><svg class="i"><use href="#i-file"/></svg>Baixar planilha</button>
           <span class="tb-fim fb-count tnum" id="ct-count"></span>
         </div>
-        <div hidden><button type="button" id="ct-aud-ant"></button><button type="button" id="ct-aud-prox"></button><span id="ct-aud-info"></span><button type="button" id="ct-geral"></button></div>
-        <div class="sec-rot">Resumo por resultado</div>
-        <div class="stats five ct-stats" id="ct-stats"></div>
-        <div class="card ct-cart" id="ct-cart"></div>
-        <details class="card ct-bars-box" id="ct-bars-det"><summary class="ct-bars-head"><b>Gráfico das teses</b><span id="ct-bars-info"></span></summary><div class="ct-bars" id="ct-chips" role="group" aria-label="Filtrar por tese"></div></details>
-        <div class="ct-resf" id="ct-resf" role="group" aria-label="Filtrar por resultado"></div>
         <div class="sec-rot">Clientes</div>
         <div class="card ct-tab"><table class="ct-tbl ct-num"><thead><tr><th>Cliente</th><th>CPF</th><th>Processo</th><th id="ct-th-aud">Audiência</th><th>Tese da contestação</th><th>Resultado na audiência</th></tr></thead><tbody id="ct-body"></tbody></table></div>
       </section>
@@ -1887,6 +1894,12 @@ body{font-size:14px}
   function modoSwitch(r){
     return '<select class="modo-sel' + (r.online ? ' on' : '') + '" data-modo="' + esc(r.id) + '" aria-label="Tipo de audiência de ' + esc(r.nome) + '" title="Mudar o tipo de audiência"><option value="p"' + (r.online ? '' : ' selected') + '>Presencial</option><option value="o"' + (r.online ? ' selected' : '') + '>Online</option></select>';
   }
+  // audiência numa linha só: data · hora · quanto falta, e a etiqueta presencial/online
+  function audLinha(r){
+    if (!r.audData) return '<span class="mini">Sem data</span>';
+    var n = daysUntil(r.audData), cls = n < 0 ? '' : (n <= 3 ? 'crit' : (n <= 7 ? 'warn' : 'blue'));
+    return '<div class="aud-l"><span class="val">' + fmtShort(r.audData) + (r.audHora ? ' · ' + esc(r.audHora) : '') + '</span><span class="mini ' + cls + '">' + relLabel(n) + '</span>' + modoSwitch(r) + '</div>';
+  }
   function audCell(r){
     if (!r.audData) return '<div class="mini">Sem data</div>';
     var n = daysUntil(r.audData);
@@ -2121,11 +2134,11 @@ body{font-size:14px}
     }
     list.slice(0, state.limit).forEach(function(r){
       html += '<div class="row">' +
-        '<div class="c-name"><div class="name' + (r.online ? ' online' : '') + '"' + (r.online ? ' title="Audiência online"' : '') + '><span>' + esc(r.nome) + '</span>' + pastaIco(r) + '</div><div class="addr">' + esc(r.endereco || 'Endereço não informado') + '</div></div>' +
-        '<div><span class="lbl">Processo</span><div class="val" style="font-size:12.5px">' + esc(r.processo || '—') + '</div>' +
-          '<div class="mini' + (r.cpf && !cpfValido(r.cpf) ? ' crit' : '') + '">CPF ' + esc(r.cpf || '—') + (r.cpf && !cpfValido(r.cpf) ? ' · inválido' : '') + '</div></div>' +
+        '<div class="c-name"><div class="name' + (r.online ? ' online' : '') + '"' + (r.online ? ' title="Audiência online"' : '') + '><span>' + esc(r.nome) + '</span>' + pastaIco(r) + (r.cpf && !cpfValido(r.cpf) ? '<span class="cpf-ruim" title="CPF inválido: confira os dígitos">CPF inválido</span>' : '') + '</div>' +
+          '<div class="addr" title="' + esc(r.endereco || '') + '">' + (r.cpf ? 'CPF ' + esc(r.cpf) + ' · ' : '') + esc(r.endereco || 'Endereço não informado') + '</div></div>' +
+        '<div><span class="lbl">Processo</span><div class="val proc-l">' + esc(r.processo || '—') + '</div></div>' +
         '<div><span class="lbl">Contato</span>' + telCell(r) + '</div>' +
-        '<div><span class="lbl">Audiência</span>' + audCell(r) + '</div>' +
+        '<div><span class="lbl">Audiência</span>' + audLinha(r) + '</div>' +
         '<div><span class="lbl">Aviso</span>' + avisoCell(r) + '</div>' +
         '<div class="c-act"><button type="button" class="ico-btn" data-act="edit" data-id="' + esc(r.id) + '" title="Editar cadastro" aria-label="Editar ' + esc(r.nome) + '"><svg class="i"><use href="#i-pencil"/></svg></button></div>' +
       '</div>';
