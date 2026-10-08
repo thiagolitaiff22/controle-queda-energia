@@ -1182,6 +1182,13 @@ section.vw-dash{gap:10px!important}
 .ct-bar-num small{font-size:10.5px!important;margin-left:4px!important}
 .ct-sec{margin:6px 0 0!important;font-size:10px!important}
 .ct-bars-box .ct-bars{padding-top:2px}
+
+/* ---------- coluna do grupo da pauta ---------- */
+.ct-g{display:flex;align-items:center;gap:8px;min-width:0}
+.ct-g-n{flex:none;width:18px;height:18px;border-radius:50%;background:var(--soft);border:1px solid var(--line);font-size:10.5px;font-weight:700;display:grid;place-items:center;color:var(--ink-2)}
+.ct-g-t{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.ct-g .ct-cart-tag{flex:none;grid-column:auto}
+.ct-g-sem{font-size:12.5px;color:var(--ink-3)}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -1392,7 +1399,7 @@ section.vw-dash{gap:10px!important}
           <span class="tb-fim fb-count tnum" id="ct-count"></span>
         </div>
         <div class="sec-rot">Clientes</div>
-        <div class="card ct-tab"><table class="ct-tbl ct-num"><thead><tr><th>Cliente</th><th>Processo</th><th id="ct-th-aud">Audiência</th><th>Tese da contestação</th><th>Resultado na audiência</th></tr></thead><tbody id="ct-body"></tbody></table></div>
+        <div class="card ct-tab"><table class="ct-tbl ct-num"><thead><tr><th>Cliente</th><th>Processo</th><th id="ct-th-aud">Audiência</th><th>Grupo da pauta</th><th>Resultado na audiência</th></tr></thead><tbody id="ct-body"></tbody></table></div>
       </section>
 
       <section id="view-fin" class="vw-dash" hidden style="display:flex;flex-direction:column;gap:18px">
@@ -2551,6 +2558,12 @@ section.vw-dash{gap:10px!important}
     ['repdev', 'Demandas repetitivas + devedor contumaz', 'as duas teses', 'permanecer'],
     ['oitivas', 'Oitivas especiais', 'coisa julgada', 'liberar']
   ];
+  function grupoCel(r){
+    var g = grupoCart(r), x = GRUPOS_CART.filter(function(y){ return y[0] === g; })[0];
+    if (!x) return '<span class="ct-g-sem">Sem tese</span>';
+    var n = GRUPOS_CART.indexOf(x) + 1;
+    return '<div class="ct-g"><span class="ct-g-n">' + n + '</span><span class="ct-g-t" title="' + esc(tesesDe(r).map(nomeTese).join(' + ')) + '">' + x[1] + '</span><span class="ct-cart-tag ' + (x[3] === 'liberar' ? 'lib' : 'perm') + '">' + (x[3] === 'liberar' ? 'Liberar' : 'Permanecer') + '</span></div>';
+  }
   function grupoCart(r){
     var k = tesesDe(r); if (!k.length) return '';
     if (k.indexOf('coisa') >= 0) return 'oitivas';
@@ -3289,7 +3302,7 @@ section.vw-dash{gap:10px!important}
     /* Primeiro quem tem uma tese só, depois as combinações; dentro de cada, o maior primeiro. */
     var nT = function(c){ return c.split('+').length; };
     var ordem = Object.keys(cont).sort(function(x, y){ return nT(x) - nT(y) || cont[y] - cont[x]; });
-    if (ctFiltro && ctFiltro !== '__sem' && ctFiltro.indexOf('g:') !== 0 && !cont[ctFiltro]) ctFiltro = '';
+    if (ctFiltro && ctFiltro !== '__sem' && ctFiltro.indexOf('g:') !== 0) ctFiltro = '';
     var maior = Math.max.apply(null, ordem.map(function(k){ return cont[k]; }).concat([sem, 1]));
     var barra = function(k, nome){
       var n = k === '__sem' ? sem : cont[k], p = rows.length ? Math.round(n / rows.length * 100) : 0;
@@ -3318,11 +3331,9 @@ section.vw-dash{gap:10px!important}
       (sem ? '<div class="ct-cart-obs">' + sem + (sem === 1 ? ' cliente sem tese registrada' : ' clientes sem tese registrada') + '</div>' : '');
     var tsel = $('ct-tese-sel');
     var opt = function(k, nome, n){ return '<option value="' + esc(k) + '">' + esc(nome) + ' · ' + n + (n === 1 ? ' cliente' : ' clientes') + '</option>'; };
-    tsel.innerHTML = '<option value="">Todas as teses · ' + rows.length + ' clientes</option>' +
-      '<optgroup label="Pauta do cartório">' + GRUPOS_CART.filter(function(g){ return gc[g[0]]; }).map(function(g){ return opt('g:' + g[0], g[1] + (g[3] === 'liberar' ? ' (liberar)' : ' (permanecer)'), gc[g[0]]); }).join('') + '</optgroup>' +
-      (umas.length ? '<optgroup label="Uma tese">' + umas.map(function(k){ return opt(k, nomeCombo(k), cont[k]); }).join('') + '</optgroup>' : '') +
-      (varias.length ? '<optgroup label="Mais de uma tese">' + varias.map(function(k){ return opt(k, nomeCombo(k), cont[k]); }).join('') + '</optgroup>' : '') +
-      (sem ? '<optgroup label="Sem tese">' + opt('__sem', 'Sem tese registrada', sem) + '</optgroup>' : '');
+    tsel.innerHTML = '<option value="">Todos os grupos · ' + rows.length + ' clientes</option>' +
+      GRUPOS_CART.map(function(g, i){ return opt('g:' + g[0], (i + 1) + '. ' + g[1] + (g[3] === 'liberar' ? ' (liberar)' : ' (permanecer)'), gc[g[0]]); }).join('') +
+      (sem ? opt('__sem', 'Sem tese registrada', sem) : '');
     tsel.value = ctFiltro || '';
     tsel.classList.toggle('ativo', !!ctFiltro);
     $('ct-bars-info').innerHTML = rows.length + ' clientes · ' + (ordem.length + (sem ? 1 : 0)) + ' grupos · cada cliente aparece em um grupo só' +
@@ -3362,7 +3373,7 @@ section.vw-dash{gap:10px!important}
     $('ct-th-aud').textContent = ctSessao ? 'Tipo' : 'Audiência';
     $('ct-body').innerHTML = lista.slice(0, ctLimite).map(function(r){
       var t = tesesDe(r);
-      return '<tr data-ct="' + esc(r.id) + '"' + (ctAberto[r.id] ? ' class="aberto"' : '') + '><td class="nome' + (r.online ? ' online' : '') + '"' + (r.online ? ' title="Audiência online"' : '') + '><button type="button" class="nome-abrir" data-ct-abrir="' + esc(r.id) + '" title="Ver os dados do cliente">' + esc(r.nome) + '</button><div class="ct-sub">' + (r.cpf ? 'CPF ' + esc(r.cpf) : 'CPF não informado') + '</div></td><td class="n">' + (r.processo ? '<button type="button" class="copia" data-copiar="' + esc(r.processo) + '" title="Copiar o número do processo">' + esc(r.processo) + '<svg class="i"><use href="#i-copy"/></svg></button>' : '—') + '</td><td class="n">' + (!ctSessao && r.audData ? fmtShort(r.audData) + (r.audHora ? ' · ' + esc(r.audHora) : '') : '') + (r.audData ? modoSwitch(r) : '—') + '</td><td><div class="ct-pills">' + (t.length ? t.map(function(k){ return '<span>' + esc(nomeTese(k)) + '</span>'; }).join('') : '<span>Sem tese</span>') + '</div></td><td><div class="res-rap" role="group" aria-label="Resultado de ' + esc(r.nome) + '">' + CT_RES.filter(function(x){ return x[0] !== 'improcedente'; }).map(function(x){ return '<button type="button" class="r-' + x[0] + '" data-res="' + x[0] + '" data-id="' + esc(r.id) + '" aria-pressed="' + (resAud(r) === x[0]) + '" title="' + (resAud(r) === x[0] ? 'Clique de novo para apagar' : 'Marcar ' + x[1].toLowerCase()) + '">' + x[1] + '</button>'; }).join('') + '</div>' + (resAud(r) === 'improcedente' ? '<span class="res-imp">Improcedente</span>' : '') + '</td></tr>' + (ctAberto[r.id] ? '<tr class="ct-ficha-row"><td colspan="5">' + fichaCliente(r) + '</td></tr>' : '');
+      return '<tr data-ct="' + esc(r.id) + '"' + (ctAberto[r.id] ? ' class="aberto"' : '') + '><td class="nome' + (r.online ? ' online' : '') + '"' + (r.online ? ' title="Audiência online"' : '') + '><button type="button" class="nome-abrir" data-ct-abrir="' + esc(r.id) + '" title="Ver os dados do cliente">' + esc(r.nome) + '</button><div class="ct-sub">' + (r.cpf ? 'CPF ' + esc(r.cpf) : 'CPF não informado') + '</div></td><td class="n">' + (r.processo ? '<button type="button" class="copia" data-copiar="' + esc(r.processo) + '" title="Copiar o número do processo">' + esc(r.processo) + '<svg class="i"><use href="#i-copy"/></svg></button>' : '—') + '</td><td class="n">' + (!ctSessao && r.audData ? fmtShort(r.audData) + (r.audHora ? ' · ' + esc(r.audHora) : '') : '') + (r.audData ? modoSwitch(r) : '—') + '</td><td>' + grupoCel(r) + '</td><td><div class="res-rap" role="group" aria-label="Resultado de ' + esc(r.nome) + '">' + CT_RES.filter(function(x){ return x[0] !== 'improcedente'; }).map(function(x){ return '<button type="button" class="r-' + x[0] + '" data-res="' + x[0] + '" data-id="' + esc(r.id) + '" aria-pressed="' + (resAud(r) === x[0]) + '" title="' + (resAud(r) === x[0] ? 'Clique de novo para apagar' : 'Marcar ' + x[1].toLowerCase()) + '">' + x[1] + '</button>'; }).join('') + '</div>' + (resAud(r) === 'improcedente' ? '<span class="res-imp">Improcedente</span>' : '') + '</td></tr>' + (ctAberto[r.id] ? '<tr class="ct-ficha-row"><td colspan="5">' + fichaCliente(r) + '</td></tr>' : '');
     }).join('') + (lista.length > ctLimite ? '<tr class="ct-mais-row"><td colspan="5" class="ct-mais"><button type="button" class="btn" id="ct-mais">Mostrar mais ' + Math.min(200, lista.length - ctLimite) + '</button></td></tr>' : '') +
       (!lista.length ? '<tr><td colspan="5" class="ct-mais small">Nenhum cliente encontrado.</td></tr>' : '');
   }
