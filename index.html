@@ -1189,6 +1189,8 @@ section.vw-dash{gap:10px!important}
 .ct-g-t{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .ct-g .ct-cart-tag{flex:none;grid-column:auto}
 .ct-g-sem{font-size:12.5px;color:var(--ink-3)}
+
+.ct-cart-tag.varia{background:var(--line-2);color:var(--ink)}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -2549,24 +2551,32 @@ section.vw-dash{gap:10px!important}
     var out = TESES.filter(function(x){ return x[2].test(t); }).map(function(x){ return x[0]; });
     return out.length ? out : ['outra'];
   }
-  /* Grupos da pauta do cartório (mesma ordem da lista do juízo). Oitivas especiais: o juízo também põe
-     outros casos ali; aqui entra só quem tem coisa julgada. */
+  /* Grupos da pauta do cartório (mesma ordem da lista do juízo). Oitivas especiais: qualquer alegação
+     além de reiteração, devedor contumaz ou contestação genérica (coisa julgada, UC cortada, ilegitimidade…). */
   var GRUPOS_CART = [
     ['geral', 'Geral / proposta diferenciada', 'contestação genérica', 'liberar'],
     ['repetitivas', 'Só demandas repetitivas', 'aparente reiteração de demandas', 'liberar'],
     ['devedor', 'Devedor contumaz', 'sem reiteração', 'permanecer'],
     ['repdev', 'Demandas repetitivas + devedor contumaz', 'as duas teses', 'permanecer'],
-    ['oitivas', 'Oitivas especiais', 'coisa julgada', 'liberar']
+    ['oitivas', 'Oitivas especiais', 'outras alegações: coisa julgada, UC cortada…', 'varia']
   ];
   function grupoCel(r){
     var g = grupoCart(r), x = GRUPOS_CART.filter(function(y){ return y[0] === g; })[0];
     if (!x) return '<span class="ct-g-sem">Sem tese</span>';
     var n = GRUPOS_CART.indexOf(x) + 1;
-    return '<div class="ct-g"><span class="ct-g-n">' + n + '</span><span class="ct-g-t" title="' + esc(tesesDe(r).map(nomeTese).join(' + ')) + '">' + x[1] + '</span><span class="ct-cart-tag ' + (x[3] === 'liberar' ? 'lib' : 'perm') + '">' + (x[3] === 'liberar' ? 'Liberar' : 'Permanecer') + '</span></div>';
+    return '<div class="ct-g"><span class="ct-g-n">' + n + '</span><span class="ct-g-t" title="' + esc(tesesDe(r).map(nomeTese).join(' + ')) + '">' + x[1] + '</span><span class="ct-cart-tag ' + (liberaCli(r) === 'liberar' ? 'lib' : 'perm') + '">' + (liberaCli(r) === 'liberar' ? 'Liberar' : 'Permanecer') + '</span></div>';
+  }
+  var TESES_COMUNS = ['reiteracao', 'devedor', 'generica'];
+  function alegacoesExtras(r){ return tesesDe(r).filter(function(k){ return TESES_COMUNS.indexOf(k) < 0; }); }
+  // liberar ou permanecer após a identificação, cliente a cliente
+  function liberaCli(r){
+    var g = grupoCart(r); if (!g) return '';
+    if (g !== 'oitivas') return GRUPOS_CART.filter(function(x){ return x[0] === g; })[0][3];
+    return alegacoesExtras(r).every(function(k){ return k === 'coisa'; }) ? 'liberar' : 'permanecer';
   }
   function grupoCart(r){
     var k = tesesDe(r); if (!k.length) return '';
-    if (k.indexOf('coisa') >= 0) return 'oitivas';
+    if (alegacoesExtras(r).length) return 'oitivas';
     var rei = k.indexOf('reiteracao') >= 0, dev = k.indexOf('devedor') >= 0;
     return rei && dev ? 'repdev' : dev ? 'devedor' : rei ? 'repetitivas' : 'geral';
   }
@@ -3319,20 +3329,27 @@ section.vw-dash{gap:10px!important}
       (sem ? secao('Sem tese', sem) + barra('__sem', 'Sem tese registrada') : '');
     // pauta do cartório: quantos em cada grupo, e quantos são liberados ou permanecem após a identificação
     var gc = {}, lib = 0, perm = 0; GRUPOS_CART.forEach(function(g){ gc[g[0]] = 0; });
-    rows.forEach(function(r){ var g = grupoCart(r); if (!g) return; gc[g]++; if (GRUPOS_CART.filter(function(x){ return x[0] === g; })[0][3] === 'liberar') lib++; else perm++; });
+    var oit = { liberar: 0, permanecer: 0 };
+    rows.forEach(function(r){ var g = grupoCart(r); if (!g) return; gc[g]++; var l = liberaCli(r); if (l === 'liberar') lib++; else perm++; if (g === 'oitivas') oit[l]++; });
+    var tagGrupo = function(g){
+      var t = g[3];
+      if (t === 'varia') t = oit.permanecer && oit.liberar ? 'varia' : oit.permanecer ? 'permanecer' : 'liberar';
+      if (t === 'varia') return '<span class="ct-cart-tag varia" title="Coisa julgada: liberar · outras alegações: permanecer">Liberar ' + oit.liberar + ' · Permanecer ' + oit.permanecer + '</span>';
+      return '<span class="ct-cart-tag ' + (t === 'liberar' ? 'lib' : 'perm') + '">' + (t === 'liberar' ? 'Liberar' : 'Permanecer') + '</span>';
+    };
     $('ct-cart').innerHTML = '<div class="ct-cart-head"><b>Pauta do cartório</b><span>' + (ctSessao ? 'nesta audiência' : 'todas as audiências') + '</span>' +
         '<span class="ct-cart-tot"><i class="lib"></i>Liberados após identificação <b>' + lib + '</b></span><span class="ct-cart-tot"><i class="perm"></i>Permanecem <b>' + perm + '</b></span></div>' +
       '<div class="ct-cart-grid">' + GRUPOS_CART.map(function(g, i){
         var n = gc[g[0]];
         return '<button type="button" class="ct-cart-g" data-tese="g:' + g[0] + '" aria-pressed="' + (ctFiltro === 'g:' + g[0]) + '"' + (n ? '' : ' disabled') + '>' +
           '<span class="ct-cart-n">' + (i + 1) + '</span><span class="ct-cart-t">' + g[1] + '<small>' + g[2] + '</small></span>' +
-          '<b class="tnum">' + n + '</b><span class="ct-cart-tag ' + (g[3] === 'liberar' ? 'lib' : 'perm') + '">' + (g[3] === 'liberar' ? 'Liberar' : 'Permanecer') + '</span></button>';
+          '<b class="tnum">' + n + '</b>' + tagGrupo(g) + '</button>';
       }).join('') + '</div>' +
       (sem ? '<div class="ct-cart-obs">' + sem + (sem === 1 ? ' cliente sem tese registrada' : ' clientes sem tese registrada') + '</div>' : '');
     var tsel = $('ct-tese-sel');
     var opt = function(k, nome, n){ return '<option value="' + esc(k) + '">' + esc(nome) + ' · ' + n + (n === 1 ? ' cliente' : ' clientes') + '</option>'; };
     tsel.innerHTML = '<option value="">Todos os grupos · ' + rows.length + ' clientes</option>' +
-      GRUPOS_CART.map(function(g, i){ return opt('g:' + g[0], (i + 1) + '. ' + g[1] + (g[3] === 'liberar' ? ' (liberar)' : ' (permanecer)'), gc[g[0]]); }).join('') +
+      GRUPOS_CART.map(function(g, i){ return opt('g:' + g[0], (i + 1) + '. ' + g[1] + (g[3] === 'liberar' ? ' (liberar)' : g[3] === 'permanecer' ? ' (permanecer)' : ''), gc[g[0]]); }).join('') +
       (sem ? opt('__sem', 'Sem tese registrada', sem) : '');
     tsel.value = ctFiltro || '';
     tsel.classList.toggle('ativo', !!ctFiltro);
