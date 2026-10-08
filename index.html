@@ -17,8 +17,8 @@
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   color-scheme:dark;
-  --bg:#09090b; --panel:#0c0c0e; --soft:#18181b; --hover:#18181b; --active:#27272a;
-  --ink:#fafafa; --ink-2:#d4d4d8; --ink-3:#a1a1aa; --line:#27272a; --line-2:#3f3f46;
+  --bg:#111113; --panel:#18181b; --soft:#1f1f23; --hover:#1f1f23; --active:#27272a;
+  --ink:#fafafa; --ink-2:#d4d4d8; --ink-3:#a1a1aa; --line:#2a2a2e; --line-2:#3f3f46;
   --primary:#fafafa; --on-primary:#18181b;
   --blue:#60a5fa; --blue-soft:rgba(96,165,250,.14); --green:#34d399; --green-soft:rgba(52,211,153,.14);
   --amber:#fbbf24; --amber-soft:rgba(251,191,36,.14); --red:#f87171; --red-soft:rgba(248,113,113,.14); --purple:#a78bfa;
@@ -26,8 +26,8 @@
 }}
 :root[data-theme="dark"]{
   color-scheme:dark;
-  --bg:#09090b; --panel:#0c0c0e; --soft:#18181b; --hover:#18181b; --active:#27272a;
-  --ink:#fafafa; --ink-2:#d4d4d8; --ink-3:#a1a1aa; --line:#27272a; --line-2:#3f3f46;
+  --bg:#111113; --panel:#18181b; --soft:#1f1f23; --hover:#1f1f23; --active:#27272a;
+  --ink:#fafafa; --ink-2:#d4d4d8; --ink-3:#a1a1aa; --line:#2a2a2e; --line-2:#3f3f46;
   --primary:#fafafa; --on-primary:#18181b;
   --blue:#60a5fa; --blue-soft:rgba(96,165,250,.14); --green:#34d399; --green-soft:rgba(52,211,153,.14);
   --amber:#fbbf24; --amber-soft:rgba(251,191,36,.14); --red:#f87171; --red-soft:rgba(248,113,113,.14); --purple:#a78bfa;
@@ -1121,6 +1121,23 @@ section.vw-dash{gap:10px!important}
 #list .st.acao{color:var(--amber);border-color:color-mix(in srgb,var(--amber) 45%,transparent);background:color-mix(in srgb,var(--amber) 10%,transparent)}
 #list .proc-l{color:var(--ink-2)}
 #list .row .c-act{justify-content:flex-end}
+
+/* ---------- dados do cliente (abre ao clicar no nome) ---------- */
+.nome-abrir{background:none;border:0;padding:0;font:inherit;font-weight:inherit;color:inherit;cursor:pointer;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.nome-abrir:hover{text-decoration:underline}
+.ficha{margin:0 16px 12px 52px;padding:14px 18px;border:1px solid var(--line);background:var(--soft);border-radius:4px}
+.ficha-t{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);margin-bottom:10px}
+.ficha-g{display:grid;grid-template-columns:1fr 1fr;column-gap:40px}
+@media (max-width:760px){ .ficha-g{grid-template-columns:1fr} .ficha{margin-left:16px} }
+.ficha-i{display:flex;gap:12px;align-items:flex-start;padding:8px 0;border-bottom:1px dashed var(--line)}
+.ficha-i > div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.ficha-i span{font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3)}
+.ficha-i b{font-size:13.5px;font-weight:500;color:var(--ink);overflow-wrap:anywhere}
+.fc-ok,.fc-nao{flex:none;width:20px;height:20px;border-radius:4px;display:grid;place-items:center;font-style:normal;margin-top:2px}
+.fc-ok{background:color-mix(in srgb,var(--green) 18%,transparent);color:var(--green)}
+.fc-ok .i{width:13px;height:13px}
+.fc-nao{background:var(--line);color:var(--ink-3);font-weight:700}
+.ficha-acoes{display:flex;gap:8px;margin-top:12px}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -1939,6 +1956,32 @@ section.vw-dash{gap:10px!important}
       .replace(/^(seu|sua|seus|suas)\s+/i, '')
       .trim();
   }
+  /* "Dados do cliente": abre embaixo da linha ao clicar no nome */
+  var clAberto = {};
+  function fichaCliente(r){
+    var proc = String(r.processo || '').trim();
+    var aud = r.audData ? fmtDate(r.audData) + (r.audHora ? ' às ' + r.audHora : '') + ' · ' + (r.online ? 'online' : 'presencial') : '';
+    var aviso = r.avisado ? 'Avisado' + (r.meioAviso ? ' por ' + (MEIOS[r.meioAviso] || r.meioAviso).toLowerCase() : '') + (r.avisadoEm ? ' em ' + fmtShort(String(r.avisadoEm).slice(0, 10)) : '') + (r.avisadoA ? ' · ' + soNome(r.avisadoA) : '') : (sit(r) === 'sem_contato' ? 'Sem contato' : '');
+    var via = clienteVia(r);
+    var contato = r.contato || (via ? 'pelo número de ' + via.nome + ' (' + via.contato + ')' : '');
+    var res = { procedente: 'Procedente', faltou: 'Faltou', conclusos: 'Conclusos', improcedente: 'Improcedente' }[resAud(r)] || '';
+    var teses = tesesDe(r).map(nomeTese).join(' · ');
+    var campos = [
+      ['Nome completo', r.nome], ['CPF', r.cpf], ['RG', r.rg], ['Telefone', contato],
+      ['Endereço', r.endereco], ['Prospectador', prospName(r.responsavelId)],
+      ['Processo', proc], ['Protocolado em', r.protocolo ? fmtDate(r.protocolo) : ''],
+      ['Unidade consumidora', r.uc], ['Período', r.periodo],
+      ['Teses da contestação', teses], ['Audiência', aud],
+      ['Aviso', aviso], ['Resultado', res],
+      ['Pagamento', r.pagamento && PAG[r.pagamento] ? PAG[r.pagamento][0] : ''], ['Observações', r.obs]
+    ];
+    var ok = '<i class="fc-ok"><svg class="i"><use href="#i-check"/></svg></i>', nada = '<i class="fc-nao">–</i>';
+    return '<div class="ficha"><div class="ficha-t">Dados do cliente</div><div class="ficha-g">' + campos.map(function(c){
+      var v = c[1] == null ? '' : String(c[1]).trim();
+      return '<div class="ficha-i">' + (v ? ok : nada) + '<div><span>' + c[0] + '</span><b>' + (v ? esc(v) : '—') + '</b></div></div>';
+    }).join('') + '</div><div class="ficha-acoes"><button type="button" class="btn" data-act="edit" data-id="' + esc(r.id) + '"><svg class="i"><use href="#i-pencil"/></svg>Editar cadastro</button>' +
+      (r.pastaUrl ? '<a class="btn" href="' + esc(r.pastaUrl) + '" target="_blank" rel="noopener"><svg class="i"><use href="#i-folder"/></svg>Pasta no Drive</a>' : '') + '</div></div>';
+  }
   function avisoCell(r){
     var n = daysUntil(r.audData), s = sit(r);
     var pend = !r.avisado && r.audData && n >= 0;
@@ -2157,14 +2200,14 @@ section.vw-dash{gap:10px!important}
     }
     list.slice(0, state.limit).forEach(function(r){
       html += '<div class="row">' +
-        '<div class="c-name"><div class="name' + (r.online ? ' online' : '') + '"' + (r.online ? ' title="Audiência online"' : '') + '><span>' + esc(r.nome) + '</span>' + pastaIco(r) + (r.cpf && !cpfValido(r.cpf) ? '<span class="cpf-ruim" title="CPF inválido: confira os dígitos">CPF inválido</span>' : '') + '</div>' +
-          '<div class="addr" title="' + esc(r.endereco || '') + '">' + (r.cpf ? 'CPF ' + esc(r.cpf) + ' · ' : '') + esc(r.endereco || 'Endereço não informado') + '</div></div>' +
+        '<div class="c-name"><div class="name' + (r.online ? ' online' : '') + '"' + (r.online ? ' title="Audiência online"' : '') + '><button type="button" class="nome-abrir" data-act="abrir" data-id="' + esc(r.id) + '" aria-expanded="' + !!clAberto[r.id] + '" title="Ver os dados do cliente">' + esc(r.nome) + '</button>' + pastaIco(r) + (r.cpf && !cpfValido(r.cpf) ? '<span class="cpf-ruim" title="CPF inválido: confira os dígitos">CPF inválido</span>' : '') + '</div>' +
+          '<div class="addr">' + (r.cpf ? 'CPF ' + esc(r.cpf) : 'CPF não informado') + '</div></div>' +
         '<div><span class="lbl">Processo</span><div class="val proc-l">' + esc(r.processo || '—') + '</div></div>' +
         '<div><span class="lbl">Contato</span>' + telCell(r) + '</div>' +
         '<div><span class="lbl">Audiência</span>' + audLinha(r) + '</div>' +
         '<div><span class="lbl">Aviso</span>' + avisoCell(r) + '</div>' +
         '<div class="c-act"><button type="button" class="ico-btn" data-act="edit" data-id="' + esc(r.id) + '" title="Editar cadastro" aria-label="Editar ' + esc(r.nome) + '"><svg class="i"><use href="#i-pencil"/></svg></button></div>' +
-      '</div>';
+      '</div>' + (clAberto[r.id] ? fichaCliente(r) : '');
     });
     if (list.length > state.limit){
       html += '<div class="more"><button type="button" class="btn" data-act="more">Mostrar mais ' + Math.min(100, list.length - state.limit) + ' de ' + (list.length - state.limit) + ' restantes</button></div>';
@@ -3667,6 +3710,7 @@ section.vw-dash{gap:10px!important}
   async function listClick(e){
     var b = e.target.closest('[data-act]'); if (!b) return;
     if (b.dataset.act === 'more'){ state.limit += 100; renderList(); return; }
+    if (b.dataset.act === 'abrir'){ if (clAberto[b.dataset.id]) delete clAberto[b.dataset.id]; else clAberto[b.dataset.id] = 1; renderList(); return; }
     var r = state.rows.find(function(x){ return x.id === b.dataset.id; }); if (!r) return;
     if (b.dataset.act === 'edit') return openForm(r);
     if (b.dataset.act === 'pasta'){
