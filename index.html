@@ -1172,6 +1172,16 @@ section.vw-dash{gap:10px!important}
 #list .row[data-linha]{cursor:pointer}
 #list .row[data-linha]:hover{background:var(--hover)}
 #list .row.aberto{background:var(--soft)}
+
+/* ---------- gráfico das teses compacto: 3 colunas, linhas baixas ---------- */
+.ct-bars{grid-template-columns:repeat(auto-fill,minmax(380px,1fr))!important;gap:0 24px!important}
+.ct-bar{grid-template-columns:minmax(0,2.2fr) minmax(40px,.8fr) auto!important;gap:10px!important;padding:3px 8px!important;margin:0 -8px!important}
+.ct-bar-nome{font-size:12px!important}
+.ct-bar-trilho{height:5px!important}
+.ct-bar-num{font-size:12px!important;min-width:56px!important}
+.ct-bar-num small{font-size:10.5px!important;margin-left:4px!important}
+.ct-sec{margin:6px 0 0!important;font-size:10px!important}
+.ct-bars-box .ct-bars{padding-top:2px}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
