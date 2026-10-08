@@ -2503,6 +2503,7 @@ section.vw-dash{gap:10px!important}
   }
   function renderBusca(){
     var box = $('bc-res'); if (!box) return;
+    box.hidden = true; box.innerHTML = ''; return; // sem cartão de resultado: a busca já filtra a lista
     var q = $('bc-q').value.trim(), ql = semAcento(q), qd = q.replace(/[^0-9]/g, '');
     if (q.length < 2){ box.hidden = true; box.innerHTML = ''; return; }
     var achados = state.rows.filter(function(r){
