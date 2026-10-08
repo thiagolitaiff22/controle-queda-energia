@@ -1151,6 +1151,23 @@ section.vw-dash{gap:10px!important}
 #view-ct > .ct-cart,#view-ct > .ct-bars-box,#view-ct > .ct-resf{margin-top:14px}
 #view-ct > .ct-resf:empty{display:none}
 .cl-cards{row-gap:12px!important;column-gap:12px!important}
+
+/* ---------- Contestações no formato da lista de Clientes ---------- */
+#ct-body tr[data-ct]{cursor:pointer}
+#ct-body tr[data-ct] td{padding-top:7px!important;padding-bottom:7px!important;vertical-align:middle}
+#ct-body td.nome{font-weight:700;font-size:13.5px}
+#ct-body td.nome.online .nome-abrir{color:var(--blue)}
+#ct-body .ct-sub{font-size:12px;font-weight:400;color:var(--ink-3);margin-top:1px}
+#ct-body tr.aberto td{background:var(--soft)}
+#ct-body tr.ct-ficha-row td{padding:0 0 6px!important;background:var(--soft);box-shadow:none!important}
+#ct-body tr.ct-ficha-row td::before{content:none!important}
+#ct-body tr.ct-ficha-row .ficha{margin:0 16px 8px 52px;background:var(--panel)}
+#ct-body .copia{font-size:12.5px}
+
+#ct-body ~ thead th,.ct-num thead th{text-transform:uppercase!important;letter-spacing:.04em!important;font-size:11.5px!important}
+#ct-body td.n{white-space:nowrap}
+#ct-body .modo-sel{display:inline-block!important;vertical-align:middle;margin:0 0 0 6px!important;-webkit-appearance:none;appearance:none;height:20px!important;line-height:18px;padding:0 8px!important;font-size:11px!important;font-weight:600;background:var(--soft)!important;border:1px solid var(--line)!important;color:var(--ink-2)!important;cursor:pointer;width:auto}
+#ct-body .modo-sel.on{color:var(--blue)!important;border-color:var(--blue)!important;background:color-mix(in srgb,var(--blue) 12%,transparent)!important}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -1361,7 +1378,7 @@ section.vw-dash{gap:10px!important}
           <span class="tb-fim fb-count tnum" id="ct-count"></span>
         </div>
         <div class="sec-rot">Clientes</div>
-        <div class="card ct-tab"><table class="ct-tbl ct-num"><thead><tr><th>Cliente</th><th>CPF</th><th>Processo</th><th id="ct-th-aud">Audiência</th><th>Tese da contestação</th><th>Resultado na audiência</th></tr></thead><tbody id="ct-body"></tbody></table></div>
+        <div class="card ct-tab"><table class="ct-tbl ct-num"><thead><tr><th>Cliente</th><th>Processo</th><th id="ct-th-aud">Audiência</th><th>Tese da contestação</th><th>Resultado na audiência</th></tr></thead><tbody id="ct-body"></tbody></table></div>
       </section>
 
       <section id="view-fin" class="vw-dash" hidden style="display:flex;flex-direction:column;gap:18px">
@@ -2591,6 +2608,7 @@ section.vw-dash{gap:10px!important}
     var r = state.rows.filter(function(x){ return x.id === b.dataset.bc; })[0]; if (r) openForm(r);
   });
 
+  var ctAberto = {}; // linhas de Contestações com os dados do cliente abertos
   var ctFiltro = '', ctSessao = null, ctRes = '', ctOnline = false, ctQ = '', ctLimite = 200;
   // what happened at the hearing, as one of four quick marks
   var CT_RES = [['conclusos', 'Conclusos'], ['procedente', 'Procedente'], ['faltou', 'Faltou'], ['improcedente', 'Improcedente']];
@@ -3330,9 +3348,9 @@ section.vw-dash{gap:10px!important}
     $('ct-th-aud').textContent = ctSessao ? 'Tipo' : 'Audiência';
     $('ct-body').innerHTML = lista.slice(0, ctLimite).map(function(r){
       var t = tesesDe(r);
-      return '<tr data-ct="' + esc(r.id) + '"><td class="nome' + (r.online ? ' online' : '') + '"' + (r.online ? ' title="Audiência online"' : '') + '>' + esc(r.nome) + '</td><td class="n">' + esc(r.cpf || '—') + '</td><td class="n">' + (r.processo ? '<button type="button" class="copia" data-copiar="' + esc(r.processo) + '" title="Copiar o número do processo">' + esc(r.processo) + '<svg class="i"><use href="#i-copy"/></svg></button>' : '—') + '</td><td class="n">' + (!ctSessao && r.audData ? fmtShort(r.audData) + (r.audHora ? ' · ' + esc(r.audHora) : '') : '') + (r.audData ? modoSwitch(r) : '—') + '</td><td><div class="ct-pills">' + (t.length ? t.map(function(k){ return '<span>' + esc(nomeTese(k)) + '</span>'; }).join('') : '<span>Sem tese</span>') + '</div></td><td><div class="res-rap" role="group" aria-label="Resultado de ' + esc(r.nome) + '">' + CT_RES.filter(function(x){ return x[0] !== 'improcedente'; }).map(function(x){ return '<button type="button" class="r-' + x[0] + '" data-res="' + x[0] + '" data-id="' + esc(r.id) + '" aria-pressed="' + (resAud(r) === x[0]) + '" title="' + (resAud(r) === x[0] ? 'Clique de novo para apagar' : 'Marcar ' + x[1].toLowerCase()) + '">' + x[1] + '</button>'; }).join('') + '</div>' + (resAud(r) === 'improcedente' ? '<span class="res-imp">Improcedente</span>' : '') + '</td></tr>';
-    }).join('') + (lista.length > ctLimite ? '<tr class="ct-mais-row"><td colspan="6" class="ct-mais"><button type="button" class="btn" id="ct-mais">Mostrar mais ' + Math.min(200, lista.length - ctLimite) + '</button></td></tr>' : '') +
-      (!lista.length ? '<tr><td colspan="6" class="ct-mais small">Nenhum cliente encontrado.</td></tr>' : '');
+      return '<tr data-ct="' + esc(r.id) + '"' + (ctAberto[r.id] ? ' class="aberto"' : '') + '><td class="nome' + (r.online ? ' online' : '') + '"' + (r.online ? ' title="Audiência online"' : '') + '><button type="button" class="nome-abrir" data-ct-abrir="' + esc(r.id) + '" title="Ver os dados do cliente">' + esc(r.nome) + '</button><div class="ct-sub">' + (r.cpf ? 'CPF ' + esc(r.cpf) : 'CPF não informado') + '</div></td><td class="n">' + (r.processo ? '<button type="button" class="copia" data-copiar="' + esc(r.processo) + '" title="Copiar o número do processo">' + esc(r.processo) + '<svg class="i"><use href="#i-copy"/></svg></button>' : '—') + '</td><td class="n">' + (!ctSessao && r.audData ? fmtShort(r.audData) + (r.audHora ? ' · ' + esc(r.audHora) : '') : '') + (r.audData ? modoSwitch(r) : '—') + '</td><td><div class="ct-pills">' + (t.length ? t.map(function(k){ return '<span>' + esc(nomeTese(k)) + '</span>'; }).join('') : '<span>Sem tese</span>') + '</div></td><td><div class="res-rap" role="group" aria-label="Resultado de ' + esc(r.nome) + '">' + CT_RES.filter(function(x){ return x[0] !== 'improcedente'; }).map(function(x){ return '<button type="button" class="r-' + x[0] + '" data-res="' + x[0] + '" data-id="' + esc(r.id) + '" aria-pressed="' + (resAud(r) === x[0]) + '" title="' + (resAud(r) === x[0] ? 'Clique de novo para apagar' : 'Marcar ' + x[1].toLowerCase()) + '">' + x[1] + '</button>'; }).join('') + '</div>' + (resAud(r) === 'improcedente' ? '<span class="res-imp">Improcedente</span>' : '') + '</td></tr>' + (ctAberto[r.id] ? '<tr class="ct-ficha-row"><td colspan="5">' + fichaCliente(r) + '</td></tr>' : '');
+    }).join('') + (lista.length > ctLimite ? '<tr class="ct-mais-row"><td colspan="5" class="ct-mais"><button type="button" class="btn" id="ct-mais">Mostrar mais ' + Math.min(200, lista.length - ctLimite) + '</button></td></tr>' : '') +
+      (!lista.length ? '<tr><td colspan="5" class="ct-mais small">Nenhum cliente encontrado.</td></tr>' : '');
   }
   function ctSessoes(){ var m = {}; state.rows.forEach(function(r){ if (r.audData) m[(r.audData || '') + '|' + (r.audHora || '')] = 1; }); return Object.keys(m).sort(); }
   $('ct-on-btn').addEventListener('click', function(){ ctOnline = !ctOnline; ctLimite = 200; renderContest(); });
@@ -3400,8 +3418,12 @@ section.vw-dash{gap:10px!important}
       catch(err){ toast(errMsg(err)); }
       return;
     }
+    var ed = e.target.closest('[data-act="edit"]');
+    if (ed){ var re = state.rows.filter(function(x){ return x.id === ed.dataset.id; })[0]; if (re) openForm(re); return; }
+    if (e.target.closest('a,select,input,.ficha')) return;
     var tr = e.target.closest('[data-ct]'); if (!tr) return;
-    var r = state.rows.filter(function(x){ return x.id === tr.dataset.ct; })[0]; if (r) openForm(r);
+    if (ctAberto[tr.dataset.ct]) delete ctAberto[tr.dataset.ct]; else ctAberto[tr.dataset.ct] = 1;
+    renderContest();
   });
 
   function renderEquipe(){
