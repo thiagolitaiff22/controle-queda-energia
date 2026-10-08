@@ -1101,6 +1101,26 @@ section.vw-dash{gap:10px!important}
 
 /* ---------- cantos retos em todo o sistema (sem mexer no que é redondo: avatar, bolinhas, chaves) ---------- */
 .card,.btn,button.tb-btn,.tb-sel,.search,.search input,input:not([type=checkbox]):not([type=radio]),select,textarea,dialog,.f,.pill,.st,.res-rap,.res-rap button,.ct-pills span,.modo-sel,.ig-card,.ct-cart-g,.ct-cart-tag,.rep-btn,.day-chip,.fb-painel,.toast,#toast,.tel-add,.campo-tag,.cpf-ruim,.pj-l,.pj-det,.pj-fav,.copia,.ico-btn,.stat-link,.ph-tile,.tab,.integ,.fin-valor,.ct-bar,.ct-bars-box,.bc-res,.list-sum,.termo,.pp-row,.eq-list,.linkbtn,.fb-clear,.res-imp,.vw-dash .card.stat,.cl-etapa-cards > button.card{border-radius:4px!important}
+
+/* ---------- lista de clientes: uma linha limpa por cliente ---------- */
+#list .row{grid-template-columns:minmax(0,2.5fr) minmax(0,1.35fr) minmax(0,1fr) minmax(0,1.75fr) minmax(0,1.6fr) 36px!important;gap:16px!important;min-height:46px}
+#list .row .aud-l{flex-wrap:nowrap;overflow:hidden;gap:8px}
+#list .row .aud-l .val{font-weight:600;font-size:12.5px}
+#list .row .aud-l .mini{font-size:11.5px;font-weight:600}
+#list .row .modo-sel{-webkit-appearance:none;appearance:none;height:20px!important;line-height:18px;padding:0 8px!important;font-size:11px!important;font-weight:600;background:var(--soft)!important;border:1px solid var(--line)!important;color:var(--ink-2)!important;cursor:pointer;width:auto}
+#list .row .modo-sel.on{color:var(--blue)!important;border-color:var(--blue)!important;background:color-mix(in srgb,var(--blue) 12%,transparent)!important}
+.av-l{display:flex;align-items:center;gap:8px;min-width:0}
+.av-l > .mini{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0;font-size:11.5px;color:var(--ink-3)}
+.av-l > div.mini{display:none}
+#list .st{padding:2px 8px;font-size:11.5px;border:1px solid var(--line);background:var(--soft);white-space:nowrap;flex:none}
+#list .st i{width:6px;height:6px}
+#list .st.ok{color:var(--green);border-color:color-mix(in srgb,var(--green) 45%,transparent);background:color-mix(in srgb,var(--green) 10%,transparent)}
+#list .st.ok i{background:var(--green)}
+#list .st.crit{color:var(--red);border-color:color-mix(in srgb,var(--red) 45%,transparent);background:color-mix(in srgb,var(--red) 10%,transparent)}
+#list .st.crit i{background:var(--red)}
+#list .st.acao{color:var(--amber);border-color:color-mix(in srgb,var(--amber) 45%,transparent);background:color-mix(in srgb,var(--amber) 10%,transparent)}
+#list .proc-l{color:var(--ink-2)}
+#list .row .c-act{justify-content:flex-end}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -1944,7 +1964,7 @@ section.vw-dash{gap:10px!important}
     var extra = '';
     if (r.semWhatsApp) extra = '<div class="mini warn" title="O número cadastrado não tem WhatsApp">Número sem WhatsApp</div>';
     else if (r.reguaUltimo && r.reguaUltimo.status === 'enviado') extra = '<div class="mini">WhatsApp automático: ' + esc(ETQ[r.reguaUltimo.etapa] || r.reguaUltimo.etapa) + '</div>';
-    return '<div>' + linha1 + (linha2 ? '<div class="mini quebra" title="' + esc(linha2) + '">' + esc(linha2) + '</div>' : '') + extra + '</div>';
+    return '<div class="av-l">' + linha1 + (linha2 ? '<span class="mini" title="' + esc(linha2) + '">' + esc(linha2) + '</span>' : '') + extra + '</div>';
   }
 
   function renderStats(){
