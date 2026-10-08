@@ -1052,6 +1052,31 @@ body{font-size:14px}
 .ct-cart-g > b{font-size:20px;line-height:1}
 .ct-cart-tag{grid-column:2 / 4;justify-self:start;font-size:11px;font-weight:700;color:#fff;border-radius:5px;padding:1px 7px}
 .ct-cart-obs{margin-top:8px;font-size:12.5px;color:var(--ink-3)}
+
+/* ---------- visual do sistema de contratação ---------- */
+.sec-rot{font-size:13.5px;font-weight:600;color:var(--ink-2);margin:4px 0 -6px}
+.vw-dash .card.stat{position:relative;overflow:hidden;border-bottom:2px solid var(--cor-linha, var(--line-2))!important;padding-bottom:16px}
+.vw-dash .card.stat .stat-viz{display:none!important}
+.vw-dash .card.stat .stat-h{text-transform:uppercase;letter-spacing:.04em;font-size:11.5px}
+.vw-dash .card.stat .stat-v{font-size:30px;line-height:1.1;margin-top:6px}
+.vw-dash .card.stat[aria-pressed="true"]{border-color:var(--ink)!important;border-bottom-color:var(--ink)!important;box-shadow:none!important}
+/* lista numerada com linha de destaque à esquerda */
+.card.list{counter-reset:linha}
+.card.list .row{position:relative;padding-left:52px!important}
+.card.list .row:not(.head){counter-increment:linha;box-shadow:inset 3px 0 0 var(--line-2)}
+.card.list .row:not(.head):hover{box-shadow:inset 3px 0 0 var(--blue)}
+.card.list .row::before{position:absolute;left:18px;top:50%;transform:translateY(-50%);font-size:12.5px;font-weight:700;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.card.list .row:not(.head)::before{content:counter(linha)}
+.card.list .row.head::before{content:"#";color:var(--ink-3);font-size:11.5px}
+.card.list .row.head > div{text-transform:uppercase;letter-spacing:.04em;font-size:11.5px}
+.ct-num{counter-reset:linha}
+.ct-num thead th{text-transform:uppercase;letter-spacing:.04em;font-size:11.5px}
+.ct-num thead th:first-child,.ct-num tbody td:first-child{position:relative;padding-left:52px!important}
+.ct-num thead th:first-child::before{content:"#";position:absolute;left:18px;color:var(--ink-3)}
+.ct-num tbody tr[data-ct]{counter-increment:linha}
+.ct-num tbody tr[data-ct] td:first-child{box-shadow:inset 3px 0 0 var(--line-2)}
+.ct-num tbody tr[data-ct]:hover td:first-child{box-shadow:inset 3px 0 0 var(--blue)}
+.ct-num tbody tr[data-ct] td:first-child::before{content:counter(linha);position:absolute;left:18px;top:50%;transform:translateY(-50%);font-size:12.5px;font-weight:700;color:var(--ink-2);font-variant-numeric:tabular-nums}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -1178,6 +1203,7 @@ body{font-size:14px}
           <button type="button" id="cl-aud-ant"></button><button type="button" id="cl-aud-prox"></button><span id="cl-aud-info"></span>
         </div>
         <div class="bc-res" id="bc-res" hidden></div>
+        <div class="sec-rot">Resumo por status</div>
         <div class="cl-cards">
         <div class="stats">
           <div class="card stat card-filtro" data-card="todos" role="button" tabindex="0">
@@ -1213,6 +1239,7 @@ body{font-size:14px}
 
         <div class="sec-title" id="list-title">Clientes</div>
         <div class="card list-sum" id="list-sum"></div>
+        <div class="sec-rot">Clientes</div>
         <div class="card list" id="list"></div>
         <p class="foot-note">Situação do aviso: <b>Avisado</b> quando o cliente confirmou; <b>Sem contato</b> quando não foi possível falar com ele. O <b>responsável</b> é o prospectador encarregado de avisar o cliente. Clique no botão da coluna Aviso para marcar ou desmarcar.</p>
       </section>
@@ -1254,11 +1281,13 @@ body{font-size:14px}
           <span class="tb-fim fb-count tnum" id="ct-count"></span>
         </div>
         <div hidden><button type="button" id="ct-aud-ant"></button><button type="button" id="ct-aud-prox"></button><span id="ct-aud-info"></span><button type="button" id="ct-geral"></button></div>
+        <div class="sec-rot">Resumo por resultado</div>
         <div class="stats five ct-stats" id="ct-stats"></div>
         <div class="card ct-cart" id="ct-cart"></div>
         <details class="card ct-bars-box" id="ct-bars-det"><summary class="ct-bars-head"><b>Gráfico das teses</b><span id="ct-bars-info"></span></summary><div class="ct-bars" id="ct-chips" role="group" aria-label="Filtrar por tese"></div></details>
         <div class="ct-resf" id="ct-resf" role="group" aria-label="Filtrar por resultado"></div>
-        <div class="card ct-tab"><table class="ct-tbl"><thead><tr><th>Cliente</th><th>CPF</th><th>Processo</th><th id="ct-th-aud">Audiência</th><th>Tese da contestação</th><th>Resultado na audiência</th></tr></thead><tbody id="ct-body"></tbody></table></div>
+        <div class="sec-rot">Clientes</div>
+        <div class="card ct-tab"><table class="ct-tbl ct-num"><thead><tr><th>Cliente</th><th>CPF</th><th>Processo</th><th id="ct-th-aud">Audiência</th><th>Tese da contestação</th><th>Resultado na audiência</th></tr></thead><tbody id="ct-body"></tbody></table></div>
       </section>
 
       <section id="view-fin" class="vw-dash" hidden style="display:flex;flex-direction:column;gap:18px">
@@ -2274,6 +2303,15 @@ body{font-size:14px}
     }).join('');
   }
   if (/^(localhost|127.0.0.1)$/.test(location.hostname)) window.__qeDev = { state: state, render: function(){ render(); } };
+  // linha colorida embaixo de cada cartão, na cor da barrinha dele (a barrinha some no visual novo)
+  function corDosCartoes(){
+    Array.prototype.forEach.call(document.querySelectorAll('.card.stat'), function(c){
+      var el = c.querySelector('.stat-viz [style*="background"], .stat-viz svg [stroke]');
+      var cor = el ? (el.style.background || el.style.backgroundColor || el.getAttribute('stroke')) : '';
+      c.style.setProperty('--cor-linha', cor || 'var(--line-2)');
+    });
+  }
+  if (window.MutationObserver) new MutationObserver(function(){ clearTimeout(corDosCartoes.t); corDosCartoes.t = setTimeout(corDosCartoes, 30); }).observe(document.body, { childList: true, subtree: true });
   function render(){ renderStats(); renderPauta(); renderList(); renderLista(); renderPos(); renderRet(); renderProsp(); renderEquipe(); renderContest(); renderBusca(); renderClSessao(); renderFin(); if (typeof AV !== 'undefined' && AV && !AV.rodando) avMontar(); }
   var clQ = '';
   // stage of each process, derived from what is already recorded (no extra typing)
