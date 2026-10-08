@@ -1212,6 +1212,30 @@ section.vw-dash{gap:10px!important}
 
 /* filtro de grupos redundante: o quadro Pauta do cartório já filtra */
 #ct-tese-sel{display:none!important}
+
+/* ---------- Cadastro ---------- */
+#view-cad{gap:0!important}
+#view-cad > .sec-rot{margin:30px 0 10px!important}
+#view-cad > .sec-rot:not(.sec-rot ~ .sec-rot){margin-top:0!important}
+#view-cad > .fbar{margin-top:30px!important}
+.cad-stats{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+@media (max-width:900px){ .cad-stats{grid-template-columns:repeat(2,minmax(0,1fr))!important} }
+#cad-list .row{grid-template-columns:minmax(0,2.4fr) minmax(0,1.4fr) minmax(0,1.2fr) minmax(0,1fr) minmax(0,1.3fr) 36px!important;gap:16px!important;min-height:46px;padding-top:6px!important;padding-bottom:6px!important}
+#cad-list .row[data-linha]{cursor:pointer}
+#cad-list .row[data-linha]:hover{background:var(--hover)}
+#cad-list .row.aberto{background:var(--soft)}
+#cad-list .c-name .name{font-size:13.5px;font-weight:700;display:flex;align-items:center;gap:6px;min-width:0}
+#cad-list .c-name .addr{font-size:12px;color:var(--ink-3)}
+#cad-list .val{font-size:12.5px}
+#cad-list .c-act{justify-content:flex-end}
+.cad-sit{display:inline-flex;font-size:11.5px;font-weight:600;padding:3px 8px;border-radius:4px;border:1px solid var(--line);white-space:nowrap}
+.cad-sit.ok{color:var(--green);border-color:color-mix(in srgb,var(--green) 45%,transparent);background:color-mix(in srgb,var(--green) 10%,transparent)}
+.cad-sit.warn{color:var(--amber);border-color:color-mix(in srgb,var(--amber) 45%,transparent);background:color-mix(in srgb,var(--amber) 10%,transparent)}
+.cad-sit.crit{color:var(--red);border-color:color-mix(in srgb,var(--red) 45%,transparent);background:color-mix(in srgb,var(--red) 10%,transparent)}
+.fin-prev{height:30px;font-size:12.5px;padding:0 8px}
+.vw-dash .cl-cards{grid-template-columns:repeat(5,minmax(0,1fr))!important}
+@media (max-width:1100px){ .vw-dash .cl-cards{grid-template-columns:repeat(3,minmax(0,1fr))!important} }
+#cl-etapa > [data-etapa-cl="aguardaud"]{order:3}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -1279,10 +1303,11 @@ section.vw-dash{gap:10px!important}
   <header class="topnav">
     <div class="brand"><div class="logo"><svg class="i"><use href="#i-bolt"/></svg></div><div><b>Queda de Energia</b><span>Rodrigues Litaiff Advogados</span></div></div>
     <nav class="nav" role="tablist" aria-orientation="horizontal">
-      <button class="tab" role="tab" id="tab-clientes" aria-selected="true" type="button" title="Clientes"><svg class="i"><use href="#i-users"/></svg><span>Clientes</span></button>
+      <button class="tab" role="tab" id="tab-cad" aria-selected="false" type="button" title="Cadastro"><svg class="i"><use href="#i-plus"/></svg><span>Cadastro</span></button>
+      <button class="tab" role="tab" id="tab-clientes" aria-selected="true" type="button" title="Controle"><svg class="i"><use href="#i-users"/></svg><span>Controle</span></button>
       <button class="tab" role="tab" id="tab-ct" aria-selected="false" type="button" title="Contestações"><svg class="i"><use href="#i-scale"/></svg><span>Contestações</span></button>
-      <button class="tab" role="tab" id="tab-ret" aria-selected="false" type="button" title="Retorno"><svg class="i"><use href="#i-repeat"/></svg><span>Retorno</span></button>
       <button class="tab admin-only" role="tab" id="tab-fin" aria-selected="false" type="button" title="Financeiro"><svg class="i"><use href="#i-cash"/></svg><span>Financeiro</span></button>
+      <button class="tab" role="tab" id="tab-ret" aria-selected="false" type="button" title="Arquivados"><svg class="i"><use href="#i-file"/></svg><span>Arquivados</span></button>
       <button class="tab admin-only" role="tab" id="tab-equipe" aria-selected="false" type="button" title="Configurações"><svg class="i"><use href="#i-gear"/></svg><span>Configurações</span></button>
     </nav>
     <div class="top-right">
@@ -1309,12 +1334,24 @@ section.vw-dash{gap:10px!important}
         <div class="card list" id="cl-list"></div>
       </section>
 
+      <section id="view-cad" class="vw-dash" hidden style="display:flex;flex-direction:column;gap:18px">
+        <div class="sec-rot">Resumo do cadastro</div>
+        <div class="stats cad-stats" id="cad-stats"></div>
+        <div class="fbar">
+          <div class="search tb-busca"><svg class="i"><use href="#i-search"/></svg><input id="cad-q" type="search" autocomplete="off" placeholder="Buscar cliente por nome ou CPF"></div>
+          <select id="cad-sit" class="tb-sel" aria-label="Situação do cadastro"></select>
+          <span class="tb-fim fb-count tnum" id="cad-count"></span>
+        </div>
+        <div class="sec-rot">Clientes em cadastro</div>
+        <div class="card list" id="cad-list"></div>
+      </section>
+
       <section id="view-clientes" class="vw-dash" style="display:flex;flex-direction:column;gap:18px">
         <div class="sec-rot">Resumo por status</div>
         <div class="cl-cards">
         <div class="stats">
           <div class="card stat card-filtro" data-card="todos" role="button" tabindex="0">
-            <div class="stat-h"><svg class="i"><use href="#i-users"/></svg>Clientes<span class="help" data-p-help="semtel" data-p-rot="Ver quem está sem telefone" title="Todos os clientes cadastrados. &quot;Com nº de processo&quot; são os que já foram protocolados.|Com telefone: tem número próprio cadastrado.|Via outro cliente: é avisado pelo número de outro cliente (parente ou vizinho).|Prospectador: o contato é feito pelo prospectador da comunidade.|Sem telefone: nenhum meio de contato cadastrado.">?</span></div>
+            <div class="stat-h"><svg class="i"><use href="#i-users"/></svg>Em controle<span class="help" data-p-help="semtel" data-p-rot="Ver quem está sem telefone" title="Todos os clientes cadastrados. &quot;Com nº de processo&quot; são os que já foram protocolados.|Com telefone: tem número próprio cadastrado.|Via outro cliente: é avisado pelo número de outro cliente (parente ou vizinho).|Prospectador: o contato é feito pelo prospectador da comunidade.|Sem telefone: nenhum meio de contato cadastrado.">?</span></div>
             <div class="stat-v tnum" id="s-total">0</div>
             <div class="stat-c" id="s-total-c">&nbsp;</div>
             <div class="stat-viz" id="v-total"></div>
@@ -1442,7 +1479,7 @@ section.vw-dash{gap:10px!important}
           <div class="card ct-tab"><table class="ct-tbl fin-tbl"><thead><tr><th>Mês</th><th class="dir">Processos recebidos</th><th class="dir">Valor que caiu</th><th class="dir">Faturamento (honorários)</th><th class="dir">Repassado aos clientes</th><th class="dir">Prospectadores</th><th class="dir">Líquido</th></tr></thead><tbody id="fin-ano-body"></tbody></table></div>
         </div>
         <div class="fin-receita">
-        <div class="card ct-tab"><table class="ct-tbl fin-tbl"><thead><tr><th>Cliente</th><th>Processo</th><th>Audiência</th><th class="dir">Condenação</th><th class="dir">Escritório</th><th class="dir">Cliente</th><th>Pagamento</th><th>Repasse ao cliente</th></tr></thead><tbody id="fin-body"></tbody></table></div>
+        <div class="card ct-tab"><table class="ct-tbl fin-tbl"><thead><tr><th>Cliente</th><th>Processo</th><th>Audiência</th><th class="dir">Condenação</th><th class="dir">Escritório</th><th class="dir">Cliente</th><th>Previsão de pagamento</th><th>Pagamento</th><th>Repasse ao cliente</th></tr></thead><tbody id="fin-body"></tbody></table></div>
         </div>
         <div class="fin-resultado" hidden>
           <div class="card ct-tab"><table class="ct-tbl fin-tbl"><thead><tr><th>Cenário</th><th class="dir">Processos</th><th class="dir">Faturamento do escritório</th><th class="dir">Gasto com prospectadores</th><th class="dir">Resultado líquido</th></tr></thead><tbody id="fin-res-body"></tbody></table></div>
@@ -1456,12 +1493,12 @@ section.vw-dash{gap:10px!important}
         <div class="fbar">
           <div class="search tb-busca"><svg class="i"><use href="#i-search"/></svg><input id="r-q" type="search" placeholder="Buscar cliente por nome ou CPF"></div>
           <select id="r-f" class="tb-sel" aria-label="Situação do retorno">
-            <option value="">Todos com protocolo</option>
+            <option value="arquivado">Arquivados (pagos)</option>
+            <option value="">Todos com protocolo (retorno)</option>
             <option value="liberado">Já podem entrar de novo</option>
             <option value="30">Liberam nos próximos 30 dias</option>
             <option value="aguardando">Ainda aguardando</option>
             <option value="contatado">Já contatados</option>
-            <option value="arquivado">Arquivados (pagos)</option>
           </select>
           <span class="tb-fim" id="r-count"></span>
         </div>
@@ -1819,7 +1856,7 @@ section.vw-dash{gap:10px!important}
 <script>
 (function(){
   var state = { hora: '', rows: [], prosp: [], resp: '', db: null, filter: 'todos', aud: 'todas', tel: 'todos', meio: 'todos', dia: '', q: '', editing: null, limit: 100, view: 'c',
-    p: { res: '', rec: '', pag: '', conc: '', comp: '', q: '' }, r: { f: '', q: '', mes: '' } };
+    p: { res: '', rec: '', pag: '', conc: '', comp: '', q: '' }, r: { f: 'arquivado', q: '', mes: '' } };
   var $ = function(id){ return document.getElementById(id); };
   var memId = 0;
   var DOW = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
@@ -1954,9 +1991,12 @@ section.vw-dash{gap:10px!important}
   }
   // arquivado: processo pago ao cliente e encerrado; sai do fluxo e fica só em Arquivados
   function naoArquivado(r){ return !r.arquivado; }
+  // Controle: protocolado, não arquivado e com a audiência ainda por acontecer (depois vai para o Financeiro)
+  function noControle(r){ return !!String(r.processo || '').trim() && !r.arquivado && !jaRealizada(r); }
+  // Cadastro: ainda sem número de processo
+  function noCadastro(r){ return !String(r.processo || '').trim() && !r.arquivado; }
   function passEtapaCl(r, f){
-    if (f === 'arquivados') return !!r.arquivado;
-    if (r.arquivado) return false;
+    if (!noControle(r)) return false;
     if (!f) return true;
     var n = daysUntil(r.audData), proc = !!String(r.processo || '').trim();
     if (f === 'marcada') return isFuture(r);
@@ -2085,7 +2125,7 @@ section.vw-dash{gap:10px!important}
   }
 
   function renderStats(){
-    var rows = state.rows.filter(naoArquivado), fut = rows.filter(isFuture);
+    var rows = state.rows.filter(noControle), fut = rows.filter(isFuture);
     var comProc = rows.filter(function(r){ return r.processo; }).length;
     var semTel = rows.filter(function(r){ return !temContato(r) && !pelaProsp(r); }).length, viaProsp = rows.filter(pelaProsp).length, viaCli = rows.filter(function(r){ return !!clienteVia(r); }).length;
     var avis = fut.filter(function(r){ return r.avisado; });
@@ -2177,7 +2217,7 @@ section.vw-dash{gap:10px!important}
     'fb-tel': ['tel', 'tel', [['todos', 'Todos'], ['com', 'Com telefone'], ['sem', 'Sem telefone'], ['via', 'Via outro cliente'], ['prosp', 'Pelo prospectador'], ['novo', 'Preenchidos agora']]]
   };
   function renderFilters(shown){
-    var rows = state.rows.filter(naoArquivado), conta = function(o){ return rows.filter(function(r){ return matches(r, o); }).length; };
+    var rows = state.rows.filter(noControle), conta = function(o){ return rows.filter(function(r){ return matches(r, o); }).length; };
     // quick views
     var atual = presetAtual();
     Array.prototype.forEach.call($('fb-rapido').querySelectorAll('[data-p]'), function(b){
@@ -2204,9 +2244,7 @@ section.vw-dash{gap:10px!important}
     var ativo = cardAtivo();
     Array.prototype.forEach.call(document.querySelectorAll('.cl-cards [data-card]'), function(c){ c.setAttribute('aria-pressed', c.dataset.card === 'todos' ? 'false' : String(c.dataset.card === ativo)); });
     var CARD_ETAPA = [
-      ['protocolar', 'i-clock', 'Sem protocolo', 'cadastrados, aguardando protocolar', '--amber'],
-      ['protocolados', 'i-file', 'Protocolados', 'com número de processo', '--blue'],
-      ['realizadas', 'i-check', 'Audiências realizadas', 'audiência já aconteceu', '--purple']
+      ['aguardaud', 'i-clock', 'Aguardando audiência', 'protocolados, ainda sem data marcada', '--amber']
     ];
     var totE = rows.length || 1;
     $('cl-etapa').innerHTML = CARD_ETAPA.map(function(x){
@@ -2473,13 +2511,65 @@ section.vw-dash{gap:10px!important}
   // linha colorida embaixo de cada cartão, na cor da barrinha dele (a barrinha some no visual novo)
   function corDosCartoes(){
     Array.prototype.forEach.call(document.querySelectorAll('.card.stat'), function(c){
+      if (c.dataset.corFixa) return;
       var el = c.querySelector('.stat-viz [style*="background"], .stat-viz svg [stroke]');
       var cor = el ? (el.style.background || el.style.backgroundColor || el.getAttribute('stroke')) : '';
       c.style.setProperty('--cor-linha', cor || 'var(--line-2)');
     });
   }
   if (window.MutationObserver) new MutationObserver(function(){ clearTimeout(corDosCartoes.t); corDosCartoes.t = setTimeout(corDosCartoes, 30); }).observe(document.body, { childList: true, subtree: true });
-  function render(){ renderStats(); renderPauta(); renderList(); renderLista(); renderPos(); renderRet(); renderProsp(); renderEquipe(); renderContest(); renderBusca(); renderClSessao(); renderFin(); if (typeof AV !== 'undefined' && AV && !AV.rodando) avMontar(); }
+  /* Cadastro: clientes ainda sem protocolo */
+  var cadQ = '', cadSit = '', cadAberto = {};
+  function situacaoCad(r){
+    if (r.conferirDados) return ['conferir', 'Conferir dados', 'warn'];
+    if (!String(r.cpf || '').trim() || !String(r.endereco || '').trim() || (r.cpf && !cpfValido(r.cpf))) return ['incompleto', 'Dados incompletos', 'crit'];
+    return ['pronto', 'Pronto para protocolar', 'ok'];
+  }
+  function renderCad(){
+    var box = $('cad-list'); if (!box) return;
+    var todos = state.rows.filter(noCadastro);
+    var conta = { conferir: 0, incompleto: 0, pronto: 0 };
+    todos.forEach(function(r){ conta[situacaoCad(r)[0]]++; });
+    var semTel = todos.filter(function(r){ return !temContato(r); }).length;
+    var cardC = function(ico, rot, n, cap, cor){ return '<div class="card stat" data-cor-fixa="1" style="--cor-linha:var(' + cor + ')"><div class="stat-h"><svg class="i"><use href="#' + ico + '"/></svg>' + rot + '</div><div class="stat-v tnum">' + n + '</div><div class="stat-c">' + cap + '</div><div class="stat-viz"></div></div>'; };
+    $('cad-stats').innerHTML =
+      cardC('i-users', 'Em cadastro', todos.length, 'ainda sem número de processo', '--line-2') +
+      cardC('i-check', 'Prontos para protocolar', conta.pronto, 'nome, CPF e endereço preenchidos', '--green') +
+      cardC('i-clock', 'Conferir dados', conta.conferir, 'cadastrados pelo celular', '--amber') +
+      cardC('i-bellx', 'Dados incompletos', conta.incompleto, 'falta CPF ou endereço · ' + semTel + ' sem telefone', '--red');
+    var SITS = [['', 'Todas as situações · ' + todos.length], ['pronto', 'Prontos para protocolar · ' + conta.pronto], ['conferir', 'Conferir dados · ' + conta.conferir], ['incompleto', 'Dados incompletos · ' + conta.incompleto]];
+    $('cad-sit').innerHTML = SITS.map(function(o){ return '<option value="' + o[0] + '"' + (o[0] === cadSit ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('');
+    $('cad-sit').classList.toggle('ativo', !!cadSit);
+    var lista = todos.filter(function(r){ return (!cadSit || situacaoCad(r)[0] === cadSit) && buscaCliente(r, cadQ); })
+      .sort(function(a, b){ return String(b.criadoEm || '').localeCompare(String(a.criadoEm || '')) || String(a.nome || '').localeCompare(String(b.nome || ''), 'pt'); });
+    $('cad-count').textContent = lista.length + (lista.length === 1 ? ' cliente' : ' clientes');
+    var html = '<div class="row head"><div>Cliente</div><div>Prospectador</div><div>Contato</div><div>Cadastrado em</div><div>Situação</div><div></div></div>';
+    if (!lista.length) html += '<div class="empty">' + (todos.length ? 'Nenhum cliente neste filtro.' : 'Nenhum cliente em cadastro. Clique em <b>Novo cliente</b> para começar.') + '</div>';
+    lista.slice(0, 300).forEach(function(r){
+      var st = situacaoCad(r);
+      html += '<div class="row' + (cadAberto[r.id] ? ' aberto' : '') + '" data-linha="' + esc(r.id) + '">' +
+        '<div class="c-name"><div class="name"><button type="button" class="nome-abrir" data-act="abrir" data-id="' + esc(r.id) + '">' + esc(r.nome) + '</button>' + pastaIco(r) + '</div><div class="addr">' + (r.cpf ? 'CPF ' + esc(r.cpf) : 'CPF não informado') + '</div></div>' +
+        '<div><span class="lbl">Prospectador</span><div class="val">' + esc(prospName(r.responsavelId) || '—') + '</div></div>' +
+        '<div><span class="lbl">Contato</span>' + telCell(r) + '</div>' +
+        '<div><span class="lbl">Cadastrado em</span><div class="val">' + (r.criadoEm ? fmtShort(String(r.criadoEm).slice(0, 10)) : '—') + '</div></div>' +
+        '<div><span class="lbl">Situação</span><span class="cad-sit ' + st[2] + '">' + st[1] + '</span></div>' +
+        '<div class="c-act"><button type="button" class="ico-btn" data-act="edit" data-id="' + esc(r.id) + '" title="Editar cadastro" aria-label="Editar ' + esc(r.nome) + '"><svg class="i"><use href="#i-pencil"/></svg></button></div>' +
+      '</div>' + (cadAberto[r.id] ? fichaCliente(r) : '');
+    });
+    box.innerHTML = html;
+  }
+  $('cad-q').addEventListener('input', function(){ cadQ = this.value.trim(); renderCad(); });
+  $('cad-sit').addEventListener('change', function(){ cadSit = this.value; renderCad(); });
+  $('cad-list').addEventListener('click', function(e){
+    var b = e.target.closest('[data-act]');
+    if (b && b.dataset.act === 'edit'){ var r = state.rows.filter(function(x){ return x.id === b.dataset.id; })[0]; if (r) openForm(r); return; }
+    if (b && b.dataset.act !== 'abrir') return;
+    var ln = b ? { dataset: { linha: b.dataset.id } } : e.target.closest('[data-linha]');
+    if (!ln || (!b && e.target.closest('a,button,select,input,label,.ficha'))) return;
+    if (cadAberto[ln.dataset.linha]) delete cadAberto[ln.dataset.linha]; else cadAberto[ln.dataset.linha] = 1;
+    renderCad();
+  });
+  function render(){ renderCad(); renderStats(); renderPauta(); renderList(); renderLista(); renderPos(); renderRet(); renderProsp(); renderEquipe(); renderContest(); renderBusca(); renderClSessao(); renderFin(); if (typeof AV !== 'undefined' && AV && !AV.rodando) avMontar(); }
   var clQ = '';
   // stage of each process, derived from what is already recorded (no extra typing)
   var ETAPAS = [
@@ -2791,9 +2881,10 @@ section.vw-dash{gap:10px!important}
       return '<tr data-ct="' + esc2(r.id) + '"><td class="nome">' + esc2(r.nome) + '</td><td class="n">' + esc2(r.processo || '—') + '</td><td class="n">' + (r.audData ? fmtShort(r.audData) + (r.audHora ? ' · ' + esc2(r.audHora) : '') : '—') + '</td>' +
         '<td class="dir"><input class="fin-valor" type="text" inputmode="numeric" data-valor="' + esc2(r.id) + '" value="' + moedaTxt(v) + '" title="Valor da condenação deste cliente"></td>' +
         '<td class="dir n">' + brl(v * FIN_ESCRITORIO) + '</td><td class="dir n">' + brl(v - v * FIN_ESCRITORIO) + '</td>' +
+        '<td><input type="date" class="fin-prev" data-prev="' + esc2(r.id) + '" value="' + esc2(r.previsao || '') + '" title="Quando deve começar o pagamento"></td>' +
         '<td><select class="pos-sel' + (r.pagamento === 'pago' ? ' ok' : r.pagamento && r.pagamento !== 'aguardando' ? ' blue' : '') + '" data-pos="pagamento" data-id="' + esc2(r.id) + '"><option value=""' + (!r.pagamento ? ' selected' : '') + '>Sem informação</option>' +
         Object.keys(PAG).map(function(k){ return '<option value="' + k + '"' + (r.pagamento === k ? ' selected' : '') + '>' + esc2(PAG[k][0]) + '</option>'; }).join('') + '</select></td><td>' + repasseCell(r) + '</td></tr>';
-    }).join('') || '<tr><td colspan="8" class="ct-mais small">Nenhum procedente' + (finSessao ? ' nesta audiência' : '') + ' ainda. Marque o resultado em Contestações.</td></tr>';
+    }).join('') || '<tr><td colspan="9" class="ct-mais small">Nenhum procedente' + (finSessao ? ' nesta audiência' : '') + ' ainda. Marque o resultado em Contestações.</td></tr>';
   }
   var esc2 = function(t){ return esc(t); };
   function valorInd(id){ var p = prospById(id), v = Number(p && p.valorIndicacao); return v > 0 ? v : FIN_INDICACAO; }
@@ -2870,6 +2961,12 @@ section.vw-dash{gap:10px!important}
     $('rep-save').disabled = true;
     try { await patchRow(repCli.id, dados); dlgRep.close(); toast('Pagamento registrado e processo arquivado: ' + repCli.nome + ' · ' + moedaTxt(rp.valor)); }
     catch(err){ toast(errMsg(err)); } finally { $('rep-save').disabled = false; }
+  });
+  $('fin-body').addEventListener('change', async function(e){
+    var inp = e.target.closest('.fin-prev'); if (!inp) return;
+    var r = state.rows.filter(function(x){ return x.id === inp.dataset.prev; })[0]; if (!r) return;
+    try { await patchRow(r.id, { previsao: inp.value || '', atualizadoEm: new Date().toISOString() }); toast(inp.value ? 'Previsão de pagamento: ' + fmtDate(inp.value) + ' · ' + r.nome : 'Previsão apagada · ' + r.nome); }
+    catch(err){ inp.value = r.previsao || ''; toast(errMsg(err)); }
   });
   $('fin-body').addEventListener('click', function(e){
     var b = e.target.closest('[data-rep]'); if (!b) return; e.stopPropagation();
@@ -3946,14 +4043,15 @@ section.vw-dash{gap:10px!important}
     } catch(err){ toast(errMsg(err)); }
     finally { $('av-save').disabled = false; }
   });
-  var VIEWS = { c: ['tab-clientes', 'view-clientes'], f: ['tab-fin', 'view-fin'], r: ['tab-ret', 'view-ret'], t: ['tab-ct', 'view-ct'], e: ['tab-equipe', 'view-equipe'] };
+  var VIEWS = { d: ['tab-cad', 'view-cad'], c: ['tab-clientes', 'view-clientes'], f: ['tab-fin', 'view-fin'], r: ['tab-ret', 'view-ret'], t: ['tab-ct', 'view-ct'], e: ['tab-equipe', 'view-equipe'] };
   var TITULOS = {
-    c: ['Clientes', 'Controle geral e avisos · Ações contra a Âmbar Energia, Alvarães/AM'],
+    d: ['Cadastro', 'Clientes em cadastro, ainda sem protocolo · Ações contra a Âmbar Energia, Alvarães/AM'],
+    c: ['Controle', 'Processos protocolados: avisos e audiências até a audiência acontecer'],
     a: ['Audiências', 'Pauta por dia, avisos e convites'],
     l: ['Clientes', 'Todos os clientes e a etapa de cada processo'],
     p: ['Pós-audiência', 'Resultados, conclusos, embargos e pagamentos'],
-    f: ['Financeiro', 'Condenações das sentenças procedentes, honorários e projeção de ganho'],
-    r: ['Retorno', 'Quando cada cliente pode entrar com uma nova ação (6 meses após o protocolo)'],
+    f: ['Financeiro', 'Depois da audiência: condenações, previsão de pagamento, honorários e repasse'],
+    r: ['Arquivados', 'Processos pagos e encerrados · e quando cada cliente pode entrar com uma nova ação'],
     t: ['Contestações', 'Audiência, resultado, teses da Âmbar e pagamento'],
     e: ['Configurações', 'Equipe, integrações e prospectadores']
   };
