@@ -1205,6 +1205,10 @@ section.vw-dash{gap:10px!important}
 :root[data-theme="light"] .al-pills .al-amarelo{color:#b45309}
 :root[data-theme="light"] .al-pills .al-vermelho{color:#b91c1c}
 @media (prefers-color-scheme:light){ :root:not([data-theme="dark"]) .al-pills .al-verde{color:#047857} :root:not([data-theme="dark"]) .al-pills .al-amarelo{color:#b45309} :root:not([data-theme="dark"]) .al-pills .al-vermelho{color:#b91c1c} }
+
+.al-pills .al-azul{color:#60a5fa;background:rgba(96,165,250,.12);border-color:rgba(96,165,250,.35)}
+:root[data-theme="light"] .al-pills .al-azul{color:#1d4ed8}
+@media (prefers-color-scheme:light){ :root:not([data-theme="dark"]) .al-pills .al-azul{color:#1d4ed8} }
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -2581,8 +2585,8 @@ section.vw-dash{gap:10px!important}
     return '<div class="ct-g"><span class="ct-g-n">' + n + '</span><span class="ct-g-t" title="' + esc(tesesDe(r).map(nomeTese).join(' + ')) + '">' + x[1] + '</span><span class="ct-cart-tag ' + (liberaCli(r) === 'liberar' ? 'lib' : 'perm') + '">' + (liberaCli(r) === 'liberar' ? 'Liberar' : 'Permanecer') + '</span></div>';
   }
   var TESES_COMUNS = ['reiteracao', 'devedor', 'generica'];
-  // cor da etiqueta: genérica e reiteração verdes, devedor contumaz amarelo, alegação especial vermelha
-  function corAlegacao(k){ return k === 'generica' || k === 'reiteracao' ? 'al-verde' : k === 'devedor' ? 'al-amarelo' : 'al-vermelho'; }
+  // cor da etiqueta: genérica azul, reiteração verde, devedor contumaz amarelo, alegação especial vermelha
+  function corAlegacao(k){ return k === 'generica' ? 'al-azul' : k === 'reiteracao' ? 'al-verde' : k === 'devedor' ? 'al-amarelo' : 'al-vermelho'; }
   function alegacoesExtras(r){ return tesesDe(r).filter(function(k){ return TESES_COMUNS.indexOf(k) < 0; }); }
   // liberar ou permanecer após a identificação, cliente a cliente
   function liberaCli(r){
