@@ -58,6 +58,7 @@ function doPost(e){
     if (!/^[A-Za-z0-9_-]{8,64}$/.test(p.envio || '')) throw new Error('Envio inválido.');
     if (p.acao === 'arquivo') return saida(arquivo(p, quem));
     if (p.acao === 'fechar') return saida(fechar(p, quem));
+    if (p.acao === 'completar') return saida(completar(p, quem));
     throw new Error('Ação desconhecida.');
   } catch (err){
     return saida({ ok: false, erro: String(err && err.message || err) });
@@ -101,8 +102,13 @@ function pastaDoEnvio(envio, quem, cliente){
   } finally { lock.releaseLock(); }
 }
 
+function pastaDoCliente(p){
+  var c = rpc('campo_pasta_cliente', { p_token: p.token, p_cliente: String(p.completar || '') });
+  if (!c || !c.pastaId) throw new Error('Pasta do cliente não encontrada.');
+  return DriveApp.getFolderById(c.pastaId);
+}
 function arquivo(p, quem){
-  var pasta = pastaDoEnvio(p.envio, quem, nomeDigitado(p));
+  var pasta = p.completar ? pastaDoCliente(p) : pastaDoEnvio(p.envio, quem, nomeDigitado(p));
   var nome = String(p.nome || 'arquivo').replace(/[\\/:*?"<>|]/g, '').slice(0, 120);
   var sub = /\.pdf$/i.test(nome) ? pasta : subpasta(pasta, 'Imagens escaneadas');
   var ja = sub.getFilesByName(nome);
@@ -132,7 +138,7 @@ function fechar(p, quem){
   var id = rpc('campo_cadastrar', {
     p_token: p.token, p_envio: p.envio,
     p_dados: { nome: dados.nome, cpf: dados.cpf, rg: dados.rg, nascimento: dados.nascimento, endereco: dados.endereco,
-      contato: p.contato || '', pastaUrl: pasta.getUrl(), pastaId: pasta.getId(), docs: p.docs || [], local: p.local || null, leitura: nota.join('\n') }
+      contato: p.contato || '', pastaUrl: pasta.getUrl(), pastaId: pasta.getId(), docs: p.docs || [], faltam: p.faltam || [], local: p.local || null, leitura: nota.join('\n') }
   });
   PropertiesService.getScriptProperties().deleteProperty('pasta_' + p.envio);
   PropertiesService.getScriptProperties().setProperty('lido_' + pasta.getId(), String(Date.now())); // já lida agora: a leitura automática não repete
@@ -327,4 +333,10 @@ function renomearArquivos(arquivos, tipos){
     delete usados[nome.toUpperCase()]; usados[novo.toUpperCase()] = 1;
     a.setName(novo);
   });
+}
+
+/* o prospectador completou os documentos que faltavam de um cliente já cadastrado */
+function completar(p, quem){
+  var resta = rpc('campo_completar', { p_token: p.token, p_cliente: String(p.completar || ''), p_docs: p.docs || [] });
+  return { ok: true, restam: resta || [] };
 }

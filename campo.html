@@ -7,6 +7,13 @@
 <meta name="robots" content="noindex">
 <title>RL Advogados</title>
 <link rel="manifest" href="campo.webmanifest">
+<!-- iPhone: abre em tela cheia pelo ícone da Tela de Início -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="RL Advogados">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="img/icone-180.png">
+<link rel="icon" type="image/png" href="img/icone-192.png">
 <style>
 :root{--bg:#f4f4f5;--card:#fff;--ink:#111;--ink2:#555;--line:#e3e3e6;--ok:#16a34a;--okbg:#e8f7ee;--warn:#d97706;--red:#dc2626;--pri:#111;--onpri:#fff}
 @media (prefers-color-scheme:dark){:root{--bg:#0b0b0c;--card:#17171a;--ink:#f2f2f3;--ink2:#a1a1aa;--line:#2a2a2e;--okbg:#0f2a19;--pri:#f2f2f3;--onpri:#111}}
@@ -320,6 +327,23 @@ body{background:linear-gradient(168deg,#2e335a 0%,#1c1b33 55%,#1c1b33 100%) fixe
 .ver .ctl .boa,.rec .ctl .boa{background:linear-gradient(135deg,#7b4dff,#c427fb)!important;color:#fff}
 .versao{color:rgba(235,235,245,.45)}
 .abas .bolha[hidden]{display:none}
+/* iPhone: respeita o entalhe e a barra de baixo */
+.topo{padding-top:calc(10px + env(safe-area-inset-top))}
+#app > .entrar{margin-top:calc(max(24px, 10vh) + env(safe-area-inset-top))!important}
+#link{font-size:16px!important}
+.aviso-docs{display:flex;align-items:center;gap:12px;width:100%;text-align:left;font:inherit;color:#fff;margin:0 0 14px;padding:12px 14px;border-radius:20px;border:1px solid rgba(251,113,133,.45);background:rgba(251,113,133,.12)}
+.aviso-docs .n{flex:none;min-width:40px;height:40px;border-radius:14px;background:#fb7185;color:#2e335a;font-size:20px;font-weight:700;display:grid;place-items:center}
+.aviso-docs b{display:block;font-size:14.5px}
+.aviso-docs small{display:block;font-size:12.5px;color:rgba(235,235,245,.7)}
+.lista .falta-l{color:#fb7185!important;font-weight:600}
+.falta-box{border:1px solid rgba(251,113,133,.45);background:rgba(251,113,133,.1);border-radius:18px;padding:12px 14px;margin-bottom:14px}
+.falta-box b{display:block;color:#fb7185;font-size:14px}
+.falta-box span{display:block;font-size:14px;margin-top:2px}
+.completar{position:relative;border-radius:22px;padding:14px 16px;margin-bottom:6px;background:linear-gradient(140deg,#5936b4,#362a84)}
+.completar small{display:block;font-size:12px;color:rgba(235,235,245,.75)}
+.completar b{display:block;font-size:17px;margin:2px 80px 2px 0}
+.completar span{font-size:13px;color:rgba(235,235,245,.85)}
+.completar button{position:absolute;right:12px;top:12px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;font:inherit;font-size:13px;font-weight:600;border-radius:999px;padding:6px 12px}
 .ver .topo,.rec .topo{display:block;position:static;background:none;backdrop-filter:none;-webkit-backdrop-filter:none;border:0;padding:calc(14px + env(safe-area-inset-top)) 16px 8px;text-align:center}
 .ver .topo small,.rec .topo small{display:block;margin-top:2px}
 .cam .lados{display:inline-flex;margin-top:10px;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:3px;text-shadow:none}
@@ -366,7 +390,7 @@ body{background:linear-gradient(168deg,#2e335a 0%,#1c1b33 55%,#1c1b33 100%) fixe
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 5;
+  var APP_VERSAO = 6;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
@@ -495,6 +519,22 @@ body{background:linear-gradient(168deg,#2e335a 0%,#1c1b33 55%,#1c1b33 100%) fixe
   /* ---------- telas ---------- */
   /* ---------- casca do aplicativo: barra de cima, três abas e as vistas ---------- */
   var aba = lsGet('campo_aba') || 'painel', painel = null, filtroCli = 'todos', buscaCli = '';
+  var NOME_DOC = { procuracao: 'Procuração', rg_frente: 'RG', cpf: 'CPF', luz: 'Talão de luz', cliente: 'Foto do cliente' };
+  function faltas(c){ return (c && Array.isArray(c.faltaDocs) ? c.faltaDocs : []).filter(function(k){ return NOME_DOC[k]; }); }
+  function nomesFaltas(l){ return l.map(function(k){ return NOME_DOC[k]; }).join(', '); }
+  // completando: cliente já cadastrado que o prospectador está completando ({ id, nome, faltaDocs })
+  var completando = null;
+  try { completando = JSON.parse(lsGet('campo_completando') || 'null'); } catch(e){}
+  function iniciarComplemento(c){
+    if (Object.keys(fotos).length && !completando) return alert('Há um cadastro novo em andamento com fotos. Envie ou apague esse cadastro antes de completar os documentos de outro cliente.');
+    completando = { id: c.id, nome: c.nome, faltaDocs: faltas(c) };
+    lsSet('campo_completando', JSON.stringify(completando));
+    irPara('novo');
+  }
+  function cancelarComplemento(){
+    if (Object.keys(fotos).length && !confirm('Descartar as fotos tiradas para completar os documentos?')) return;
+    fotos = {}; completando = null; lsSet('campo_completando', ''); telaInicial();
+  }
   try { painel = JSON.parse(lsGet('campo_painel') || 'null'); } catch(e){}
   function montarCasca(){
     if ($('vista')) return;
@@ -535,12 +575,14 @@ body{background:linear-gradient(168deg,#2e335a 0%,#1c1b33 55%,#1c1b33 100%) fixe
     guardarRascunho();
     var n = Object.keys(fotos).length;
     var falta = DOCS.filter(function(d){ return d.req && !fotos[d.k]; });
-    $('vista').innerHTML =
+    var visiveis = DOCS.filter(function(d){ return !d.oculto && (!completando || completando.faltaDocs.indexOf(d.k) >= 0); });
+    $('vista').innerHTML = (completando ?
+      '<div class="completar"><small>Completar documentos de</small><b>' + esc(completando.nome) + '</b><span>Tire só as fotos que estavam faltando e envie.</span><button type="button" id="cancelar-comp">Cancelar</button></div>' :
       '<div class="rot" style="margin-top:0">Dados do cliente</div><div class="dados">' +
         '<label class="fone' + (lsGet('campo_nome').trim() ? '' : ' falta') + '" id="l-nome"><svg viewBox="0 0 24 24"><use href="#i-pessoa"/></svg><input id="nome" autocomplete="off" autocapitalize="characters" placeholder="Nome completo do cliente" value="' + esc(lsGet('campo_nome')) + '"></label>' +
         '<label class="fone"><svg viewBox="0 0 24 24"><use href="#i-fone"/></svg><input id="fone" inputmode="tel" placeholder="Número de telefone" value="' + esc(lsGet('campo_fone')) + '"></label>' +
-      '</div>' +
-      '<div class="rot">Documentos</div><div class="grid">' + DOCS.filter(function(d){ return !d.oculto; }).map(function(d){
+      '</div>') +
+      '<div class="rot">' + (completando ? 'Documentos que faltam' : 'Documentos') + '</div><div class="grid">' + visiveis.map(function(d){
         var f = d.k === 'rg_frente' ? rgFotos() : fotos[d.k];
         if (d.k === 'rg_frente' && f.length) return '<button class="doc feito" data-k="' + d.k + '"><div class="thumbs">' + f.map(function(x){ return '<img alt="" src="' + x.url + '">'; }).join('') + '</div>' +
           '<span class="apagar" data-apagar="' + d.k + '" aria-label="Apagar">×</span><div class="marca"><svg viewBox="0 0 24 24"><use href="#i-ok"/></svg>' + (fotos.rg_frente && fotos.rg_verso ? 'RG · frente e verso' : fotos.rg_frente ? 'RG · falta o verso' : 'RG · falta a frente') + '</div></button>';
@@ -550,9 +592,12 @@ body{background:linear-gradient(168deg,#2e335a 0%,#1c1b33 55%,#1c1b33 100%) fixe
       }).join('') + '</div>' +
       '<div id="fila"></div>' +
       '<div class="barra"><button class="enviar" id="enviar"' + (n ? '' : ' disabled') + '><svg viewBox="0 0 24 24"><use href="#i-env"/></svg>Enviar cadastro</button></div>';
+    if (completando){ $('cancelar-comp').onclick = cancelarComplemento; if ($('enviar')) $('enviar').lastChild.textContent = 'Enviar documentos'; }
+    else {
     $('fone').addEventListener('input', function(){ lsSet('campo_fone', this.value); });
     $('nome').addEventListener('input', function(){ lsSet('campo_nome', this.value); $('l-nome').classList.toggle('falta', !this.value.trim()); });
     $('nome').addEventListener('blur', function(){ this.value = this.value.replace(/\s+/g, ' ').trim().toUpperCase(); lsSet('campo_nome', this.value); });
+    }
     if ($('som')) $('som').addEventListener('click', function(){ falar(falta.length ? 'Digite o nome e o número do cliente. Depois toque em cada quadro e tire a foto, encaixando o documento no quadro. Faltam: ' + falta.map(function(d){ return d.t; }).join(', ') + '. Quando terminar, aperte o botão verde, enviar.' : 'Tudo pronto. Aperte o botão verde, enviar.'); });
     Array.prototype.forEach.call(document.querySelectorAll('.doc'), function(b){
       b.addEventListener('click', function(e){
@@ -611,6 +656,7 @@ body{background:linear-gradient(168deg,#2e335a 0%,#1c1b33 55%,#1c1b33 100%) fixe
     var cl = clientesPainel(), cont = {};
     cl.forEach(function(c){ var k = etapaCli(c); cont[k] = (cont[k] || 0) + 1; });
     var ganharam = (cont.ganhou || 0) + (cont.alvara || 0) + (cont.pago || 0);
+    var comFalta = cl.filter(function(c){ return faltas(c).length; });
     var prox = cl.filter(function(c){ return etapaCli(c) === 'marcada'; }).sort(function(a, b){ return (a.audData + (a.audHora || '')).localeCompare(b.audData + (b.audHora || '')); });
     var h = new Date(), primeiro = String((quem && quem.nome) || '').trim().split(/\s+/)[0];
     var atual = painel && painel.atualizado ? new Date(painel.atualizado) : null;
@@ -621,6 +667,7 @@ body{background:linear-gradient(168deg,#2e335a 0%,#1c1b33 55%,#1c1b33 100%) fixe
       '<div class="hero"><small>Clientes indicados por você</small><span class="num">' + cl.length + '</span>' +
         '<div class="lin"><span><b>' + (cont.marcada || 0) + '</b> com audiência marcada</span><span><b>' + ganharam + '</b> ganharam</span><span><b>' + (cont.pago || 0) + '</b> ' + ((cont.pago || 0) === 1 ? 'pago' : 'pagos') + '</span></div></div>' +
       '<div id="aviso-fila"></div>' +
+      (comFalta.length ? '<button type="button" class="aviso-docs" data-ir="faltam"><span class="n">' + comFalta.length + '</span><span><b>' + (comFalta.length === 1 ? 'cliente com documento faltando' : 'clientes com documentos faltando') + '</b><small>Toque para ver quais e completar</small></span></button>' : '') +
       '<div class="kpis">' +
         kpi('Clientes indicados', cl.length, 'var(--ink)', 'todos', 'todo') +
         kpi('Em preparação', cont.preparo || 0, 'var(--line2)', 'preparo') +
@@ -655,8 +702,8 @@ body{background:linear-gradient(168deg,#2e335a 0%,#1c1b33 55%,#1c1b33 100%) fixe
   }
 
   /* ---------- aba Clientes ---------- */
-  var GRUPOS = [['todos', 'Todos'], ['preparo', 'Em preparação'], ['protocolado', 'Aguardando audiência'], ['marcada', 'Audiência marcada'], ['resultado', 'Aguardando resultado'], ['ganharam', 'Ganharam'], ['pago', 'Pagos'], ['faltou', 'Faltaram'], ['perdeu', 'Não ganharam']];
-  function noGrupo(c, g){ var k = etapaCli(c); return g === 'todos' || k === g || (g === 'ganharam' && (k === 'ganhou' || k === 'alvara' || k === 'pago')); }
+  var GRUPOS = [['todos', 'Todos'], ['faltam', 'Faltam documentos'], ['preparo', 'Em preparação'], ['protocolado', 'Aguardando audiência'], ['marcada', 'Audiência marcada'], ['resultado', 'Aguardando resultado'], ['ganharam', 'Ganharam'], ['pago', 'Pagos'], ['faltou', 'Faltaram'], ['perdeu', 'Não ganharam']];
+  function noGrupo(c, g){ var k = etapaCli(c); if (g === 'faltam') return faltas(c).length > 0; return g === 'todos' || k === g || (g === 'ganharam' && (k === 'ganhou' || k === 'alvara' || k === 'pago')); }
   function vistaClientes(){
     var cl = clientesPainel();
     $('vista').innerHTML =
@@ -668,7 +715,8 @@ body{background:linear-gradient(168deg,#2e335a 0%,#1c1b33 55%,#1c1b33 100%) fixe
       var l = cl.filter(function(c){ return noGrupo(c, filtroCli) && (!q || String(c.nome || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().indexOf(q) >= 0); });
       $('lista-cli').innerHTML = '<div class="rot">' + l.length + (l.length === 1 ? ' cliente' : ' clientes') + '</div>' + (l.length ? '<div class="lista">' + l.slice(0, 300).map(function(c){
         var k = etapaCli(c), e = ETP[k], sub = k === 'marcada' ? dataBR(c.audData) + (c.audHora ? ' · ' + c.audHora : '') + ' · ' + quando(c.audData) : c.cadastro ? 'indicado em ' + dataBR(c.cadastro) : '';
-        return '<div data-cli="' + esc(c.id) + '"><i class="' + e[1] + '"></i><span class="nm"><b>' + esc(c.nome || 'Sem nome') + '</b><span>' + esc(sub) + '</span></span><small>' + e[0] + '</small></div>';
+        var fl = faltas(c);
+        return '<div data-cli="' + esc(c.id) + '"><i class="' + (fl.length ? 'red' : e[1]) + '"></i><span class="nm"><b>' + esc(c.nome || 'Sem nome') + '</b><span>' + esc(sub) + '</span>' + (fl.length ? '<span class="falta-l">Falta: ' + esc(nomesFaltas(fl)) + '</span>' : '') + '</span><small>' + e[0] + '</small></div>';
       }).join('') + '</div>' : '<div class="vazio">' + (cl.length ? 'Nenhum cliente neste filtro.' : navigator.onLine === false && !painel ? 'Sem internet: a lista aparece quando o celular tiver sinal.' : 'Você ainda não tem clientes no sistema. Os cadastros enviados aparecem aqui.') + '</div>');
     }
     desenhar();
@@ -693,13 +741,17 @@ body{background:linear-gradient(168deg,#2e335a 0%,#1c1b33 55%,#1c1b33 100%) fixe
     var f = document.createElement('div'); f.className = 'folha';
     f.innerHTML = '<div><div class="puxa"></div><h3>' + esc(c.nome) + '</h3><div class="sub">' + ETP[k][0] + (c.contato ? ' · ' + esc(c.contato) : '') + '</div>' +
       ((tl || zp) ? '<div class="acoes">' + (tl ? '<a class="lig" href="' + tl + '"><svg><use href="#i-fone"/></svg>Ligar</a>' : '') + (zp ? '<a class="lig" href="' + zp + '" target="_blank" rel="noopener">WhatsApp</a>' : '') + '</div>' : '') +
+      (faltas(c).length ? '<div class="falta-box"><b>Faltam documentos</b><span>' + esc(nomesFaltas(faltas(c))) + '</span>' + (c.temPasta !== false ? '<button type="button" class="enviar" data-completar style="height:50px;font-size:16px;margin-top:10px">Completar documentos</button>' : '<span>O escritório ainda está criando a pasta deste cliente.</span>') + '</div>' : '') +
       '<ol class="tempo">' + passos.map(function(p, i){
         var cls = p.ruim ? 'ruim' : p.ok ? 'feito' : i === atual ? 'atual' : '';
         return '<li class="' + cls + '"><span class="pt">' + (p.ok ? '<svg viewBox="0 0 24 24"><use href="#i-ok"/></svg>' : '') + '</span><div><b>' + p.t + '</b><span>' + esc(p.d) + '</span></div></li>';
       }).join('') + '</ol>' +
       '<button type="button" class="sair" style="margin-top:6px" data-fecha>Fechar</button></div>';
     document.body.appendChild(f);
-    f.addEventListener('click', function(e){ if (e.target === f || e.target.closest('[data-fecha]')) f.remove(); });
+    f.addEventListener('click', function(e){
+      if (e.target.closest('[data-completar]')){ f.remove(); return iniciarComplemento(c); }
+      if (e.target === f || e.target.closest('[data-fecha]')) f.remove();
+    });
   }
 
   /* ---------- sair da conta ---------- */
@@ -963,6 +1015,17 @@ body{background:linear-gradient(168deg,#2e335a 0%,#1c1b33 55%,#1c1b33 100%) fixe
   function tela(html){ var t = document.createElement('div'); t.className = 'tela'; t.innerHTML = '<div>' + html + '</div>'; document.body.appendChild(t); return t; }
 
   function enviar(){
+    if (completando){
+      var aindaFalta = completando.faltaDocs.filter(function(k){ return !fotos[k]; });
+      if (!Object.keys(fotos).length) return alert('Tire pelo menos uma das fotos que estavam faltando.');
+      if (aindaFalta.length){
+        var t0 = tela('<svg viewBox="0 0 24 24" style="stroke:var(--warn)"><use href="#i-doc"/></svg><b>Ainda falta</b><p>' + esc(nomesFaltas(aindaFalta)) + '</p><button id="t-voltar">Voltar e tirar</button><button class="sec2" id="t-mesmo">Enviar o que tirei</button>');
+        t0.querySelector('#t-voltar').onclick = function(){ t0.remove(); };
+        t0.querySelector('#t-mesmo').onclick = function(){ t0.remove(); montar([]); };
+        return;
+      }
+      return montar([]);
+    }
     var nm = ($('nome') || {}).value || '';
     if (!nm.trim()){ falar('Digite o nome completo do cliente.'); alert('Digite o nome completo do cliente.'); $('nome').focus(); return; }
     var falta = DOCS.filter(function(d){ return d.req && !fotos[d.k]; });
@@ -978,26 +1041,30 @@ body{background:linear-gradient(168deg,#2e335a 0%,#1c1b33 55%,#1c1b33 100%) fixe
   function montar(falta){
     var t = tela('<svg viewBox="0 0 24 24" style="stroke:var(--ok)"><use href="#i-nuvem"/></svg><b>Preparando…</b><p>Montando os documentos</p>');
     var id = Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
-    var arquivos = [], todas = [];
+    var arquivos = [], todas = [], comp = completando;
+    // complemento: nome dos arquivos com a data, para não confundir com os que já estão na pasta
+    var sufixo = comp ? ' - complemento ' + new Date().toLocaleDateString('pt-BR').replace(/\//g, '-') : '';
     var p = Promise.resolve();
     DOCS.forEach(function(d){
       var f = fotos[d.k]; if (!f) return;
-      f.forEach(function(x, i){ arquivos.push({ nome: d.arq + (f.length > 1 ? ' ' + (i + 1) : '') + '.jpg', mime: 'image/jpeg', blob: x.blob }); });
+      f.forEach(function(x, i){ arquivos.push({ nome: d.arq + sufixo + (f.length > 1 ? ' ' + (i + 1) : '') + '.jpg', mime: 'image/jpeg', blob: x.blob }); });
       if (d.k !== 'cliente'){
         todas = todas.concat(f);
-        p = p.then(function(){ return pdfDe(f).then(function(pdf){ arquivos.push({ nome: d.arq + '.pdf', mime: 'application/pdf', blob: pdf }); }); });
+        p = p.then(function(){ return pdfDe(f).then(function(pdf){ arquivos.push({ nome: d.arq + sufixo + '.pdf', mime: 'application/pdf', blob: pdf }); }); });
       }
     });
-    p.then(function(){ return todas.length ? pdfDe(todas).then(function(pdf){ arquivos.push({ nome: '00 - Documentos completos.pdf', mime: 'application/pdf', blob: pdf }); }) : null; })
+    p.then(function(){ return todas.length && !comp ? pdfDe(todas).then(function(pdf){ arquivos.push({ nome: '00 - Documentos completos.pdf', mime: 'application/pdf', blob: pdf }); }) : null; })
      .then(function(){
-       var envio = { id: id, token: token, criado: new Date().toISOString(), contato: ($('fone') || {}).value || '', cliente: (($('nome') || {}).value || '').replace(/\s+/g, ' ').trim().toUpperCase(), local: local, faltam: falta.map(function(d){ return d.k; }),
+       var envio = { id: id, token: token, criado: new Date().toISOString(), completar: comp ? comp.id : '', contato: ($('fone') || {}).value || '', cliente: comp ? comp.nome : (($('nome') || {}).value || '').replace(/\s+/g, ' ').trim().toUpperCase(), local: local, faltam: falta.map(function(d){ return d.k; }),
          docs: DOCS.filter(function(d){ return fotos[d.k]; }).map(function(d){ return d.k; }), arquivos: arquivos.map(function(a){ return { nome: a.nome, mime: a.mime, blob: a.blob, ok: false }; }) };
-       return filaPor(envio).then(function(){ return histPor({ id: envio.id, token: token, cliente: envio.cliente, criado: envio.criado, enviado: null }); }).then(function(){ return envio; });
+       return filaPor(envio).then(function(){ return histPor({ id: envio.id, token: token, cliente: envio.cliente + (comp ? ' · documentos' : ''), criado: envio.criado, enviado: null }); }).then(function(){ return envio; });
      })
      .then(function(envio){
-       fotos = {}; local = null; lsSet('campo_fone', ''); lsSet('campo_nome', '');
-       t.remove(); aba = 'novo'; telaInicial(); window.scrollTo(0, 0);
-       var ok = tela('<svg viewBox="0 0 24 24" style="stroke:var(--ok)"><use href="#i-ok"/></svg><b>Cadastro guardado</b><p>' + esc(envio.cliente || '') + '<br>Ele vai para o escritório sozinho quando tiver internet. Pode cadastrar o próximo cliente.</p><button id="t-ok">Cadastrar o próximo</button>');
+       fotos = {}; local = null;
+       if (comp){ completando = null; lsSet('campo_completando', ''); if (painel) painel.clientes.forEach(function(c){ if (c.id === comp.id) c.faltaDocs = comp.faltaDocs.filter(function(k){ return envio.docs.indexOf(k) < 0; }); }); }
+       else { lsSet('campo_fone', ''); lsSet('campo_nome', ''); }
+       t.remove(); aba = comp ? 'painel' : 'novo'; telaInicial(); window.scrollTo(0, 0);
+       var ok = tela('<svg viewBox="0 0 24 24" style="stroke:var(--ok)"><use href="#i-ok"/></svg><b>' + (comp ? 'Documentos guardados' : 'Cadastro guardado') + '</b><p>' + esc(envio.cliente || '') + '<br>' + (comp ? 'Vão para a pasta do cliente sozinhos quando tiver internet.' : 'Ele vai para o escritório sozinho quando tiver internet. Pode cadastrar o próximo cliente.') + '</p><button id="t-ok">' + (comp ? 'Entendi' : 'Cadastrar o próximo') + '</button>');
        ok.querySelector('#t-ok').onclick = function(){ ok.remove(); };
        proximo();
      })
@@ -1019,10 +1086,11 @@ body{background:linear-gradient(168deg,#2e335a 0%,#1c1b33 55%,#1c1b33 100%) fixe
     var p = Promise.resolve();
     envio.arquivos.forEach(function(a){
       if (a.ok) return;
-      p = p.then(function(){ return b64(a.blob); }).then(function(dados){ return post({ acao: 'arquivo', token: envio.token, envio: envio.id, cliente: envio.cliente || '', nome: a.nome, mime: a.mime, b64: dados }); })
+      p = p.then(function(){ return b64(a.blob); }).then(function(dados){ return post({ acao: 'arquivo', token: envio.token, envio: envio.id, completar: envio.completar || '', cliente: envio.cliente || '', nome: a.nome, mime: a.mime, b64: dados }); })
            .then(function(){ a.ok = true; feitos++; barra(); return filaPor(envio); });
     });
     return p.then(function(){
+        if (envio.completar) return post({ acao: 'completar', token: envio.token, envio: envio.id, completar: envio.completar, docs: envio.docs });
         return post({ acao: 'fechar', token: envio.token, envio: envio.id, cliente: envio.cliente || '', contato: envio.contato, local: envio.local, docs: envio.docs, faltam: envio.faltam }); })
       .then(function(d){
         return filaTira(envio.id).then(function(){ return histMuda(envio.id, { enviado: new Date().toISOString() }); }).then(function(){
