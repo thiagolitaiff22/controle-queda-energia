@@ -26,7 +26,7 @@ var NOMES = {
 };
 
 // o sistema usa esta resposta para mostrar Drive e Claude como ativados em Configurações
-function doGet(){ var c = ''; try { c = chaveClaude(); } catch (x){} return saida({ ok: true, servico: 'cadastro pelo celular', claude: !!c }); }
+function doGet(){ try { gatilho(); } catch (x){} var c = ''; try { c = chaveClaude(); } catch (x){} return saida({ ok: true, servico: 'cadastro pelo celular', claude: !!c }); }
 
 /* chave do Claude: a do sistema (Configurações › Integrações › Claude); a das propriedades do script vale como reserva */
 function chaveClaude(){
@@ -175,6 +175,12 @@ function cpfValido(c){
 /* de hora em hora: pastas de PENDENTES cujo cliente já foi protocolado vão para PROTOCOLADOS */
 function gatilho(){
   var props = PropertiesService.getScriptProperties();
+  // leitura dos documentos das pastas novas a cada 10 minutos
+  if (!props.getProperty('gatilho_leitura_ok')){
+    if (!ScriptApp.getProjectTriggers().some(function(t){ return t.getHandlerFunction() === 'lerPendentes'; }))
+      ScriptApp.newTrigger('lerPendentes').timeBased().everyMinutes(10).create();
+    props.setProperty('gatilho_leitura_ok', '1');
+  }
   if (props.getProperty('gatilho_ok')) return;
   if (!ScriptApp.getProjectTriggers().some(function(t){ return t.getHandlerFunction() === 'moverProtocolados'; }))
     ScriptApp.newTrigger('moverProtocolados').timeBased().everyHours(1).create();
