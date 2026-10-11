@@ -3619,7 +3619,7 @@ section.vw-dash{gap:10px!important}
   function getMcp(){ return Promise.resolve(null); } // creating folders comes with the Google integration
   function driveErr(e){
     switch (e && e.code){
-      case 'no_mcp': return 'a criação automática de pastas ainda não está ligada. Crie a pasta no Drive e cole o link no cadastro.';
+      case 'no_mcp': case 'sem_url': return 'o script do Google ainda não está ligado (Configurações › Cadastro pelo celular). Crie a pasta no Drive e cole o link no cadastro.';
       case 'server_not_connected': return 'conecte o Google Drive em claude.ai, Configurações, Conectores.';
       case 'needs_reauth': return 'reconecte o Google Drive em claude.ai, Configurações, Conectores.';
       case 'not_in_manifest': return 'o acesso ao Google Drive não foi permitido nesta página.';
@@ -3630,23 +3630,26 @@ section.vw-dash{gap:10px!important}
     }
   }
   var folderBusy = {};
+  // pasta do cliente no Drive (AMBAR ENERGIA › CLIENTES), criada pelo script do Google do escritório
+  var pastaScriptUrl = null;
+  async function urlDoScript(){
+    if (pastaScriptUrl) return pastaScriptUrl;
+    var r = await SB.rpc('campo_url_equipe'); if (r.error) throw { code: 'sem_url', message: r.error.message };
+    if (!r.data) throw { code: 'sem_url' };
+    return (pastaScriptUrl = r.data);
+  }
   async function ensureFolder(id, nome){
     if (folderBusy[id]) return null;
     folderBusy[id] = true;
     try {
-      var mcp = await getMcp(); if (!mcp) throw { code: 'no_mcp' };
-      var title = String(nome || '').trim();
-      var q = "parentId = '" + CLIENTES_FOLDER + "' and mimeType = 'application/vnd.google-apps.folder' and title = '" + title.replace(/\\/g, '\\\\').replace(/'/g, "\\'") + "'";
-      var found = await mcp.callTool('Google Drive', 'search_files', { query: q, excludeContentSnippets: true, pageSize: 5 }, { cache: false });
-      var f = found && found.payload && found.payload.files && found.payload.files[0];
-      if (!f){
-        var res = await mcp.callTool('Google Drive', 'create_file', { title: title, contentMimeType: 'application/vnd.google-apps.folder', parentId: CLIENTES_FOLDER });
-        f = res && res.payload;
-      }
-      if (!f || !f.id) throw { code: 'tool_error', message: 'resposta sem identificação da pasta' };
-      var url = f.viewUrl || ('https://drive.google.com/drive/folders/' + f.id);
-      await patchRow(id, { pastaId: f.id, pastaUrl: url });
-      return url;
+      var url = await urlDoScript();
+      var ses = await SB.auth.getSession(), jwt = ses && ses.data && ses.data.session ? ses.data.session.access_token : '';
+      var r0 = state.rows.filter(function(x){ return x.id === id; })[0] || {};
+      var etapa = r0.arquivado ? 'arquivado' : String(r0.processo || '').trim() ? 'protocolado' : 'pendente';
+      var d = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ acao: 'pasta', jwt: jwt, nome: nome, etapa: etapa, pastaId: r0.pastaId || '' }) }).then(function(x){ return x.json(); });
+      if (!d || !d.ok) throw { code: 'tool_error', message: d && d.erro };
+      await patchRow(id, { pastaId: d.id, pastaUrl: d.url });
+      return d.url;
     } finally { folderBusy[id] = false; }
   }
   function pastaIco(r){
@@ -3807,6 +3810,10 @@ section.vw-dash{gap:10px!important}
       var noCadastro = $('form').parentElement === $('cad-box');
       var newId = await saveRow(state.editing, data); if (dlg.open) dlg.close();
       toast(isNew ? 'Cliente cadastrado: ' + nome : 'Alterações salvas');
+      // pasta automática no Drive para o cliente novo (sem travar o cadastro)
+      if (isNew && newId && !data.pastaUrl){
+        ensureFolder(newId, nome).then(function(u){ if (u) toast('Pasta criada no Drive: ' + nome); }).catch(function(e2){ toast('Cliente salvo, mas a pasta não foi criada: ' + driveErr(e2)); });
+      }
       if (noCadastro) openForm(null, true);
     }
     catch(err){ toast(errMsg(err)); }

@@ -10,13 +10,14 @@
  *  3. Implantar › Nova implantação › Tipo: App da Web · Executar como: Eu · Quem pode acessar: Qualquer pessoa.
  *  4. Copie o endereço que termina em /exec e cole no sistema: Configurações › Cadastro pelo celular.
  *
- * Pastas: o cliente novo entra em 1. CLIENTES › 1. PENDENTES. De hora em hora o script confere no sistema
- * quem já tem número de processo e move a pasta para 1. CLIENTES › 2. PROTOCOLADOS.
+ * Pastas (RODRIGUES LITAIFF ADVOGADOS › AMBAR ENERGIA › CLIENTES): o cliente novo entra em PENDENTES DE PROTOCOLO,
+ * seja pelo celular ou pelo cadastro no BI. De hora em hora o script confere no sistema a etapa de cada cliente
+ * e move a pasta para PROTOCOLADOS (tem número de processo) ou ARQUIVADOS (pago e arquivado).
  */
 var SUPABASE_URL = 'https://etmknidodbmtpvbzgvhp.supabase.co';
 var SUPABASE_KEY = 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r'; // chave pública do site
-var PASTA_CLIENTES = '1LhuCyBh-TCwgxDcQUv2BLsNjmI3zRK9t'; // 1. CLIENTES
-var PENDENTES = '1. PENDENTES', PROTOCOLADOS = '2. PROTOCOLADOS';
+var PASTA_CLIENTES = '1IqUpcNe7FCEdmVnfsLj0KP9k7K3Ck2dG'; // AMBAR ENERGIA › CLIENTES
+var PENDENTES = 'PENDENTES DE PROTOCOLO', PROTOCOLADOS = 'PROTOCOLADOS', ARQUIVADOS = 'ARQUIVADOS';
 var MODELO = 'claude-sonnet-5-5';
 
 var NOMES = {
@@ -46,6 +47,7 @@ function doPost(e){
   try {
     gatilho();
     var p = JSON.parse(e.postData.contents);
+    if (p.acao === 'pasta') return saida(pastaDoCadastro(p));
     var quem = validar(p.token);
     if (!/^[A-Za-z0-9_-]{8,64}$/.test(p.envio || '')) throw new Error('Envio inválido.');
     if (p.acao === 'arquivo') return saida(arquivo(p, quem));
@@ -178,11 +180,38 @@ function gatilho(){
   props.setProperty('gatilho_ok', '1');
 }
 function moverProtocolados(){
-  var raiz = DriveApp.getFolderById(PASTA_CLIENTES), pend = subpasta(raiz, PENDENTES), prot = subpasta(raiz, PROTOCOLADOS);
-  var it = pend.getFolders(), porId = {};
-  while (it.hasNext()){ var f = it.next(); porId[f.getId()] = f; }
+  var raiz = DriveApp.getFolderById(PASTA_CLIENTES);
+  var destino = { pendente: subpasta(raiz, PENDENTES), protocolado: subpasta(raiz, PROTOCOLADOS), arquivado: subpasta(raiz, ARQUIVADOS) };
+  var porId = {}, onde = {};
+  ['pendente', 'protocolado'].forEach(function(k){
+    var it = destino[k].getFolders();
+    while (it.hasNext()){ var f = it.next(); porId[f.getId()] = f; onde[f.getId()] = k; }
+  });
   var ids = Object.keys(porId); if (!ids.length) return 0;
-  var feitos = rpc('campo_pastas_protocoladas', { p_ids: ids }) || [];
-  feitos.forEach(function(id){ if (porId[id]) porId[id].moveTo(prot); });
-  return feitos.length;
+  var etapa = rpc('campo_pastas_status', { p_ids: ids }) || {}, movidas = 0;
+  Object.keys(etapa).forEach(function(id){
+    var e = etapa[id];
+    if (porId[id] && destino[e] && onde[id] !== e){ porId[id].moveTo(destino[e]); movidas++; }
+  });
+  return movidas;
+}
+
+/* pasta criada pelo BI no momento do cadastro: só para quem está logado no sistema e faz parte da equipe */
+function pastaDoCadastro(p){
+  var r = UrlFetchApp.fetch(SUPABASE_URL + '/rest/v1/rpc/minha_funcao', {
+    method: 'post', contentType: 'application/json', muteHttpExceptions: true,
+    headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + String(p.jwt || '') }, payload: '{}'
+  });
+  var funcao = null; try { funcao = JSON.parse(r.getContentText()); } catch (x){}
+  if (r.getResponseCode() >= 300 || !funcao) throw new Error('Entre no sistema para criar a pasta.');
+  if (p.pastaId){ try { var ja = DriveApp.getFolderById(p.pastaId); return { ok: true, id: ja.getId(), url: ja.getUrl() }; } catch (x){} }
+  var nome = String(p.nome || '').trim().toUpperCase().replace(/[\\/:*?"<>|]/g, '').slice(0, 150);
+  if (!nome) throw new Error('Informe o nome do cliente.');
+  var raiz = DriveApp.getFolderById(PASTA_CLIENTES);
+  var etapa = p.etapa === 'arquivado' ? ARQUIVADOS : p.etapa === 'protocolado' ? PROTOCOLADOS : PENDENTES;
+  // evita pasta repetida: procura o mesmo nome nas três etapas antes de criar
+  var achou = null;
+  [PENDENTES, PROTOCOLADOS, ARQUIVADOS].some(function(n){ var it = subpasta(raiz, n).getFoldersByName(nome); if (it.hasNext()){ achou = it.next(); return true; } return false; });
+  var f = achou || subpasta(raiz, etapa).createFolder(nome);
+  return { ok: true, id: f.getId(), url: f.getUrl(), existente: !!achou };
 }
