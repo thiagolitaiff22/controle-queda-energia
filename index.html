@@ -1254,7 +1254,7 @@ section.vw-dash{gap:10px!important}
 #form.novo .f-body > .field:has(#f-end){display:flex!important;order:4}
 #form.novo .f-body > .field:has(#f-uc){display:flex!important;order:5}
 #form.novo .f-body > .field:has(#f-periodo){display:flex!important;order:6}
-#form.novo .f-body > .field:has(#f-protocolo){display:flex!important;order:7}
+#form.novo .f-body > .field:has(#f-dtcad){display:flex!important;order:7}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -1647,6 +1647,7 @@ section.vw-dash{gap:10px!important}
       <div class="field full"><label for="f-proc">Nº do processo</label><input id="f-proc" class="tnum" placeholder="0000000-00.0000.8.04.2000"></div>
       <div class="field"><label for="f-uc">UC (unidade consumidora)</label><input id="f-uc" class="tnum"></div>
       <div class="field"><label for="f-periodo">Período da ação</label><input id="f-periodo"></div>
+      <div class="field"><label for="f-dtcad">Data do cadastro</label><input id="f-dtcad" type="date"></div>
       <div class="field"><label for="f-protocolo">Data do protocolo</label><input id="f-protocolo" type="date"><span class="hint" id="h-prot"></span></div>
       <div class="field"><label for="f-contatado">Contato para nova ação</label>
         <select id="f-contatado"><option value="">Ainda não contatado</option><option value="sim">Contatado</option></select></div>
@@ -2560,7 +2561,7 @@ section.vw-dash{gap:10px!important}
     $('cad-sit').innerHTML = SITS.map(function(o){ return '<option value="' + o[0] + '"' + (o[0] === cadSit ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('');
     $('cad-sit').classList.toggle('ativo', !!cadSit);
     var lista = todos.filter(function(r){ return (!cadSit || situacaoCad(r)[0] === cadSit) && buscaCliente(r, cadQ); })
-      .sort(function(a, b){ return String(b.criadoEm || '').localeCompare(String(a.criadoEm || '')) || String(a.nome || '').localeCompare(String(b.nome || ''), 'pt'); });
+      .sort(function(a, b){ return String(b.dataCadastro || b.criadoEm || '').localeCompare(String(a.dataCadastro || a.criadoEm || '')) || String(a.nome || '').localeCompare(String(b.nome || ''), 'pt'); });
     $('cad-count').textContent = lista.length + (lista.length === 1 ? ' cliente' : ' clientes');
     var html = '<div class="row head"><div>Cliente</div><div>Prospectador</div><div>Contato</div><div>Cadastrado em</div><div>Situação</div><div></div></div>';
     if (!lista.length) html += '<div class="empty">' + (todos.length ? 'Nenhum cliente neste filtro.' : 'Nenhum cliente em cadastro. Clique em <b>Novo cliente</b> para começar.') + '</div>';
@@ -2570,7 +2571,7 @@ section.vw-dash{gap:10px!important}
         '<div class="c-name"><div class="name"><button type="button" class="nome-abrir" data-act="abrir" data-id="' + esc(r.id) + '">' + esc(r.nome) + '</button>' + pastaIco(r) + '</div><div class="addr">' + (r.cpf ? 'CPF ' + esc(r.cpf) : 'CPF não informado') + '</div></div>' +
         '<div><span class="lbl">Prospectador</span><div class="val">' + esc(prospName(r.responsavelId) || '—') + '</div></div>' +
         '<div><span class="lbl">Contato</span>' + telCell(r) + '</div>' +
-        '<div><span class="lbl">Cadastrado em</span><div class="val">' + (r.criadoEm ? fmtShort(String(r.criadoEm).slice(0, 10)) : '—') + '</div></div>' +
+        '<div><span class="lbl">Cadastrado em</span><div class="val">' + (r.dataCadastro || r.criadoEm ? fmtShort(String(r.dataCadastro || r.criadoEm).slice(0, 10)) : '—') + '</div></div>' +
         '<div><span class="lbl">Situação</span><span class="cad-sit ' + st[2] + '">' + st[1] + '</span></div>' +
         '<div class="c-act"><button type="button" class="ico-btn" data-act="edit" data-id="' + esc(r.id) + '" title="Editar cadastro" aria-label="Editar ' + esc(r.nome) + '"><svg class="i"><use href="#i-pencil"/></svg></button></div>' +
       '</div>' + (cadAberto[r.id] ? fichaCliente(r) : '');
@@ -3784,7 +3785,8 @@ section.vw-dash{gap:10px!important}
     $('f-uc').value = r ? r.uc || '' : '';
     $('f-periodo').value = r ? r.periodo || '' : '';
     $('f-tese').value = r ? r.tese || '' : '';
-    $('f-protocolo').value = r ? r.protocolo || '' : iso(new Date()); // new client: protocol date = today
+    $('f-protocolo').value = r ? r.protocolo || '' : ''; // protocolo só quando o processo for protocolado no PROJUDI
+    $('f-dtcad').value = r ? (r.dataCadastro || String(r.criadoEm || '').slice(0, 10)) : iso(new Date()); // cadastro inicial: hoje
     $('f-contatado').value = r && r.contatadoRetorno ? 'sim' : '';
     $('f-res').value = r ? r.resultado || '' : '';
     $('f-conc').value = r && r.concluso ? 'sim' : '';
@@ -3844,7 +3846,7 @@ section.vw-dash{gap:10px!important}
       protocolo: $('f-protocolo').value || '', contatadoRetorno: $('f-contatado').value === 'sim' ? (prev.contatadoRetorno || iso(new Date())) : null,
       comparecimento: $('f-comp').value, motivoFalta: $('f-comp').value === 'faltou' ? $('f-falta').value.trim() : '',
       resultado: $('f-comp').value === 'faltou' && !$('f-res').value ? 'ausente' : ($('f-comp').value === 'compareceu' && $('f-res').value === 'ausente' ? '' : $('f-res').value), concluso: $('f-conc').value === 'sim', motivoConcluso: $('f-conc').value === 'sim' ? $('f-mot').value.trim() : '', embargos: $('f-rec').value, pagamento: $('f-pag').value, previsao: $('f-prev').value || '',
-      obs: $('f-obs').value.trim(), criadoEm: prev.criadoEm || new Date().toISOString(), atualizadoEm: new Date().toISOString(),
+      obs: $('f-obs').value.trim(), dataCadastro: $('f-dtcad').value || prev.dataCadastro || iso(new Date()), criadoEm: prev.criadoEm || new Date().toISOString(), atualizadoEm: new Date().toISOString(),
       conferirDados: false
     });
     var pastaCol = $('f-pasta-url') ? $('f-pasta-url').value.trim() : '';
