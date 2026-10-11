@@ -327,6 +327,7 @@ body{background:linear-gradient(168deg,#0f2348 0%,#08142b 55%,#08142b 100%) fixe
 .ver .ctl .boa,.rec .ctl .boa{background:linear-gradient(135deg,#2563eb,#38bdf8)!important;color:#fff}
 .versao{color:rgba(235,235,245,.45)}
 .abas .bolha[hidden]{display:none}
+.ver .fotos .ajustar{position:absolute;left:8px;bottom:8px;border:0;background:rgba(8,20,43,.85);color:#fff;font:inherit;font-size:13px;font-weight:700;border-radius:999px;padding:7px 12px}
 /* iPhone: respeita o entalhe e a barra de baixo */
 .topo{padding-top:calc(10px + env(safe-area-inset-top))}
 #app > .entrar{margin-top:calc(max(24px, 10vh) + env(safe-area-inset-top))!important}
@@ -414,7 +415,7 @@ body{background:transparent!important}
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 8;
+  var APP_VERSAO = 9;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
@@ -487,42 +488,41 @@ body{background:transparent!important}
   // escanear: "folha" (procuração, conta: papel branco e letra preta) ou "cartao" (RG/CPF: mais leve, mantém a foto da pessoa)
   function tratar(im, escanear){
     var iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height;
-    var max = escanear ? 2200 : 1200, k = Math.min(1, max / Math.max(iw, ih));
+    var max = escanear === 'folha' ? 3300 : escanear ? 2200 : 1400, k = Math.min(1, max / Math.max(iw, ih));
     var w = Math.round(iw * k), h = Math.round(ih * k);
     var c = document.createElement('canvas'); c.width = w; c.height = h;
-    var x = c.getContext('2d'); x.drawImage(im, 0, 0, w, h);
+    var x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(im, 0, 0, w, h);
     if (escanear){
-      // fundo estimado com uma versão pequena e borrada da foto; dividir por ele tira sombra e deixa o papel branco
-      var bw = Math.max(8, Math.round(w / 24)), bh = Math.max(8, Math.round(h / 24));
-      var b = document.createElement('canvas'); b.width = bw; b.height = bh;
-      var bx = b.getContext('2d'); bx.filter = 'blur(2px)'; bx.drawImage(c, 0, 0, bw, bh);
-      var g = document.createElement('canvas'); g.width = w; g.height = h;
-      var gx = g.getContext('2d'); gx.imageSmoothingQuality = 'high'; gx.drawImage(b, 0, 0, w, h);
-      var px = x.getImageData(0, 0, w, h), fd = gx.getImageData(0, 0, w, h).data, d = px.data;
-      // tira a sombra (divide pelo fundo) e ajusta os níveis: papel vira branco, letra vira preta
-      var PRETO = escanear === 'cartao' ? 25 : 135, BRANCO = escanear === 'cartao' ? 235 : 225, esc3 = 255 / (BRANCO - PRETO);
-      for (var i = 0; i < d.length; i += 4){
-        for (var j = 0; j < 3; j++){
-          // cartão (RG/CPF): não divide pelo fundo, senão a foto da pessoa some; só ajusta contraste e nitidez
-          var v = escanear === 'cartao' ? d[i + j] : d[i + j] / Math.max(70, fd[i + j]) * 255;
-          v = (v - PRETO) * esc3;
-          d[i + j] = v < 0 ? 0 : v > 255 ? 255 : v;
+      var px = x.getImageData(0, 0, w, h), d = px.data, i, j, v;
+      if (escanear === 'folha'){
+        // papel: estima o fundo (versão bem pequena e borrada) e divide por ele -> some a sombra, papel fica branco
+        var bw = Math.max(8, Math.round(w / 32)), bh = Math.max(8, Math.round(h / 32));
+        var bc = document.createElement('canvas'); bc.width = bw; bc.height = bh;
+        var bx = bc.getContext('2d'); bx.filter = 'blur(3px)'; bx.drawImage(c, 0, 0, bw, bh);
+        var g = document.createElement('canvas'); g.width = w; g.height = h;
+        var gx = g.getContext('2d'); gx.imageSmoothingQuality = 'high'; gx.drawImage(bc, 0, 0, w, h);
+        var fd = gx.getImageData(0, 0, w, h).data;
+        // curva suave: o que é papel vira branco; a letra escurece sem perder o traço (nada de cortar os tons do meio)
+        var curva = new Uint8ClampedArray(256 * 2);
+        for (i = 0; i < curva.length; i++){ var t = Math.min(1, i / 232); curva[i] = Math.round(255 * Math.pow(t, 2.1)); }
+        for (i = 0; i < d.length; i += 4){
+          for (j = 0; j < 3; j++){ v = Math.round(d[i + j] / Math.max(90, fd[i + j]) * 255); d[i + j] = curva[v > 511 ? 511 : v]; }
         }
+      } else {
+        // cartão (RG/CPF): mantém a foto e as cores; só um pouco mais de contraste
+        for (i = 0; i < d.length; i += 4){ for (j = 0; j < 3; j++){ v = (d[i + j] - 14) * 1.1; d[i + j] = v < 0 ? 0 : v > 255 ? 255 : v; } }
       }
-      // nitidez (máscara de contraste 3x3): deixa a borda das letras firme
-      var o = new Uint8ClampedArray(d), L = w * 4;
+      // nitidez leve (não cria serrilhado nem "quebra" o traço)
+      var o = new Uint8ClampedArray(d), L = w * 4, f = escanear === 'folha' ? 0.35 : 0.25;
       for (var yy = 1; yy < h - 1; yy++){
         for (var xx = 1; xx < w - 1; xx++){
           var p = yy * L + xx * 4;
-          for (var cc = 0; cc < 3; cc++){
-            var q = p + cc, viz = o[q - 4] + o[q + 4] + o[q - L] + o[q + L];
-            d[q] = o[q] + 0.7 * (4 * o[q] - viz) / 4 * 2;
-          }
+          for (var cc = 0; cc < 3; cc++){ var q = p + cc; d[q] = o[q] + f * (4 * o[q] - o[q - 4] - o[q + 4] - o[q - L] - o[q + L]); }
         }
       }
       x.putImageData(px, 0, 0);
     }
-    return new Promise(function(ok){ c.toBlob(function(bl){ ok({ blob: bl, w: w, h: h }); }, 'image/jpeg', escanear ? 0.88 : 0.82); });
+    return new Promise(function(ok){ c.toBlob(function(bl){ ok({ blob: bl, w: w, h: h }); }, 'image/jpeg', escanear ? 0.9 : 0.82); });
   }
   function b64(blob){ return new Promise(function(ok){ var r = new FileReader(); r.onload = function(){ ok(String(r.result).split(',')[1]); }; r.readAsDataURL(blob); }); }
   function dataUrl(blob){ return new Promise(function(ok){ var r = new FileReader(); r.onload = function(){ ok(r.result); }; r.readAsDataURL(blob); }); }
@@ -794,6 +794,8 @@ body{background:transparent!important}
   function fotografar(d){
     atual = d; falar(d.fala);
     if (d.k === 'cliente') pegarLocal();
+    // iPhone (sem foto em resolução cheia pela página): usa a câmera de foto do próprio aparelho; o recorte e o scanner vêm depois
+    if (!window.ImageCapture){ $('foto').setAttribute('capture', 'environment'); $('foto').click(); return; }
     abrirCamera(d).catch(function(){
       // sem acesso à câmera ao vivo: usa a câmera do próprio celular
       $('foto').setAttribute('capture', 'environment'); // sempre a câmera de trás
@@ -805,7 +807,7 @@ body{background:transparent!important}
   function abrirCamera(d){
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return Promise.reject(new Error('sem câmera'));
     var tipo = MOLDURA[d.k] || 'folha', frente = false; // a foto do cliente também é com a câmera de trás (quem tira é o prospectador)
-    return navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: frente ? 'user' : 'environment' }, width: { ideal: 3840 }, height: { ideal: 2160 } } }).then(function(st){
+    return navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: frente ? 'user' : 'environment' }, width: { ideal: 4096 }, height: { ideal: 3072 } } }).then(function(st){
       fluxo = st;
       var c = document.createElement('div'); c.className = 'cam';
       c.innerHTML = '<video playsinline autoplay muted' + (frente ? ' class="espelho"' : '') + '></video>' +
@@ -904,11 +906,80 @@ body{background:transparent!important}
     var e = 1 / k;
     return [achado.tl, achado.tr, achado.br, achado.bl].map(function(c2){ return [c2[0] * e, c2[1] * e]; });
   }
+  // acha as 4 bordas do documento: para cada faixa, a primeira mudança forte de cor vindo da beirada da foto;
+  // depois passa uma reta pelos pontos (ignorando os pontos fora da reta). Devolve { q: cantos, conf: certeza }
+  function bordasPorLinhas(src){
+    var S = 420, k = S / Math.max(src.width, src.height), w = Math.max(40, Math.round(src.width * k)), h = Math.max(40, Math.round(src.height * k));
+    var c = document.createElement('canvas'); c.width = w; c.height = h;
+    var x = c.getContext('2d'); x.filter = 'blur(1.2px)'; x.drawImage(src, 0, 0, w, h);
+    var p = x.getImageData(0, 0, w, h).data, N = 18;
+    function dif(a, b){ a *= 4; b *= 4; return Math.abs(p[a] - p[b]) + Math.abs(p[a + 1] - p[b + 1]) + Math.abs(p[a + 2] - p[b + 2]); }
+    function varrer(lado){
+      var horiz = lado === 'topo' || lado === 'baixo', len = horiz ? w : h, outro = horiz ? h : w, desce = lado === 'topo' || lado === 'esq';
+      var pts = [], lim = Math.round(outro * 0.45), meia = Math.max(2, Math.round(len / N / 3));
+      for (var n = 0; n < N; n++){
+        var a0 = Math.round((n + 0.5) * len / N), perfil = [], mx = 0;
+        for (var t = 2; t < lim; t++){
+          var pos = desce ? t : outro - 1 - t, s2 = 0, cnt = 0;
+          if (pos - 4 < 0 || pos + 4 >= outro) { perfil.push(0); continue; }
+          for (var o = -meia; o <= meia; o++){
+            var aa = a0 + o; if (aa < 0 || aa >= len) continue;
+            s2 += horiz ? dif((pos - 4) * w + aa, (pos + 4) * w + aa) : dif(aa * w + pos - 4, aa * w + pos + 4); cnt++;   // borda suave também conta
+          }
+          var vv = cnt ? s2 / cnt : 0; perfil.push(vv); if (vv > mx) mx = vv;
+        }
+        if (mx < 14) continue;
+        // ruído do fundo: mediana do começo da faixa (perto da beirada, onde normalmente é só fundo)
+        var ini = perfil.slice(0, Math.max(6, Math.round(perfil.length * 0.12))).slice().sort(function(a1, b1){ return a1 - b1; });
+        var ruido = ini[Math.floor(ini.length / 2)] || 0, lim2 = Math.max(12, ruido * 2.5 + 6, mx * 0.2);
+        for (var t2 = 0; t2 < perfil.length; t2++){
+          if (perfil[t2] >= lim2){
+            while (t2 + 1 < perfil.length && perfil[t2 + 1] > perfil[t2]) t2++;
+            var pp = desce ? t2 + 2 : outro - 1 - (t2 + 2);
+            pts.push([a0, pp]); break;
+          }
+        }
+      }
+      return pts;
+    }
+    function ajustar(pts, tol){
+      if (pts.length < 4) return null;
+      var melhor = null, nm = 0;
+      for (var i = 0; i < pts.length; i++) for (var j = i + 1; j < pts.length; j++){
+        var du = pts[j][0] - pts[i][0]; if (!du) continue;
+        var m = (pts[j][1] - pts[i][1]) / du; if (Math.abs(m) > 0.22) continue;
+        var b = pts[i][1] - m * pts[i][0], ins = pts.filter(function(q){ return Math.abs(q[1] - (m * q[0] + b)) <= tol; });
+        if (ins.length > nm){ nm = ins.length; melhor = ins; }
+      }
+      if (!melhor || nm < 4) return null;
+      var su = 0, sv = 0, suu = 0, suv = 0; melhor.forEach(function(q){ su += q[0]; sv += q[1]; suu += q[0] * q[0]; suv += q[0] * q[1]; });
+      var den = nm * suu - su * su, m2 = den ? (nm * suv - su * sv) / den : 0;
+      return { m: m2, b: (sv - m2 * su) / nm, n: nm };
+    }
+    var T = ajustar(varrer('topo'), h * 0.02), B = ajustar(varrer('baixo'), h * 0.02), E = ajustar(varrer('esq'), w * 0.02), Dd = ajustar(varrer('dir'), w * 0.02);
+    if (!T || !B || !E || !Dd) return null;
+    // horizontal: y = m x + b ; vertical: x = m y + b
+    function cruza(H2, V){ var xx = (V.m * H2.b + V.b) / (1 - V.m * H2.m); return [xx, H2.m * xx + H2.b]; }
+    var q = [cruza(T, E), cruza(T, Dd), cruza(B, Dd), cruza(B, E)];
+    var dentro = q.every(function(c2){ return c2[0] > -w * 0.04 && c2[0] < w * 1.04 && c2[1] > -h * 0.04 && c2[1] < h * 1.04; });
+    var area = Math.abs((q[0][0] * q[1][1] - q[1][0] * q[0][1]) + (q[1][0] * q[2][1] - q[2][0] * q[1][1]) + (q[2][0] * q[3][1] - q[3][0] * q[2][1]) + (q[3][0] * q[0][1] - q[0][0] * q[3][1])) / 2;
+    var ok = dentro && area > w * h * 0.12 && q[1][0] > q[0][0] && q[2][0] > q[3][0] && q[3][1] > q[0][1] && q[2][1] > q[1][1];
+    if (!ok) return null;
+    // certeza: bastante pontos em cada lado e lados opostos quase paralelos
+    var conf = Math.min(T.n, B.n, E.n, Dd.n) >= 6 && Math.abs(T.m - B.m) < 0.09 && Math.abs(E.m - Dd.m) < 0.09;
+    return { q: q.map(function(c2){ return [Math.max(0, Math.min(src.width, c2[0] / k)), Math.max(0, Math.min(src.height, c2[1] / k))]; }), conf: conf };
+  }
+  function detectar(src){
+    var r = null; try { r = bordasPorLinhas(src); } catch(e){}
+    if (r) return r;
+    var q = null; try { q = acharBordas(src); } catch(e){}
+    return { q: q, conf: false };
+  }
   // endireita o quadrilátero (cantos tl, tr, br, bl) num retângulo
   function endireitar(src, q){
     var dist = function(a, b){ return Math.hypot(a[0] - b[0], a[1] - b[1]); };
     var W = Math.max(dist(q[0], q[1]), dist(q[3], q[2])), H = Math.max(dist(q[0], q[3]), dist(q[1], q[2]));
-    var k = Math.min(1, 2200 / Math.max(W, H)); W = Math.max(20, Math.round(W * k)); H = Math.max(20, Math.round(H * k));
+    var k = Math.min(1, 3300 / Math.max(W, H)); W = Math.max(20, Math.round(W * k)); H = Math.max(20, Math.round(H * k));
     var x0 = q[0][0], y0 = q[0][1], x1 = q[1][0], y1 = q[1][1], x2 = q[2][0], y2 = q[2][1], x3 = q[3][0], y3 = q[3][1];
     var dx1 = x1 - x2, dx2 = x3 - x2, dx3 = x0 - x1 + x2 - x3, dy1 = y1 - y2, dy2 = y3 - y2, dy3 = y0 - y1 + y2 - y3;
     var den = dx1 * dy2 - dx2 * dy1 || 1e-9, G = (dx3 * dy2 - dx2 * dy3) / den, Hh = (dx1 * dy3 - dx3 * dy1) / den;
@@ -929,13 +1000,20 @@ body{background:transparent!important}
     ox.putImageData(od, 0, 0);
     return out;
   }
-  function recortar(d, im){
+  function recortar(d, im, op){
+    op = op || {};
     // trabalha numa cópia de até 2400 px (rápido no celular e com boa leitura)
-    var iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height, k = Math.min(1, 3000 / Math.max(iw, ih));
+    var iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height, k = Math.min(1, 3600 / Math.max(iw, ih));
     var src = document.createElement('canvas'); src.width = Math.round(iw * k); src.height = Math.round(ih * k);
     src.getContext('2d').drawImage(im, 0, 0, src.width, src.height);
     var W = src.width, H = src.height, m = Math.min(W, H) * 0.06;
-    var cantos = acharBordas(src) || [[m, m], [W - m, m], [W - m, H - m], [m, H - m]];
+    var det = op.cantos ? { q: op.cantos, conf: false } : detectar(src);
+    // achou o documento com certeza: recorta sozinho e já mostra para conferir
+    if (!op.manual && det.conf){
+      var pronto; try { pronto = endireitar(src, det.q); } catch(e){ pronto = null; }
+      if (pronto){ guardarFoto(d, pronto, { src: src, q: det.q, troca: op.troca }); return Promise.resolve(); }
+    }
+    var cantos = det.q || [[m, m], [W - m, m], [W - m, H - m], [m, H - m]];
     falar('Ajuste os cantos verdes nas pontas do documento e aperte recortar.');
     var t = document.createElement('div'); t.className = 'rec';
     t.innerHTML = '<div class="topo">' + esc(d.t) + ' · recortar<small>Arraste os cantos verdes até as pontas do documento</small></div>' +
@@ -975,22 +1053,34 @@ body{background:transparent!important}
     var fim = function(){ window.removeEventListener('resize', desenhar); t.remove(); };
     t.querySelector('.boa').onclick = function(){
       this.disabled = true; this.textContent = 'Recortando…';
-      setTimeout(function(){ var r; try { r = endireitar(src, cantos); } catch(e){ r = src; } fim(); guardarFoto(d, r); }, 30);
+      setTimeout(function(){ var r; try { r = endireitar(src, cantos); } catch(e){ r = src; } fim(); guardarFoto(d, r, { src: src, q: cantos.slice(), troca: op.troca }); }, 30);
     };
-    t.querySelector('[data-a="inteira"]').onclick = function(){ fim(); guardarFoto(d, src); };
+    t.querySelector('[data-a="inteira"]').onclick = function(){ fim(); guardarFoto(d, src, { src: src, q: [[0, 0], [W, 0], [W, H], [0, H]], troca: op.troca }); };
     t.querySelector('[data-a="denovo"]').onclick = function(){ fim(); fotografar(d); };
     requestAnimationFrame(desenhar);
     return Promise.resolve();
   }
-  function guardarFoto(d, im){
+  function guardarFoto(d, im, orig){
     return tratar(im, d.k === 'cliente' ? false : (MOLDURA[d.k] === 'cartao' ? 'cartao' : 'folha')).then(function(r){
       r.url = URL.createObjectURL(r.blob);
-      fotos[d.k] = d.multi ? (fotos[d.k] || []).concat([r]) : [r];
+      if (orig){ r.orig = { src: orig.src, q: orig.q }; }   // só na memória: permite "Ajustar recorte"
+      if (orig && orig.troca != null && fotos[d.k] && fotos[d.k][orig.troca]) fotos[d.k][orig.troca] = r;
+      else fotos[d.k] = d.multi ? (fotos[d.k] || []).concat([r]) : [r];
       telaInicial();
       conferir(d, true);
     }).catch(function(){ alert('Não deu para usar esta foto. Tire de novo.'); });
   }
   function rgFotos(){ return (fotos.rg_frente || []).concat(fotos.rg_verso || []); }
+  // botão "Ajustar recorte" em cada foto que veio do recorte (abre os cantos para mexer)
+  function botoesAjuste(t, itens){
+    var figs = t.querySelectorAll('.fotos figure');
+    itens.forEach(function(it, n){
+      var fig = figs[n]; if (!fig || !it.foto || !it.foto.orig) return;
+      var bt = document.createElement('button'); bt.type = 'button'; bt.className = 'ajustar'; bt.textContent = 'Ajustar recorte';
+      bt.onclick = function(e){ e.stopPropagation(); t.remove(); recortar(it.doc, it.foto.orig.src, { manual: true, cantos: it.foto.orig.q.map(function(c){ return c.slice(); }), troca: it.i }); };
+      fig.appendChild(bt);
+    });
+  }
   function conferirRG(nova, tirada){
     var lados = [['rg_frente', 'Frente'], ['rg_verso', 'Verso']];
     var t = document.createElement('div'); t.className = 'ver';
@@ -1000,6 +1090,7 @@ body{background:transparent!important}
       '<div class="ctl"><button type="button" class="boa">' + (faltaFrente ? 'Tirar a frente' : faltaVerso ? 'Ficou boa · tirar o verso' : 'Ficou boa') + '</button>' +
         '<div class="linha"><button type="button" class="denovo" data-l="rg_frente">' + (faltaFrente ? 'Tirar frente' : 'Tirar frente de novo') + '</button><button type="button" class="denovo" data-l="rg_verso">' + (faltaVerso ? 'Tirar verso' : 'Tirar verso de novo') + '</button></div></div>';
     document.body.appendChild(t);
+    botoesAjuste(t, lados.filter(function(l){ return fotos[l[0]]; }).map(function(l){ return { doc: DOCS.filter(function(x){ return x.k === l[0]; })[0], foto: fotos[l[0]][0], i: 0 }; }));
     var foto = function(k){ t.remove(); telaInicial(); fotografar(DOCS.filter(function(x){ return x.k === k; })[0]); };
     t.querySelector('.boa').onclick = function(){ if (faltaFrente) return foto('rg_frente'); if (faltaVerso) return foto('rg_verso'); t.remove(); telaInicial(); };
     t.addEventListener('click', function(e){ var b = e.target.closest('[data-l]'); if (b) foto(b.dataset.l); });
@@ -1015,6 +1106,7 @@ body{background:transparent!important}
         '<div class="linha"><button type="button" class="denovo" data-a="denovo">Tirar de novo</button>' +
         (d.multi ? '<button type="button" class="denovo" data-a="mais">+ Outra folha</button>' : '<button type="button" class="denovo" data-a="apagar">Apagar</button>') + '</div></div>';
     document.body.appendChild(t);
+    botoesAjuste(t, f.map(function(x, i){ return { doc: d, foto: x, i: i }; }));
     var fim = function(){ t.remove(); telaInicial(); };
     t.querySelector('.boa').onclick = fim;
     t.addEventListener('click', function(e){
