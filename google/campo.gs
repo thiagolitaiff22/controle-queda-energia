@@ -122,7 +122,7 @@ function fechar(p, quem){
   var digitado = nomeDigitado(p);
   var pasta = pastaDoEnvio(p.envio, quem, digitado);
   var dados = { nome: '', cpf: '', rg: '', nascimento: '', endereco: '' }, nota = [];
-  try { dados = lerDocumentos(pasta) || dados; }
+  try { var arqs = arquivosDaPasta(pasta).filter(function(a){ return !/^Foto do cliente/i.test(a.getName()); }); dados = arqs.length ? (lerArquivos(arqs) || dados) : (lerDocumentos(pasta) || dados); }
   catch (err){ nota.push('A leitura automática falhou (' + String(err.message || err).slice(0, 160) + '). Preencha pelos documentos da pasta.'); }
   if (dados.cpf && !cpfValido(dados.cpf)){ nota.push('CPF lido (' + dados.cpf + ') não confere: verifique no documento.'); }
   if (dados.observacao) nota.push(dados.observacao);

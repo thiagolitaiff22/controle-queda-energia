@@ -422,7 +422,7 @@ body{background:transparent!important}
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 11;
+  var APP_VERSAO = 12;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
@@ -493,6 +493,27 @@ body{background:transparent!important}
     });
   }
   // escanear: "folha" (procuração, conta: papel branco e letra preta) ou "cartao" (RG/CPF: mais leve, mantém a foto da pessoa)
+  // cor do papel em cada ponto: reduz a foto, pega o MAIS CLARO da vizinhança (some a letra), suaviza e volta ao tamanho
+  function fundoPapel(c, w, h){
+    var bw = Math.max(16, Math.round(w / 12)), bh = Math.max(16, Math.round(h / 12));
+    var pc = document.createElement('canvas'); pc.width = bw; pc.height = bh;
+    var px2 = pc.getContext('2d'); px2.imageSmoothingQuality = 'high'; px2.drawImage(c, 0, 0, bw, bh);
+    var im2 = px2.getImageData(0, 0, bw, bh), a = im2.data, tmp = new Uint8ClampedArray(a.length), R = 3, x, y, k, ch, m;
+    for (y = 0; y < bh; y++) for (x = 0; x < bw; x++) for (ch = 0; ch < 3; ch++){
+      m = 0; for (k = -R; k <= R; k++){ var xx = x + k; if (xx < 0 || xx >= bw) continue; var vv = a[(y * bw + xx) * 4 + ch]; if (vv > m) m = vv; }
+      tmp[(y * bw + x) * 4 + ch] = m;
+    }
+    for (y = 0; y < bh; y++) for (x = 0; x < bw; x++){ for (ch = 0; ch < 3; ch++){
+      m = 0; for (k = -R; k <= R; k++){ var yy = y + k; if (yy < 0 || yy >= bh) continue; var v2 = tmp[(yy * bw + x) * 4 + ch]; if (v2 > m) m = v2; }
+      a[(y * bw + x) * 4 + ch] = m;
+    } a[(y * bw + x) * 4 + 3] = 255; }
+    px2.putImageData(im2, 0, 0);
+    var sc = document.createElement('canvas'); sc.width = bw; sc.height = bh;
+    var sx = sc.getContext('2d'); sx.filter = 'blur(2px)'; sx.drawImage(pc, 0, 0);
+    var g = document.createElement('canvas'); g.width = w; g.height = h;
+    var gx = g.getContext('2d'); gx.imageSmoothingQuality = 'high'; gx.drawImage(sc, 0, 0, w, h);
+    return gx.getImageData(0, 0, w, h).data;
+  }
   function tratar(im, escanear){
     var iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height;
     var max = escanear === 'folha' || escanear === 'original' ? 3300 : escanear ? 2200 : 1400, k = Math.min(1, max / Math.max(iw, ih));
@@ -503,24 +524,19 @@ body{background:transparent!important}
       var px = x.getImageData(0, 0, w, h), d = px.data, i, j, v;
       if (escanear === 'folha'){
         // papel: estima o fundo (versão bem pequena e borrada) e divide por ele -> some a sombra, papel fica branco
-        var bw = Math.max(8, Math.round(w / 32)), bh = Math.max(8, Math.round(h / 32));
-        var bc = document.createElement('canvas'); bc.width = bw; bc.height = bh;
-        var bx = bc.getContext('2d'); bx.filter = 'blur(3px)'; bx.drawImage(c, 0, 0, bw, bh);
-        var g = document.createElement('canvas'); g.width = w; g.height = h;
-        var gx = g.getContext('2d'); gx.imageSmoothingQuality = 'high'; gx.drawImage(bc, 0, 0, w, h);
-        var fd = gx.getImageData(0, 0, w, h).data;
+        var fd = fundoPapel(c, w, h);
         // curva suave: o que é papel vira branco; a letra escurece sem perder o traço (nada de cortar os tons do meio)
         var curva = new Uint8ClampedArray(256 * 2);
-        for (i = 0; i < curva.length; i++){ var t = Math.min(1, i / 232); curva[i] = Math.round(255 * Math.pow(t, 2.1)); }
+        for (i = 0; i < curva.length; i++){ var t = Math.min(1, i / 238); curva[i] = Math.round(255 * Math.pow(t, 1.7)); }
         for (i = 0; i < d.length; i += 4){
-          for (j = 0; j < 3; j++){ v = Math.round(d[i + j] / Math.max(90, fd[i + j]) * 255); d[i + j] = curva[v > 511 ? 511 : v]; }
+          for (j = 0; j < 3; j++){ v = Math.round(d[i + j] / Math.max(60, fd[i + j]) * 255); d[i + j] = curva[v > 511 ? 511 : v]; }
         }
       } else {
         // cartão (RG/CPF): mantém a foto e as cores; só um pouco mais de contraste
         for (i = 0; i < d.length; i += 4){ for (j = 0; j < 3; j++){ v = (d[i + j] - 14) * 1.1; d[i + j] = v < 0 ? 0 : v > 255 ? 255 : v; } }
       }
       // nitidez leve (não cria serrilhado nem "quebra" o traço)
-      var o = new Uint8ClampedArray(d), L = w * 4, f = escanear === 'folha' ? 0.35 : 0.25;
+      var o = new Uint8ClampedArray(d), L = w * 4, f = escanear === 'folha' ? 0.25 : 0.2;
       for (var yy = 1; yy < h - 1; yy++){
         for (var xx = 1; xx < w - 1; xx++){
           var p = yy * L + xx * 4;
@@ -586,7 +602,7 @@ body{background:transparent!important}
     filaTodos().catch(function(){ return []; }).then(function(l){
       var n = l.filter(function(x){ return x.token === token; }).length, off = navigator.onLine === false;
       el.className = 'sinc' + (off || n ? ' off' : '');
-      el.querySelector('span').textContent = off ? 'Sem internet' + (n ? ' · ' + n : '') : n ? n + ' na fila' : 'Em dia';
+      el.querySelector('span').textContent = n ? n + ' na fila' : off ? 'Sem internet' : 'Em dia';
       var b = $('bolha'); if (b){ b.hidden = !n; b.textContent = n; }
     });
   }
@@ -621,7 +637,7 @@ body{background:transparent!important}
           '<span class="apagar" data-apagar="' + d.k + '" aria-label="Apagar">×</span><div class="marca"><svg viewBox="0 0 24 24"><use href="#i-ok"/></svg>' + esc(d.t) + (f.length > 1 ? ' · ' + f.length : '') + ' · ver' + '</div></button>';
         return '<button class="doc' + (d.req ? ' req' : '') + '" data-k="' + d.k + '">' + (d.req ? '<span class="estrela"></span>' : '') + '<svg><use href="#' + d.ic + '"/></svg><span class="t">' + esc(d.t) + '</span><span class="s">' + esc(d.s) + '</span></button>';
       }).join('') + '</div>' +
-      '<div id="fila"></div>' +
+
       '<div class="barra"><button class="enviar" id="enviar"' + (n ? '' : ' disabled') + '><svg viewBox="0 0 24 24"><use href="#i-env"/></svg>Enviar cadastro</button></div>';
     if (completando){ $('cancelar-comp').onclick = cancelarComplemento; if ($('enviar')) $('enviar').lastChild.textContent = 'Enviar documentos'; }
     else {
@@ -726,8 +742,8 @@ body{background:transparent!important}
     $('sair').onclick = sair;
     filaTodos().catch(function(){ return []; }).then(function(l){
       var n = l.filter(function(x){ return x.token === token; }).length, el = $('aviso-fila'); if (!el || !n) return;
-      el.innerHTML = '<div class="aviso-fila"><div><b>' + n + (n === 1 ? ' cadastro esperando' : ' cadastros esperando') + ' internet</b><span>Estão guardados neste celular e sobem sozinhos quando tiver sinal.</span></div><button type="button" id="mandar-ja">Enviar agora</button></div>';
-      $('mandar-ja').onclick = function(){ if (navigator.onLine === false) return alert('Sem internet agora. O envio vai sozinho quando o sinal voltar.'); proximo(); };
+      el.innerHTML = '<div class="aviso-fila"><div><b>' + n + (n === 1 ? ' cadastro esperando' : ' cadastros esperando') + ' internet</b><span>Guardados neste celular. Sobem sozinhos; veja o andamento em Clientes.</span></div><button type="button" id="mandar-ja">Enviar agora</button></div>';
+      $('mandar-ja').onclick = function(){ ultimoErro = function(e){ ultimoErro = null; alert('Não foi possível enviar ' + (e.cliente || 'o cadastro') + ': ' + e.erro + '.\n\nO aplicativo continua tentando sozinho.'); }; proximo(true); };
     });
   }
 
@@ -739,7 +755,7 @@ body{background:transparent!important}
     $('vista').innerHTML =
       '<label class="busca"><svg><use href="#i-busca"/></svg><input id="busca-cli" placeholder="Buscar cliente pelo nome" value="' + esc(buscaCli) + '" autocomplete="off"></label>' +
       '<div class="chips" id="chips">' + GRUPOS.map(function(g){ var n = cl.filter(function(c){ return noGrupo(c, g[0]); }).length; return (n || g[0] === 'todos' || g[0] === filtroCli) ? '<button type="button" data-g="' + g[0] + '" aria-pressed="' + (filtroCli === g[0]) + '">' + g[1] + '<b>' + n + '</b></button>' : ''; }).join('') + '</div>' +
-      '<div id="lista-cli"></div>';
+      '<div id="lista-cli"></div><div id="fila"></div>';
     function desenhar(){
       var q = buscaCli.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
       var l = cl.filter(function(c){ return noGrupo(c, filtroCli) && (!q || String(c.nome || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().indexOf(q) >= 0); });
@@ -753,6 +769,7 @@ body{background:transparent!important}
     $('busca-cli').addEventListener('input', function(){ buscaCli = this.value; desenhar(); });
     $('chips').addEventListener('click', function(e){ var b = e.target.closest('[data-g]'); if (!b) return; filtroCli = b.dataset.g; Array.prototype.forEach.call(this.children, function(x){ x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); }); desenhar(); });
     $('lista-cli').addEventListener('click', function(e){ var c = e.target.closest('[data-cli]'); if (c) fichaCli(c.dataset.cli); });
+    mostrarFila();
   }
 
   /* ---------- ficha do cliente: linha do tempo do processo ---------- */
@@ -1218,13 +1235,14 @@ body{background:transparent!important}
       var f0 = fotos[d.k]; if (!f0) return;
       f0.filter(function(x){ return x.pdf; }).forEach(function(x, i){ arquivos.push({ nome: d.arq + sufixo + ' - anexo ' + (i + 1) + '.pdf', mime: 'application/pdf', blob: x.blob }); });
       var f = f0.filter(function(x){ return !x.pdf; }); if (!f.length) return;
-      f.forEach(function(x, i){ arquivos.push({ nome: d.arq + sufixo + (f.length > 1 ? ' ' + (i + 1) : '') + '.jpg', mime: 'image/jpeg', blob: x.blob }); });
+      // foto do cliente vai como imagem; documentos vão só em PDF (metade do tamanho, envio mais rápido)
+      if (d.k === 'cliente') f.forEach(function(x, i){ arquivos.push({ nome: d.arq + sufixo + (f.length > 1 ? ' ' + (i + 1) : '') + '.jpg', mime: 'image/jpeg', blob: x.blob }); });
       if (d.k !== 'cliente'){
         todas = todas.concat(f);
         p = p.then(function(){ return pdfDe(f).then(function(pdf){ arquivos.push({ nome: d.arq + sufixo + '.pdf', mime: 'application/pdf', blob: pdf }); }); });
       }
     });
-    p.then(function(){ return todas.length && !comp ? pdfDe(todas).then(function(pdf){ arquivos.push({ nome: '00 - Documentos completos.pdf', mime: 'application/pdf', blob: pdf }); }) : null; })
+    p.then(function(){ return false && todas.length && !comp ? pdfDe(todas).then(function(pdf){ arquivos.push({ nome: '00 - Documentos completos.pdf', mime: 'application/pdf', blob: pdf }); }) : null; })
      .then(function(){
        var envio = { id: id, token: token, criado: new Date().toISOString(), completar: comp ? comp.id : '', contato: ($('fone') || {}).value || '', cliente: comp ? comp.nome : (($('nome') || {}).value || '').replace(/\s+/g, ' ').trim().toUpperCase(), local: local, faltam: falta.map(function(d){ return d.k; }),
          docs: DOCS.filter(function(d){ return fotos[d.k]; }).map(function(d){ return d.k; }), arquivos: arquivos.map(function(a){ return { nome: a.nome, mime: a.mime, blob: a.blob, ok: false }; }) };
@@ -1245,8 +1263,11 @@ body{background:transparent!important}
   /* ---------- envio (repete sozinho quando a internet volta) ---------- */
   var enviando = false;
   function post(corpo){
-    return fetch(quem.envioUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(corpo) })
-      .then(function(r){ return r.json(); }).then(function(d){ if (!d || !d.ok) throw new Error(d && d.erro || 'falhou'); return d; });
+    var ctl = window.AbortController ? new AbortController() : null, tempo = ctl ? setTimeout(function(){ ctl.abort(); }, 240000) : null;
+    return fetch(quem.envioUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(corpo), signal: ctl ? ctl.signal : undefined })
+      .then(function(r){ return r.text().then(function(t){ var d = null; try { d = JSON.parse(t); } catch(e){} if (!d) throw new Error('o servidor respondeu com erro (' + r.status + ')'); return d; }); })
+      .then(function(d){ if (tempo) clearTimeout(tempo); if (!d.ok) throw new Error(d.erro || 'falhou'); return d; },
+            function(e){ if (tempo) clearTimeout(tempo); throw new Error(e && e.name === 'AbortError' ? 'o envio demorou demais (internet fraca)' : e && /Failed to fetch|Load failed|NetworkError|network/i.test(e.message) ? 'sem conexão com o servidor' : (e && e.message) || 'falhou'); });
   }
   function mandar(envio){
     if (enviando || !quem || !quem.envioUrl) return Promise.resolve();
@@ -1269,13 +1290,28 @@ body{background:transparent!important}
           return proximo();
         });
       })
-      .catch(function(){ enviando = false; mostrarFila(); sincronia(); });   // sem internet: tenta de novo mais tarde, sozinho
+      .catch(function(err){
+        // guarda o motivo e passa para o próximo da fila (este tenta de novo mais tarde, sozinho)
+        envio.erro = (err && err.message) || 'falhou'; envio.tentativa = Date.now();
+        enviando = false;
+        return filaPor(envio).catch(function(){}).then(function(){ return histMuda(envio.id, { erro: envio.erro }); }).then(function(){
+          mostrarFila(); sincronia();
+          if (ultimoErro) ultimoErro(envio);
+        });
+      });
   }
+  var ultimoErro = null;
   // manda o que estiver guardado; sem o endereço do envio ainda, busca primeiro (ex.: abriu o app sem internet)
-  function proximo(){
-    if (enviando || navigator.onLine === false) return Promise.resolve();
+  function proximo(forcar){
+    if (enviando) return Promise.resolve();
     var vai = quem && quem.envioUrl ? Promise.resolve(quem) : atualizarQuem();
-    return vai.then(function(){ return filaTodos(); }).then(function(l){ var e = l.filter(function(x){ return x.token === token; })[0]; if (e && quem && quem.envioUrl) return mandar(e); }).catch(function(){});
+    return vai.then(function(){ return filaTodos(); }).then(function(l){
+      // o que falhou há pouco vai para o fim da fila (não trava os outros)
+      var agora = Date.now();
+      var cand = l.filter(function(x){ return x.token === token && (forcar || !x.tentativa || agora - x.tentativa > 50000); })
+        .sort(function(a, b){ return (a.tentativa || 0) - (b.tentativa || 0); });
+      if (cand[0] && quem && quem.envioUrl) return mandar(cand[0]);
+    }).catch(function(){});
   }
   window.addEventListener('online', function(){ proximo(); });
   setInterval(proximo, 60000);
@@ -1291,11 +1327,15 @@ body{background:transparent!important}
       if (!$('fila')) return;
       var pend = h.filter(function(x){ return !x.enviado; }).length, hoje = new Date().toDateString();
       var dt = function(t){ var d = new Date(t); return d.toDateString() === hoje ? 'hoje ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }); };
-      $('fila').innerHTML = h.length ? '<div class="sec">Cadastros neste celular · ' + h.length + (pend ? ' · ' + pend + ' esperando internet' : '') + '</div><div class="lista">' + h.slice(0, 100).map(function(x){
-        var e = naFila[x.id], st = x.enviado ? ['ok', 'Enviado'] : e ? ['warn', 'Guardado no celular'] : ['ok', 'Enviado'];
+      $('fila').innerHTML = h.length ? '<div class="sec">Cadastros neste celular · ' + h.length + (pend ? ' · ' + pend + ' na fila' : '') + '</div><div class="lista">' + h.slice(0, 100).map(function(x){
+        var e = naFila[x.id], st = x.enviado ? ['ok', 'Enviado'] : e && e.erro ? ['red', 'Não enviou: ' + e.erro] : e ? ['warn', 'Na fila para enviar'] : ['ok', 'Enviado'];
         return '<div data-envio="' + esc(x.id) + '"><i class="' + st[0] + '"></i><span style="min-width:0"><b style="display:block;font-weight:600;overflow-wrap:anywhere">' + esc(x.cliente || 'Sem nome') + '</b><span style="font-size:13px;color:var(--ink2)">' + dt(x.criado) + '</span></span><small>' + st[1] + '</small></div>';
       }).join('') + '</div>' + (pend ? '<div class="barra" style="position:static;padding:10px 0 0;background:none"><button class="enviar" id="reenviar" style="background:var(--warn);height:52px;font-size:17px">Enviar agora</button></div>' : '') : '';
-      if ($('reenviar')) $('reenviar').onclick = function(){ if (navigator.onLine === false) return alert('Sem internet agora. O envio vai sozinho quando o sinal voltar.'); proximo(); };
+      if ($('reenviar')) $('reenviar').onclick = function(){
+        var b = this; b.disabled = true; b.textContent = 'Enviando…';
+        ultimoErro = function(e){ ultimoErro = null; alert('Não foi possível enviar ' + (e.cliente || 'o cadastro') + ': ' + e.erro + '.\n\nO aplicativo continua tentando sozinho.'); };
+        proximo(true).then(function(){ setTimeout(function(){ ultimoErro = null; }, 1000); });
+      };
     }).catch(function(){});
   }
   function mostrarMeus(){
