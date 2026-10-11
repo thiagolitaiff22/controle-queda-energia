@@ -86,14 +86,15 @@ function validar(token){
   return quem;
 }
 
-function pastaDoEnvio(envio, quem){
+function nomeDigitado(p){ return String(p.cliente || '').replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, ' ').trim().toUpperCase().slice(0, 150); }
+function pastaDoEnvio(envio, quem, cliente){
   var props = PropertiesService.getScriptProperties(), id = props.getProperty('pasta_' + envio);
   if (id){ try { return DriveApp.getFolderById(id); } catch (x){} }
   var lock = LockService.getScriptLock(); lock.waitLock(20000);
   try {
     id = props.getProperty('pasta_' + envio);
     if (id) return DriveApp.getFolderById(id);
-    var nome = 'NOVO CADASTRO - ' + (quem.nome || 'prospectador') + ' - ' + Utilities.formatDate(new Date(), 'America/Manaus', 'dd-MM-yyyy HH.mm');
+    var nome = cliente || ('NOVO CADASTRO - ' + (quem.nome || 'prospectador') + ' - ' + Utilities.formatDate(new Date(), 'America/Manaus', 'dd-MM-yyyy HH.mm'));
     var f = subpasta(DriveApp.getFolderById(PASTA_CLIENTES), PENDENTES).createFolder(nome);
     props.setProperty('pasta_' + envio, f.getId());
     return f;
@@ -101,7 +102,7 @@ function pastaDoEnvio(envio, quem){
 }
 
 function arquivo(p, quem){
-  var pasta = pastaDoEnvio(p.envio, quem);
+  var pasta = pastaDoEnvio(p.envio, quem, nomeDigitado(p));
   var nome = String(p.nome || 'arquivo').replace(/[\\/:*?"<>|]/g, '').slice(0, 120);
   var sub = /\.pdf$/i.test(nome) ? pasta : subpasta(pasta, 'Imagens escaneadas');
   var ja = sub.getFilesByName(nome);
@@ -112,7 +113,8 @@ function arquivo(p, quem){
 function subpasta(pasta, nome){ var it = pasta.getFoldersByName(nome); return it.hasNext() ? it.next() : pasta.createFolder(nome); }
 
 function fechar(p, quem){
-  var pasta = pastaDoEnvio(p.envio, quem);
+  var digitado = nomeDigitado(p);
+  var pasta = pastaDoEnvio(p.envio, quem, digitado);
   var dados = { nome: '', cpf: '', rg: '', nascimento: '', endereco: '' }, nota = [];
   try { dados = lerDocumentos(pasta) || dados; }
   catch (err){ nota.push('A leitura automática falhou (' + String(err.message || err).slice(0, 160) + '). Preencha pelos documentos da pasta.'); }
@@ -123,6 +125,9 @@ function fechar(p, quem){
   if (faltam.length) nota.push('Não foi fotografado: ' + faltam.join(', ') + '.');
   nota.unshift('Cadastrado pelo celular por ' + (quem.nome || 'prospectador') + '. Conferir os dados com os documentos.');
 
+  // o nome digitado pelo prospectador vale; se a IA leu diferente nos documentos, avisa para conferir
+  if (digitado && dados.nome && String(dados.nome).toUpperCase() !== digitado) nota.push('Nome nos documentos: ' + String(dados.nome).toUpperCase() + ' (o prospectador digitou ' + digitado + ').');
+  if (digitado) dados.nome = digitado;
   if (dados.nome) pasta.setName(String(dados.nome).toUpperCase());
   var id = rpc('campo_cadastrar', {
     p_token: p.token, p_envio: p.envio,
@@ -130,6 +135,7 @@ function fechar(p, quem){
       contato: p.contato || '', pastaUrl: pasta.getUrl(), pastaId: pasta.getId(), docs: p.docs || [], local: p.local || null, leitura: nota.join('\n') }
   });
   PropertiesService.getScriptProperties().deleteProperty('pasta_' + p.envio);
+  PropertiesService.getScriptProperties().setProperty('lido_' + pasta.getId(), String(Date.now())); // já lida agora: a leitura automática não repete
   return { ok: true, id: id, nome: dados.nome || '' };
 }
 
