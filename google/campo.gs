@@ -313,7 +313,7 @@ function renomearArquivos(arquivos, tipos){
   arquivos.forEach(function(a){ usados[a.getName().toUpperCase()] = 1; });
   arquivos.forEach(function(a, i){
     var base = NOME_TIPO[String(tipos[i] || '').toLowerCase()]; if (!base) return;
-    var nome = a.getName(), ext = (nome.match(/.[A-Za-z0-9]{2,4}$/) || [''])[0].toLowerCase();
+    var nome = a.getName(), ext = (nome.match(/\.[A-Za-z0-9]{2,4}$/) || [''])[0].toLowerCase();
     if (nome.toUpperCase().indexOf(base) === 0) return; // já está com o nome padrão
     var novo = base + ext, n = 2;
     while (usados[novo.toUpperCase()]) novo = base + ' ' + (n++) + ext;
