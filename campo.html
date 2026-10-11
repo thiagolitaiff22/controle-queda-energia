@@ -358,6 +358,8 @@ body.na-novo #barra-envio{bottom:calc(150px + env(safe-area-inset-bottom))}
 .pdf-fig b{display:block;font-size:16px}
 .pdf-fig span{display:block;font-size:13px;opacity:.75;margin-top:4px;overflow-wrap:anywhere}
 .ver .fotos .ajustar.filtro{left:auto;right:8px}
+.ver .fotos .ajustar.girar{left:50%;transform:translateX(-50%)}
+.rec .ctl .linha.tres{grid-template-columns:1fr 1fr 1fr}
 .ver .fotos .ajustar{position:absolute;left:8px;bottom:8px;border:0;background:rgba(8,20,43,.85);color:#fff;font:inherit;font-size:13px;font-weight:700;border-radius:999px;padding:7px 12px}
 /* iPhone: respeita o entalhe e a barra de baixo */
 .topo{padding-top:calc(10px + env(safe-area-inset-top))}
@@ -447,7 +449,7 @@ body{background:transparent!important}
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 21;
+  var APP_VERSAO = 22;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
@@ -1187,7 +1189,7 @@ body{background:transparent!important}
     var t = document.createElement('div'); t.className = 'rec';
     t.innerHTML = '<button type="button" class="xis" aria-label="Fechar">×</button><div class="topo">' + esc(d.t) + ' · recortar<small>Arraste os cantos verdes até as pontas do documento</small></div>' +
       '<div class="area"><canvas></canvas><svg><polygon></polygon><circle r="16"></circle><circle r="16"></circle><circle r="16"></circle><circle r="16"></circle></svg></div>' +
-      '<div class="ctl"><button type="button" class="boa">Recortar</button><div class="linha"><button type="button" data-a="inteira">Usar a foto inteira</button><button type="button" data-a="denovo">Tirar de novo</button></div></div>';
+      '<div class="ctl"><button type="button" class="boa">Recortar</button><div class="linha tres"><button type="button" data-a="girar">↻ Girar</button><button type="button" data-a="inteira">Foto inteira</button><button type="button" data-a="denovo">Tirar de novo</button></div></div>';
     document.body.appendChild(t);
     var area = t.querySelector('.area'), cv = t.querySelector('canvas'), svg = t.querySelector('svg'), pol = t.querySelector('polygon'), bol = t.querySelectorAll('circle');
     var esc2 = 1, offX = 0, offY = 0;
@@ -1227,14 +1229,30 @@ body{background:transparent!important}
     t.querySelector('.xis').onclick = function(){ fim(); telaInicial(); };
     t.querySelector('[data-a="inteira"]').onclick = function(){ fim(); guardarFoto(d, src, { src: src, q: [[0, 0], [W, 0], [W, H], [0, H]], troca: op.troca }); };
     t.querySelector('[data-a="denovo"]').onclick = function(){ fim(); fotografar(d); };
+    // gira a foto (e os cantos) 90° no sentido do relógio
+    t.querySelector('[data-a="girar"]').onclick = function(){
+      var g = girarQuad(src, cantos); src = g.src; cantos = g.q; W = src.width; H = src.height; desenhar();
+    };
     requestAnimationFrame(desenhar);
     return Promise.resolve();
+  }
+  // 90° no sentido do relógio: (x, y) vai para (altura - y, x)
+  function girar90(c){
+    var w = c.naturalWidth || c.width, h = c.naturalHeight || c.height, o = document.createElement('canvas');
+    o.width = h; o.height = w;
+    var x = o.getContext('2d'); x.translate(h, 0); x.rotate(Math.PI / 2); x.drawImage(c, 0, 0);
+    return o;
+  }
+  // gira a foto e os cantos do recorte juntos (o canto de cima à esquerda continua sendo o primeiro)
+  function girarQuad(src, q){
+    var h = src.height, p = q.map(function(c){ return [h - c[1], c[0]]; });
+    return { src: girar90(src), q: [p[3], p[0], p[1], p[2]] };
   }
   function guardarFoto(d, im, orig){
     var modo = d.k === 'cliente' ? false : orig && orig.semFiltro ? 'original' : (MOLDURA[d.k] === 'cartao' ? 'cartao' : 'folha');
     return tratar(im, modo).then(function(r){
       r.url = URL.createObjectURL(r.blob);
-      if (orig){ r.orig = { src: orig.src, q: orig.q }; r.reto = im; r.semFiltro = !!orig.semFiltro; }   // só na memória: permite "Ajustar recorte"
+      if (orig && orig.src){ r.orig = { src: orig.src, q: orig.q }; r.reto = im; r.semFiltro = !!orig.semFiltro; }   // só na memória: permite "Ajustar recorte"
       if (orig && orig.troca != null && fotos[d.k] && fotos[d.k][orig.troca]) fotos[d.k][orig.troca] = r;
       else fotos[d.k] = d.multi ? (fotos[d.k] || []).concat([r]) : [r];
       if (orig && orig.silencioso) return;
@@ -1250,7 +1268,19 @@ body{background:transparent!important}
   function botoesAjuste(t, itens){
     var figs = t.querySelectorAll('.fotos figure');
     itens.forEach(function(it, n){
-      var fig = figs[n]; if (!fig || !it.foto || !it.foto.orig) return;
+      var fig = figs[n]; if (!fig || !it.foto || it.foto.pdf) return;
+      // girar 90°: refaz a partir da foto reta (sem perder "Ajustar recorte" / "Sem filtro")
+      var bg = document.createElement('button'); bg.type = 'button'; bg.className = 'ajustar girar'; bg.textContent = '↻ Girar';
+      bg.onclick = function(e){
+        e.stopPropagation(); t.remove(); processando(true);
+        var f = it.foto;
+        setTimeout(function(){
+          if (f.reto && f.orig){ var g = girarQuad(f.orig.src, f.orig.q); return guardarFoto(it.doc, girar90(f.reto), { src: g.src, q: g.q, troca: it.i, semFiltro: f.semFiltro }); }
+          carregar(f.blob).then(function(im){ return guardarFoto(it.doc, girar90(im), { troca: it.i }); }).catch(function(){ processando(false); alert('Não deu para girar esta foto.'); telaInicial(); });
+        }, 30);
+      };
+      fig.appendChild(bg);
+      if (!it.foto.orig) return;
       var bt = document.createElement('button'); bt.type = 'button'; bt.className = 'ajustar'; bt.textContent = 'Ajustar recorte';
       bt.onclick = function(e){ e.stopPropagation(); t.remove(); recortar(it.doc, it.foto.orig.src, { manual: true, cantos: it.foto.orig.q.map(function(c){ return c.slice(); }), troca: it.i }); };
       fig.appendChild(bt);
