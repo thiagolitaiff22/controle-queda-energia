@@ -327,6 +327,11 @@ body{background:linear-gradient(168deg,#0f2348 0%,#08142b 55%,#08142b 100%) fixe
 .ver .ctl .boa,.rec .ctl .boa{background:linear-gradient(135deg,#2563eb,#38bdf8)!important;color:#fff}
 .versao{color:rgba(235,235,245,.45)}
 .abas .bolha[hidden]{display:none}
+.xis{position:fixed;top:calc(10px + env(safe-area-inset-top));left:12px;z-index:5;width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,255,255,.28);background:rgba(0,0,0,.55);color:#fff;font:400 28px/1 system-ui;display:grid;place-items:center;padding:0 0 3px}
+.pdf-mini{flex:1;display:grid;place-items:center;background:#b91c1c;color:#fff;font-weight:800;font-size:18px;letter-spacing:.05em}
+.pdf-fig{border:1px dashed rgba(255,255,255,.35);border-radius:12px;padding:30px 14px;text-align:center;color:#fff}
+.pdf-fig b{display:block;font-size:16px}
+.pdf-fig span{display:block;font-size:13px;opacity:.75;margin-top:4px;overflow-wrap:anywhere}
 .ver .fotos .ajustar.filtro{left:auto;right:8px}
 .ver .fotos .ajustar{position:absolute;left:8px;bottom:8px;border:0;background:rgba(8,20,43,.85);color:#fff;font:inherit;font-size:13px;font-weight:700;border-radius:999px;padding:7px 12px}
 /* iPhone: respeita o entalhe e a barra de baixo */
@@ -411,12 +416,13 @@ body{background:transparent!important}
   <div class="aviso" id="carregando"><b>Abrindo…</b></div>
 </div>
 <input type="file" id="foto" accept="image/*" capture="environment">
+<input type="file" id="anexo" accept="image/*,application/pdf" multiple>
 
 <script src="vendor/jspdf.umd.min.js"></script>
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 10;
+  var APP_VERSAO = 11;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
@@ -458,13 +464,13 @@ body{background:transparent!important}
   // (se o celular fechar ou recarregar a página, nada se perde, mesmo sem internet)
   var RASC = function(){ return 'rascunho:' + token; };
   function guardarRascunho(){
-    var f = {}; Object.keys(fotos).forEach(function(k){ f[k] = fotos[k].map(function(x){ return { blob: x.blob, w: x.w, h: x.h }; }); });
+    var f = {}; Object.keys(fotos).forEach(function(k){ f[k] = fotos[k].map(function(x){ return { blob: x.blob, w: x.w, h: x.h, pdf: !!x.pdf, nome: x.nome }; }); });
     return (Object.keys(f).length ? tx('readwrite', function(s){ s.put({ id: RASC(), rascunho: true, fotos: f, local: local }); }) : tx('readwrite', function(s){ s.delete(RASC()); })).catch(function(){});
   }
   function abrirRascunho(){
     return tx('readonly', function(s){ return s.get(RASC()); }).then(function(r){
       if (!r || !r.fotos) return;
-      Object.keys(r.fotos).forEach(function(k){ fotos[k] = r.fotos[k].map(function(x){ return { blob: x.blob, w: x.w, h: x.h, url: URL.createObjectURL(x.blob) }; }); });
+      Object.keys(r.fotos).forEach(function(k){ fotos[k] = r.fotos[k].map(function(x){ return x.pdf ? { pdf: true, blob: x.blob, nome: x.nome } : { blob: x.blob, w: x.w, h: x.h, url: URL.createObjectURL(x.blob) }; }); });
       if (r.local) local = r.local;
     }).catch(function(){});
   }
@@ -609,9 +615,9 @@ body{background:transparent!important}
       '</div>') +
       '<div class="rot">' + (completando ? 'Documentos que faltam' : 'Documentos') + '</div><div class="grid">' + visiveis.map(function(d){
         var f = d.k === 'rg_frente' ? rgFotos() : fotos[d.k];
-        if (d.k === 'rg_frente' && f.length) return '<button class="doc feito" data-k="' + d.k + '"><div class="thumbs">' + f.map(function(x){ return '<img alt="" src="' + x.url + '">'; }).join('') + '</div>' +
+        if (d.k === 'rg_frente' && f.length) return '<button class="doc feito" data-k="' + d.k + '"><div class="thumbs">' + f.map(miniatura).join('') + '</div>' +
           '<span class="apagar" data-apagar="' + d.k + '" aria-label="Apagar">×</span><div class="marca"><svg viewBox="0 0 24 24"><use href="#i-ok"/></svg>' + (fotos.rg_frente && fotos.rg_verso ? 'RG · frente e verso' : fotos.rg_frente ? 'RG · falta o verso' : 'RG · falta a frente') + '</div></button>';
-        if (f && f.length) return '<button class="doc feito" data-k="' + d.k + '"><div class="thumbs">' + f.slice(0, 3).map(function(x){ return '<img alt="" src="' + x.url + '">'; }).join('') + '</div>' +
+        if (f && f.length) return '<button class="doc feito" data-k="' + d.k + '"><div class="thumbs">' + f.slice(0, 3).map(miniatura).join('') + '</div>' +
           '<span class="apagar" data-apagar="' + d.k + '" aria-label="Apagar">×</span><div class="marca"><svg viewBox="0 0 24 24"><use href="#i-ok"/></svg>' + esc(d.t) + (f.length > 1 ? ' · ' + f.length : '') + ' · ver' + '</div></button>';
         return '<button class="doc' + (d.req ? ' req' : '') + '" data-k="' + d.k + '">' + (d.req ? '<span class="estrela"></span>' : '') + '<svg><use href="#' + d.ic + '"/></svg><span class="t">' + esc(d.t) + '</span><span class="s">' + esc(d.s) + '</span></button>';
       }).join('') + '</div>' +
@@ -629,9 +635,9 @@ body{background:transparent!important}
         var ap = e.target.closest('[data-apagar]');
         if (ap){ e.stopPropagation(); if (confirm('Apagar as fotos de ' + DOCS.filter(function(d){ return d.k === ap.dataset.apagar; })[0].t + '?')){ delete fotos[ap.dataset.apagar]; if (ap.dataset.apagar === 'rg_frente') delete fotos.rg_verso; telaInicial(); } return; }
         var d = DOCS.filter(function(x){ return x.k === b.dataset.k; })[0];
-        if (d.k === 'rg_frente') return rgFotos().length ? conferirRG() : fotografar(d);
+        if (d.k === 'rg_frente') return rgFotos().length ? conferirRG() : escolher(d);
         if (fotos[d.k] && fotos[d.k].length) return conferir(d);
-        fotografar(d);
+        escolher(d);
       });
     });
     $('enviar').addEventListener('click', enviar);
@@ -642,7 +648,7 @@ body{background:transparent!important}
   var ETP = {
     preparo: ['Em preparação', 'gray', 'var(--ink2)'], protocolado: ['Aguardando audiência', 'warn', 'var(--warn)'],
     marcada: ['Audiência marcada', 'blue', 'var(--blue)'], resultado: ['Aguardando resultado', 'purple', '#a78bfa'],
-    ganhou: ['Ganhou', 'ok', 'var(--ok)'], alvara: ['Alvará expedido', 'ok', 'var(--ok)'], pago: ['Pago', 'ok', 'var(--ok)'],
+    ganhou: ['Ganhou', 'ok', 'var(--ok)'], alvara: ['Ganhou', 'ok', 'var(--ok)'], pago: ['Ganhou', 'ok', 'var(--ok)'],
     faltou: ['Faltou à audiência', 'red', 'var(--red)'], perdeu: ['Não ganhou', 'red', 'var(--red)']
   };
   function hojeISO(){ var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
@@ -681,6 +687,7 @@ body{background:transparent!important}
     var cl = clientesPainel(), cont = {};
     cl.forEach(function(c){ var k = etapaCli(c); cont[k] = (cont[k] || 0) + 1; });
     var ganharam = (cont.ganhou || 0) + (cont.alvara || 0) + (cont.pago || 0);
+    cont.ganhou = ganharam; cont.alvara = 0; cont.pago = 0; cont.resultado = 0;
     var comFalta = cl.filter(function(c){ return faltas(c).length; });
     var prox = cl.filter(function(c){ return etapaCli(c) === 'marcada'; }).sort(function(a, b){ return (a.audData + (a.audHora || '')).localeCompare(b.audData + (b.audHora || '')); });
     var h = new Date(), primeiro = String((quem && quem.nome) || '').trim().split(/\s+/)[0];
@@ -690,7 +697,7 @@ body{background:transparent!important}
       '<div class="ola"><b>Olá' + (primeiro ? ', ' + esc(primeiro.charAt(0) + primeiro.slice(1).toLowerCase()) : '') + '!</b><span>' + h.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' }) +
         (atual ? ' · atualizado às ' + atual.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '') + '</span></div>' +
       '<div class="hero"><small>Clientes indicados por você</small><span class="num">' + cl.length + '</span>' +
-        '<div class="lin"><span><b>' + (cont.marcada || 0) + '</b> com audiência marcada</span><span><b>' + ganharam + '</b> ganharam</span><span><b>' + (cont.pago || 0) + '</b> ' + ((cont.pago || 0) === 1 ? 'pago' : 'pagos') + '</span></div></div>' +
+        '<div class="lin"><span><b>' + (cont.marcada || 0) + '</b> com audiência marcada</span><span><b>' + ganharam + '</b> ganharam</span></div></div>' +
       '<div id="aviso-fila"></div>' +
       (comFalta.length ? '<button type="button" class="aviso-docs" data-ir="faltam"><span class="n">' + comFalta.length + '</span><span><b>' + (comFalta.length === 1 ? 'cliente com documento faltando' : 'clientes com documentos faltando') + '</b><small>Toque para ver quais e completar</small></span></button>' : '') +
       '<div class="kpis">' +
@@ -698,12 +705,10 @@ body{background:transparent!important}
         kpi('Em preparação', cont.preparo || 0, 'var(--line2)', 'preparo') +
         kpi('Aguardando audiência', cont.protocolado || 0, 'var(--warn)', 'protocolado') +
         kpi('Audiência marcada', cont.marcada || 0, 'var(--blue)', 'marcada') +
-        kpi('Aguardando resultado', cont.resultado || 0, '#a78bfa', 'resultado') +
         kpi('Ganharam', ganharam, 'var(--ok)', 'ganharam') +
-        kpi('Pagos', cont.pago || 0, 'var(--ok)', 'pago') +
       '</div>' +
       (cl.length ? '<div class="funil">' + ['preparo', 'protocolado', 'marcada', 'resultado', 'ganhou', 'alvara', 'pago', 'faltou', 'perdeu'].map(function(k){ return cont[k] ? '<span style="width:' + (cont[k] / cl.length * 100) + '%;background:' + (k === 'preparo' ? 'var(--line2)' : ETP[k][2]) + '"></span>' : ''; }).join('') + '</div>' +
-        '<div class="legenda">' + ['preparo', 'protocolado', 'marcada', 'resultado', 'ganhou', 'pago', 'faltou', 'perdeu'].filter(function(k){ return cont[k]; }).map(function(k){ return '<span><i style="background:' + (k === 'preparo' ? 'var(--line2)' : ETP[k][2]) + '"></i>' + ETP[k][0] + ' ' + cont[k] + '</span>'; }).join('') + '</div>' : '') +
+        '<div class="legenda">' + ['preparo', 'protocolado', 'marcada', 'ganhou', 'faltou', 'perdeu'].filter(function(k){ return cont[k]; }).map(function(k){ return '<span><i style="background:' + (k === 'preparo' ? 'var(--line2)' : ETP[k][2]) + '"></i>' + ETP[k][0] + ' ' + cont[k] + '</span>'; }).join('') + '</div>' : '') +
       '<div class="rot">Próximas audiências' + (prox.length ? ' · ' + prox.length : '') + '</div>' +
       (prox.length ? '<div class="auds">' + prox.slice(0, 15).map(function(c){
         var p = String(c.audData).split('-'), tl = telLink(c);
@@ -727,7 +732,7 @@ body{background:transparent!important}
   }
 
   /* ---------- aba Clientes ---------- */
-  var GRUPOS = [['todos', 'Todos'], ['faltam', 'Faltam documentos'], ['preparo', 'Em preparação'], ['protocolado', 'Aguardando audiência'], ['marcada', 'Audiência marcada'], ['resultado', 'Aguardando resultado'], ['ganharam', 'Ganharam'], ['pago', 'Pagos'], ['faltou', 'Faltaram'], ['perdeu', 'Não ganharam']];
+  var GRUPOS = [['todos', 'Todos'], ['faltam', 'Faltam documentos'], ['preparo', 'Em preparação'], ['protocolado', 'Aguardando audiência'], ['marcada', 'Audiência marcada'], ['ganharam', 'Ganharam'], ['faltou', 'Faltaram'], ['perdeu', 'Não ganharam']];
   function noGrupo(c, g){ var k = etapaCli(c); if (g === 'faltam') return faltas(c).length > 0; return g === 'todos' || k === g || (g === 'ganharam' && (k === 'ganhou' || k === 'alvara' || k === 'pago')); }
   function vistaClientes(){
     var cl = clientesPainel();
@@ -759,8 +764,7 @@ body{background:transparent!important}
       { t: 'Cliente indicado', d: c.cadastro ? 'em ' + dataBR(c.cadastro) : '', ok: true },
       { t: 'Ação protocolada', d: c.protocolado ? (c.protocolo ? 'em ' + dataBR(c.protocolo) : 'no tribunal') : 'o escritório está preparando a ação', ok: !!c.protocolado },
       { t: 'Audiência', d: c.audData ? dataBR(c.audData) + (c.audHora ? ' às ' + c.audHora : '') + ' · ' + (c.online ? 'online (vídeo)' : 'no Fórum') + (k === 'marcada' ? ' · ' + quando(c.audData) : '') : 'ainda não marcada', ok: !!c.audData && k !== 'marcada', ruim: k === 'faltou' },
-      { t: 'Sentença', d: c.resultado && RESULT[c.resultado] ? RESULT[c.resultado] : c.concluso || c.resultado === 'aguardando' ? 'aguardando a decisão do juiz' : 'depois da audiência', ok: k === 'ganhou' || k === 'alvara' || k === 'pago', ruim: k === 'perdeu' || k === 'faltou' },
-      { t: 'Pagamento', d: c.pagamento === 'pago' ? 'pago ao cliente' : k === 'alvara' ? 'alvará expedido, aguardando o pagamento' : 'depois da sentença', ok: c.pagamento === 'pago' }
+      { t: 'Sentença', d: c.resultado && RESULT[c.resultado] ? RESULT[c.resultado] : 'depois da audiência', ok: k === 'ganhou' || k === 'alvara' || k === 'pago', ruim: k === 'perdeu' || k === 'faltou' }
     ];
     var atual = passos.findIndex(function(p){ return !p.ok && !p.ruim; });
     var f = document.createElement('div'); f.className = 'folha';
@@ -792,6 +796,39 @@ body{background:transparent!important}
       pedirLink();
     });
   }
+  // tirar foto agora ou anexar o que o cliente mandou (WhatsApp, galeria, arquivos)
+  function escolher(d){
+    var t = tela('<b>' + esc(d.k === 'rg_frente' ? 'RG' : d.t) + '</b><p>Como quer colocar este documento?</p>' +
+      '<button id="t-foto">Tirar foto agora</button><button class="sec2" id="t-anexo">Anexar (galeria, WhatsApp ou PDF)</button><button class="sec2" id="t-cancela">Cancelar</button>');
+    t.querySelector('#t-foto').onclick = function(){ t.remove(); fotografar(d); };
+    t.querySelector('#t-anexo').onclick = function(){ t.remove(); anexar(d); };
+    t.querySelector('#t-cancela').onclick = function(){ t.remove(); };
+  }
+  function anexar(d){ atual = d; $('anexo').value = ''; $('anexo').click(); }
+  $('anexo').addEventListener('change', function(){
+    var arqs = Array.prototype.slice.call(this.files || []); this.value = ''; if (!arqs.length || !atual) return;
+    var d0 = atual, aviso = tela('<b>Preparando…</b><p>Lendo os arquivos anexados</p>');
+    // RG: o 1º arquivo é a frente e o 2º o verso; documentos de uma folha só ficam com o primeiro
+    var alvo = function(n){
+      if (d0.k === 'rg_frente' || d0.k === 'rg_verso') return DOCS.filter(function(x){ return x.k === (n === 0 ? d0.k : 'rg_verso'); })[0];
+      return d0;
+    };
+    var lista = d0.multi || d0.k === 'rg_frente' ? arqs.slice(0, d0.multi ? 20 : 2) : arqs.slice(0, 1);
+    var p = Promise.resolve(), ultimo = d0;
+    lista.forEach(function(arq, n){
+      var d = alvo(n); ultimo = d;
+      p = p.then(function(){
+        if (/pdf$/i.test(arq.type) || /\.pdf$/i.test(arq.name)){
+          var r = { pdf: true, blob: arq, nome: arq.name || 'documento.pdf' };
+          fotos[d.k] = d.multi ? (fotos[d.k] || []).concat([r]) : [r];
+          return;
+        }
+        return carregar(arq).then(function(im){ return recortar(d, im, { anexo: true, silencioso: true }); });
+      });
+    });
+    p.then(function(){ aviso.remove(); telaInicial(); conferir(ultimo, true); })
+     .catch(function(){ aviso.remove(); telaInicial(); alert('Não deu para usar um dos arquivos. Tente anexar de novo.'); });
+  });
   function fotografar(d){
     atual = d; falar(d.fala);
     if (d.k === 'cliente') pegarLocal();
@@ -815,6 +852,7 @@ body{background:transparent!important}
         '<div class="moldura' + (tipo === 'livre' ? ' oval' : '') + '"><i></i><i></i><i></i><i></i></div>' +
         '<div class="dica">' + esc(d.lado ? 'RG' : d.t + (d.s && d.k !== 'cliente' ? ' · ' + d.s : '')) + '<small>' + DICA[tipo] + '</small>' +
           (d.lado ? '<div class="lados"><button type="button" data-lado="rg_frente">Frente</button><button type="button" data-lado="rg_verso">Verso</button></div>' : '') + '</div>' +
+        '<button type="button" class="xis" aria-label="Fechar">×</button>' +
         '<div class="ctl"><button type="button" class="fechar">Voltar</button><button type="button" class="disparo" aria-label="Tirar foto"></button><button type="button" class="galeria">Galeria</button></div>';
       document.body.appendChild(c);
       var v = c.querySelector('video'), m = c.querySelector('.moldura');
@@ -833,6 +871,7 @@ body{background:transparent!important}
       posicionar(); window.addEventListener('resize', posicionar);
       function sair(){ window.removeEventListener('resize', posicionar); pararCamera(); c.remove(); }
       c.querySelector('.fechar').onclick = sair;
+      c.querySelector('.xis').onclick = sair;
       c.querySelector('.galeria').onclick = function(){ sair(); $('foto').removeAttribute('capture'); $('foto').click(); };
       c.querySelector('.disparo').onclick = function(){
         if (!v.videoWidth || this.disabled) return;
@@ -1012,12 +1051,13 @@ body{background:transparent!important}
     // achou o documento com certeza: recorta sozinho e já mostra para conferir
     if (!op.manual && det.conf){
       var pronto; try { pronto = endireitar(src, det.q); } catch(e){ pronto = null; }
-      if (pronto){ guardarFoto(d, pronto, { src: src, q: det.q, troca: op.troca }); return Promise.resolve(); }
+      if (pronto) return guardarFoto(d, pronto, { src: src, q: det.q, troca: op.troca, silencioso: op.silencioso });
     }
+    if (op.anexo && !op.manual) return guardarFoto(d, src, { src: src, q: [[0, 0], [W, 0], [W, H], [0, H]], silencioso: op.silencioso });
     var cantos = det.q || [[m, m], [W - m, m], [W - m, H - m], [m, H - m]];
     falar('Ajuste os cantos verdes nas pontas do documento e aperte recortar.');
     var t = document.createElement('div'); t.className = 'rec';
-    t.innerHTML = '<div class="topo">' + esc(d.t) + ' · recortar<small>Arraste os cantos verdes até as pontas do documento</small></div>' +
+    t.innerHTML = '<button type="button" class="xis" aria-label="Fechar">×</button><div class="topo">' + esc(d.t) + ' · recortar<small>Arraste os cantos verdes até as pontas do documento</small></div>' +
       '<div class="area"><canvas></canvas><svg><polygon></polygon><circle r="16"></circle><circle r="16"></circle><circle r="16"></circle><circle r="16"></circle></svg></div>' +
       '<div class="ctl"><button type="button" class="boa">Recortar</button><div class="linha"><button type="button" data-a="inteira">Usar a foto inteira</button><button type="button" data-a="denovo">Tirar de novo</button></div></div>';
     document.body.appendChild(t);
@@ -1056,6 +1096,7 @@ body{background:transparent!important}
       this.disabled = true; this.textContent = 'Recortando…';
       setTimeout(function(){ var r; try { r = endireitar(src, cantos); } catch(e){ r = src; } fim(); guardarFoto(d, r, { src: src, q: cantos.slice(), troca: op.troca }); }, 30);
     };
+    t.querySelector('.xis').onclick = function(){ fim(); telaInicial(); };
     t.querySelector('[data-a="inteira"]').onclick = function(){ fim(); guardarFoto(d, src, { src: src, q: [[0, 0], [W, 0], [W, H], [0, H]], troca: op.troca }); };
     t.querySelector('[data-a="denovo"]').onclick = function(){ fim(); fotografar(d); };
     requestAnimationFrame(desenhar);
@@ -1068,10 +1109,13 @@ body{background:transparent!important}
       if (orig){ r.orig = { src: orig.src, q: orig.q }; r.reto = im; r.semFiltro = !!orig.semFiltro; }   // só na memória: permite "Ajustar recorte"
       if (orig && orig.troca != null && fotos[d.k] && fotos[d.k][orig.troca]) fotos[d.k][orig.troca] = r;
       else fotos[d.k] = d.multi ? (fotos[d.k] || []).concat([r]) : [r];
+      if (orig && orig.silencioso) return;
       telaInicial();
       conferir(d, true);
     }).catch(function(){ alert('Não deu para usar esta foto. Tire de novo.'); });
   }
+  function miniatura(x){ return x.pdf ? '<span class="pdf-mini">PDF</span>' : '<img alt="" src="' + x.url + '">'; }
+  function figuraDe(x, rotulo){ return '<figure>' + (x.pdf ? '<div class="pdf-fig"><b>PDF anexado</b><span>' + esc(x.nome || '') + '</span></div>' : '<img alt="" src="' + x.url + '">') + (rotulo ? '<figcaption>' + rotulo + '</figcaption>' : ''); }
   function rgFotos(){ return (fotos.rg_frente || []).concat(fotos.rg_verso || []); }
   // botão "Ajustar recorte" em cada foto que veio do recorte (abre os cantos para mexer)
   function botoesAjuste(t, itens){
@@ -1092,13 +1136,14 @@ body{background:transparent!important}
     var lados = [['rg_frente', 'Frente'], ['rg_verso', 'Verso']];
     var t = document.createElement('div'); t.className = 'ver';
     var faltaVerso = !fotos.rg_verso, faltaFrente = !fotos.rg_frente;
-    t.innerHTML = '<div class="topo">RG · frente e verso<small>Confira se dá para ler tudo, sem sombra e sem borrão</small></div>' +
-      '<div class="fotos">' + lados.map(function(l){ var x = (fotos[l[0]] || [])[0]; return x ? '<figure><img alt="" src="' + x.url + '"><figcaption>' + l[1] + '</figcaption></figure>' : '<div class="falta-lado">' + l[1] + ' ainda não foi tirada</div>'; }).join('') + '</div>' +
+    t.innerHTML = '<button type="button" class="xis" aria-label="Fechar">×</button><div class="topo">RG · frente e verso<small>Confira se dá para ler tudo, sem sombra e sem borrão</small></div>' +
+      '<div class="fotos">' + lados.map(function(l){ var x = (fotos[l[0]] || [])[0]; return x ? figuraDe(x, l[1]) + '</figure>' : '<div class="falta-lado">' + l[1] + ' ainda não foi tirada</div>'; }).join('') + '</div>' +
       '<div class="ctl"><button type="button" class="boa">' + (faltaFrente ? 'Tirar a frente' : faltaVerso ? 'Ficou boa · tirar o verso' : 'Ficou boa') + '</button>' +
         '<div class="linha"><button type="button" class="denovo" data-l="rg_frente">' + (faltaFrente ? 'Tirar frente' : 'Tirar frente de novo') + '</button><button type="button" class="denovo" data-l="rg_verso">' + (faltaVerso ? 'Tirar verso' : 'Tirar verso de novo') + '</button></div></div>';
     document.body.appendChild(t);
     botoesAjuste(t, lados.filter(function(l){ return fotos[l[0]]; }).map(function(l){ return { doc: DOCS.filter(function(x){ return x.k === l[0]; })[0], foto: fotos[l[0]][0], i: 0 }; }));
     var foto = function(k){ t.remove(); telaInicial(); fotografar(DOCS.filter(function(x){ return x.k === k; })[0]); };
+    t.querySelector('.xis').onclick = function(){ t.remove(); telaInicial(); };
     t.querySelector('.boa').onclick = function(){ if (faltaFrente) return foto('rg_frente'); if (faltaVerso) return foto('rg_verso'); t.remove(); telaInicial(); };
     t.addEventListener('click', function(e){ var b = e.target.closest('[data-l]'); if (b) foto(b.dataset.l); });
   }
@@ -1107,8 +1152,8 @@ body{background:transparent!important}
     var f = fotos[d.k] || []; if (!f.length) return telaInicial();
     if (nova) falar('Confira se dá para ler tudo. Se estiver boa, aperte ficou boa.');
     var t = document.createElement('div'); t.className = 'ver';
-    t.innerHTML = '<div class="topo">' + esc(d.t) + (f.length > 1 ? ' · ' + f.length + ' fotos' : '') + '<small>Confira se dá para ler tudo, sem sombra e sem borrão</small></div>' +
-      '<div class="fotos">' + f.map(function(x, i){ return '<figure><img alt="" src="' + x.url + '">' + (f.length > 1 ? '<figcaption>Folha ' + (i + 1) + '</figcaption>' : '') + (f.length > 1 ? '<button type="button" class="tira" data-i="' + i + '">Apagar</button>' : '') + '</figure>'; }).join('') + '</div>' +
+    t.innerHTML = '<button type="button" class="xis" aria-label="Fechar">×</button><div class="topo">' + esc(d.t) + (f.length > 1 ? ' · ' + f.length + ' fotos' : '') + '<small>Confira se dá para ler tudo, sem sombra e sem borrão</small></div>' +
+      '<div class="fotos">' + f.map(function(x, i){ return figuraDe(x, f.length > 1 ? 'Folha ' + (i + 1) : '') + (f.length > 1 ? '<button type="button" class="tira" data-i="' + i + '">Apagar</button>' : '') + '</figure>'; }).join('') + '</div>' +
       '<div class="ctl"><button type="button" class="boa">Ficou boa</button>' +
         '<div class="linha"><button type="button" class="denovo" data-a="denovo">Tirar de novo</button>' +
         (d.multi ? '<button type="button" class="denovo" data-a="mais">+ Outra folha</button>' : '<button type="button" class="denovo" data-a="apagar">Apagar</button>') + '</div></div>';
@@ -1116,6 +1161,7 @@ body{background:transparent!important}
     botoesAjuste(t, f.map(function(x, i){ return { doc: d, foto: x, i: i }; }));
     var fim = function(){ t.remove(); telaInicial(); };
     t.querySelector('.boa').onclick = fim;
+    t.querySelector('.xis').onclick = fim;
     t.addEventListener('click', function(e){
       var b = e.target.closest('.tira, [data-a]'); if (!b) return;
       if (b.classList.contains('tira')){ f.splice(+b.dataset.i, 1); if (!f.length) delete fotos[d.k]; t.remove(); return f.length ? conferir(d) : telaInicial(); }
@@ -1169,7 +1215,9 @@ body{background:transparent!important}
     var sufixo = comp ? ' - complemento ' + new Date().toLocaleDateString('pt-BR').replace(/\//g, '-') : '';
     var p = Promise.resolve();
     DOCS.forEach(function(d){
-      var f = fotos[d.k]; if (!f) return;
+      var f0 = fotos[d.k]; if (!f0) return;
+      f0.filter(function(x){ return x.pdf; }).forEach(function(x, i){ arquivos.push({ nome: d.arq + sufixo + ' - anexo ' + (i + 1) + '.pdf', mime: 'application/pdf', blob: x.blob }); });
+      var f = f0.filter(function(x){ return !x.pdf; }); if (!f.length) return;
       f.forEach(function(x, i){ arquivos.push({ nome: d.arq + sufixo + (f.length > 1 ? ' ' + (i + 1) : '') + '.jpg', mime: 'image/jpeg', blob: x.blob }); });
       if (d.k !== 'cliente'){
         todas = todas.concat(f);
