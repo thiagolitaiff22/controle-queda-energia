@@ -327,6 +327,13 @@ body{background:linear-gradient(168deg,#0f2348 0%,#08142b 55%,#08142b 100%) fixe
 .ver .ctl .boa,.rec .ctl .boa{background:linear-gradient(135deg,#2563eb,#38bdf8)!important;color:#fff}
 .versao{color:rgba(235,235,245,.45)}
 .abas .bolha[hidden]{display:none}
+.cam .deteccao{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.cam .deteccao polygon{fill:rgba(56,189,248,.14);stroke:#fbbf24;stroke-width:3;stroke-linejoin:round;opacity:0;transition:opacity .2s}
+.cam.achou .deteccao polygon{opacity:1}
+.cam.certo .deteccao polygon{stroke:#4ade80;fill:rgba(74,222,128,.16)}
+.cam .moldura.guia{border-style:dashed;border-color:rgba(255,255,255,.55);box-shadow:none}
+.cam .moldura.guia i{display:none}
+.cam.achou .moldura.guia{opacity:0}
 #barra-envio{position:fixed;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:7;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:16px;background:#1e40af;color:#fff;box-shadow:0 10px 24px rgba(2,8,23,.45)}
 #barra-envio[hidden]{display:none}
 #barra-envio.ok{background:#15803d}
@@ -433,7 +440,7 @@ body{background:transparent!important}
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 15;
+  var APP_VERSAO = 16;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
@@ -447,7 +454,7 @@ body{background:transparent!important}
   ];
   // formato do enquadramento: cartão (RG/CPF, deitado), folha (A4, em pé) ou rosto (oval)
   var MOLDURA = { procuracao: 'folha', rg_frente: 'cartao', rg_verso: 'cartao', luz: 'folha', cpf: 'cartao', arogo: 'cartao', outro: 'folha', cliente: 'livre' };
-  var DICA = { cartao: 'Deite o documento e encaixe nos cantos verdes', folha: 'Encaixe a folha inteira dentro do quadro', livre: 'Rosto do cliente dentro do círculo' };
+  var DICA = { cartao: 'Aponte para o documento: a linha verde se encaixa sozinha', folha: 'Aponte para a folha inteira: a linha verde se encaixa sozinha', livre: 'Rosto do cliente dentro do círculo' };
   var $ = function(id){ return document.getElementById(id); };
   var esc = function(t){ return String(t == null ? '' : t).replace(/[&<>"']/g, function(c){ return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
   var token = (location.hash.match(/t=([A-Za-z0-9_-]+)/) || [])[1] || lsGet('campo_token');
@@ -535,7 +542,7 @@ body{background:transparent!important}
   }
   function tratar(im, escanear){
     var iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height;
-    var max = escanear === 'folha' || escanear === 'original' ? 3000 : escanear ? 2000 : 1400, k = Math.min(1, max / Math.max(iw, ih));
+    var max = escanear === 'folha' || escanear === 'original' ? 2600 : escanear ? 1800 : 1400, k = Math.min(1, max / Math.max(iw, ih));
     var w = Math.round(iw * k), h = Math.round(ih * k);
     var c = document.createElement('canvas'); c.width = w; c.height = h;
     var x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(im, 0, 0, w, h);
@@ -564,7 +571,7 @@ body{background:transparent!important}
       }
       x.putImageData(px, 0, 0);
     }
-    return new Promise(function(ok){ c.toBlob(function(bl){ ok({ blob: bl, w: w, h: h }); }, 'image/jpeg', escanear ? 0.8 : 0.8); });
+    return new Promise(function(ok){ c.toBlob(function(bl){ ok({ blob: bl, w: w, h: h }); }, 'image/jpeg', escanear ? 0.78 : 0.8); });
   }
   function b64(blob){
     return new Promise(function(ok, falha){
@@ -880,7 +887,6 @@ body{background:transparent!important}
     atual = d; falar(d.fala);
     if (d.k === 'cliente') pegarLocal();
     // iPhone (sem foto em resolução cheia pela página): usa a câmera de foto do próprio aparelho; o recorte e o scanner vêm depois
-    if (!window.ImageCapture){ $('foto').setAttribute('capture', 'environment'); $('foto').click(); return; }
     abrirCamera(d).catch(function(){
       // sem acesso à câmera ao vivo: usa a câmera do próprio celular
       $('foto').setAttribute('capture', 'environment'); // sempre a câmera de trás
@@ -896,7 +902,8 @@ body{background:transparent!important}
       fluxo = st;
       var c = document.createElement('div'); c.className = 'cam';
       c.innerHTML = '<video playsinline autoplay muted' + (frente ? ' class="espelho"' : '') + '></video>' +
-        '<div class="moldura' + (tipo === 'livre' ? ' oval' : '') + '"><i></i><i></i><i></i><i></i></div>' +
+        '<div class="moldura' + (tipo === 'livre' ? ' oval' : ' guia') + '"><i></i><i></i><i></i><i></i></div>' +
+        (tipo !== 'livre' ? '<svg class="deteccao"><polygon></polygon></svg>' : '') +
         '<div class="dica">' + esc(d.lado ? 'RG' : d.t + (d.s && d.k !== 'cliente' ? ' · ' + d.s : '')) + '<small>' + DICA[tipo] + '</small>' +
           (d.lado ? '<div class="lados"><button type="button" data-lado="rg_frente">Frente</button><button type="button" data-lado="rg_verso">Verso</button></div>' : '') + '</div>' +
         '<button type="button" class="xis" aria-label="Fechar">×</button>' +
@@ -916,15 +923,43 @@ body{background:transparent!important}
         m.style.width = w + 'px'; m.style.height = h + 'px'; m.style.left = (W - w) / 2 + 'px'; m.style.top = (H - h) / 2 - 10 + 'px';
       }
       posicionar(); window.addEventListener('resize', posicionar);
-      function sair(){ window.removeEventListener('resize', posicionar); pararCamera(); c.remove(); }
+      // detecção ao vivo: procura as bordas do papel no vídeo e desenha a linha verde em cima
+      var ultimoQ = null, quandoQ = 0, suave = null, vivo = tipo !== 'livre', pol = c.querySelector('.deteccao polygon'), peq = document.createElement('canvas');
+      function detectarVivo(){
+        if (!vivo || !c.isConnected) return;
+        var vw = v.videoWidth, vh = v.videoHeight;
+        if (vw){
+          var kk = 480 / Math.max(vw, vh); peq.width = Math.round(vw * kk); peq.height = Math.round(vh * kk);
+          peq.getContext('2d').drawImage(v, 0, 0, peq.width, peq.height);
+          var r = null; try { r = bordasPorLinhas(peq); } catch(e){}
+          var W = c.clientWidth, H = c.clientHeight, k = Math.max(W / vw, H / vh), ox = (vw * k - W) / 2, oy = (vh * k - H) / 2;
+          if (r && r.q){
+            var rel = r.q.map(function(p){ return [p[0] / peq.width, p[1] / peq.height]; });
+            suave = suave ? suave.map(function(p, i){ return [p[0] * 0.45 + rel[i][0] * 0.55, p[1] * 0.45 + rel[i][1] * 0.55]; }) : rel;
+            ultimoQ = suave; quandoQ = Date.now();
+            pol.setAttribute('points', suave.map(function(p){ return (p[0] * vw * k - ox) + ',' + (p[1] * vh * k - oy); }).join(' '));
+            c.classList.add('achou'); c.classList.toggle('certo', !!r.conf);
+          } else if (Date.now() - quandoQ > 900){ c.classList.remove('achou', 'certo'); suave = null; }
+        }
+        setTimeout(detectarVivo, 250);
+      }
+      v.addEventListener('playing', detectarVivo, { once: true });
+      function sair(){ vivo = false; window.removeEventListener('resize', posicionar); pararCamera(); c.remove(); }
       c.querySelector('.fechar').onclick = sair;
       c.querySelector('.xis').onclick = sair;
       c.querySelector('.galeria').onclick = function(){ sair(); $('foto').removeAttribute('capture'); $('foto').click(); };
       c.querySelector('.disparo').onclick = function(){
         if (!v.videoWidth || this.disabled) return;
         this.disabled = true; this.style.opacity = '.5';
-        // recorta da imagem da câmera só a área da moldura (com uma pequena folga)
         var W = c.clientWidth, H = c.clientHeight, vw = v.videoWidth, vh = v.videoHeight;
+        if (tipo !== 'livre'){
+          // documento: foto inteira (resolução cheia quando o celular deixa) e as bordas que a linha verde mostrava
+          var cheio = document.createElement('canvas'); cheio.width = vw; cheio.height = vh; cheio.getContext('2d').drawImage(v, 0, 0, vw, vh);
+          var bordas = ultimoQ && Date.now() - quandoQ < 1500 ? ultimoQ.map(function(p){ return p.slice(); }) : null;
+          vivo = false;
+          return fotoCheia(fluxo, vw, vh, [0, 0, vw, vh]).then(function(full){ sair(); usarFoto(d, full || cheio, { cantosRel: bordas }); });
+        }
+        // foto do cliente: recorta a área da tela
         var k = Math.max(W / vw, H / vh), ox = (vw * k - W) / 2, oy = (vh * k - H) / 2;
         var r = tipo === 'livre' ? c.getBoundingClientRect() : m.getBoundingClientRect(), fol = tipo === 'livre' ? 0 : 0.12;
         var x = r.left - r.width * fol, y = r.top - r.height * fol, w = r.width * (1 + 2 * fol), h = r.height * (1 + 2 * fol);
@@ -957,7 +992,7 @@ body{background:transparent!important}
   }
   // guarda a foto tratada e abre para conferir
   // documento: abre o recorte; foto do cliente vai direto
-  function usarFoto(d, im){ return d.k === 'cliente' ? guardarFoto(d, im) : recortar(d, im); }
+  function usarFoto(d, im, op){ return d.k === 'cliente' ? guardarFoto(d, im) : recortar(d, im, op); }
 
   /* ---------- recorte estilo scanner ---------- */
   // acha o papel na foto: a maior região clara que não é o fundo inteiro; devolve os 4 cantos (ou null)
@@ -1095,6 +1130,7 @@ body{background:transparent!important}
     src.getContext('2d').drawImage(im, 0, 0, src.width, src.height);
     var W = src.width, H = src.height, m = Math.min(W, H) * 0.06;
     var det = op.cantos ? { q: op.cantos, conf: false } : detectar(src);
+    if (op.cantosRel && !op.cantos && !det.conf) det = { q: op.cantosRel.map(function(p){ return [p[0] * W, p[1] * H]; }), conf: true };
     // achou o documento com certeza: recorta sozinho e já mostra para conferir
     // nunca abre a tela de cantos sozinho: recorta pelo que achou (ou usa a foto inteira) e mostra para conferir;
     // mexer nos cantos só pelo botão "Ajustar recorte"
@@ -1350,15 +1386,20 @@ body{background:transparent!important}
       barraEnvio({ nome: envio.cliente, pct: pct, passo: passo });
     };
     barra(0, 'começando');
-    var p = Promise.resolve();
-    envio.arquivos.forEach(function(a, i){
-      if (a.ok) return;
-      p = p.then(function(){ barra(0, 'arquivo ' + (i + 1) + ' de ' + nArq); return b64(deBytes(a, a.mime)); })
-           .then(function(dados){ return postComAndamento({ acao: 'arquivo', token: envio.token, envio: envio.id, completar: envio.completar || '', cliente: envio.cliente || '', nome: a.nome, mime: a.mime, b64: dados }, function(f){ barra(pesos[i] * f, 'arquivo ' + (i + 1) + ' de ' + nArq); }); })
-           .then(function(){ a.ok = true; feitos++; pronto += pesos[i]; barra(0, 'arquivo ' + (i + 1) + ' de ' + nArq + ' ✓'); return filaPor(envio); });
-    });
+    // dois arquivos sobem ao mesmo tempo
+    var pend = [], parciais = {}, nOk = envio.arquivos.filter(function(a){ return a.ok; }).length;
+    envio.arquivos.forEach(function(a, i){ if (!a.ok) pend.push(i); });
+    var mostra = function(){ var soma = 0; Object.keys(parciais).forEach(function(k){ soma += parciais[k]; }); barra(soma, nOk + ' de ' + nArq + ' arquivos'); };
+    var um = function(i){
+      var a = envio.arquivos[i];
+      return b64(deBytes(a, a.mime))
+        .then(function(dados){ return postComAndamento({ acao: 'arquivo', token: envio.token, envio: envio.id, completar: envio.completar || '', cliente: envio.cliente || '', nome: a.nome, mime: a.mime, b64: dados }, function(f){ parciais[i] = pesos[i] * f; mostra(); }); })
+        .then(function(){ a.ok = true; feitos++; nOk++; delete parciais[i]; pronto += pesos[i]; mostra(); return filaPor(envio); });
+    };
+    var trabalhador = function(){ var i = pend.shift(); return i == null ? Promise.resolve() : um(i).then(trabalhador); };
+    var p = Promise.all([trabalhador(), trabalhador()]);
     return p.then(function(){
-        barraEnvio({ nome: envio.cliente, pct: 0.99, passo: 'lendo os documentos (IA)' });
+        barraEnvio({ nome: envio.cliente, pct: 0.99, passo: 'registrando no sistema' });
         if (envio.completar) return post({ acao: 'completar', token: envio.token, envio: envio.id, completar: envio.completar, docs: envio.docs });
         return post({ acao: 'fechar', token: envio.token, envio: envio.id, cliente: envio.cliente || '', contato: envio.contato, local: envio.local, docs: envio.docs, faltam: envio.faltam }); })
       .then(function(d){

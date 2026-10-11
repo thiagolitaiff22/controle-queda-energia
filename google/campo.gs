@@ -50,7 +50,8 @@ function chaveClaude(){
 
 function doPost(e){
   try {
-    gatilho();
+    // conferir os agendamentos é lento: no máximo uma vez por hora (o envio de cada arquivo fica rápido)
+    var cg = CacheService.getScriptCache(); if (!cg.get('gatilho_ok')){ gatilho(); cg.put('gatilho_ok', '1', 3600); }
     var p = JSON.parse(e.postData.contents);
     if (p.acao === 'pasta') return saida(pastaDoCadastro(p));
     if (p.acao === 'lerPasta') return saida(lerPastaDoCadastro(p));
@@ -121,9 +122,8 @@ function subpasta(pasta, nome){ var it = pasta.getFoldersByName(nome); return it
 function fechar(p, quem){
   var digitado = nomeDigitado(p);
   var pasta = pastaDoEnvio(p.envio, quem, digitado);
+  // o envio só registra o cliente (rápido); a IA lê os documentos depois, na leitura automática (a cada 10 minutos)
   var dados = { nome: '', cpf: '', rg: '', nascimento: '', endereco: '' }, nota = [];
-  try { var arqs = arquivosDaPasta(pasta).filter(function(a){ return !/^Foto do cliente/i.test(a.getName()); }); dados = arqs.length ? (lerArquivos(arqs) || dados) : (lerDocumentos(pasta) || dados); }
-  catch (err){ nota.push('A leitura automática falhou (' + String(err.message || err).slice(0, 160) + '). Preencha pelos documentos da pasta.'); }
   if (dados.cpf && !cpfValido(dados.cpf)){ nota.push('CPF lido (' + dados.cpf + ') não confere: verifique no documento.'); }
   if (dados.observacao) nota.push(dados.observacao);
   if (p.local && p.local.lat) nota.push('Localização da casa: https://maps.google.com/?q=' + p.local.lat + ',' + p.local.lng);
@@ -141,7 +141,6 @@ function fechar(p, quem){
       contato: p.contato || '', pastaUrl: pasta.getUrl(), pastaId: pasta.getId(), docs: p.docs || [], faltam: p.faltam || [], local: p.local || null, leitura: nota.join('\n') }
   });
   PropertiesService.getScriptProperties().deleteProperty('pasta_' + p.envio);
-  PropertiesService.getScriptProperties().setProperty('lido_' + pasta.getId(), String(Date.now())); // já lida agora: a leitura automática não repete
   return { ok: true, id: id, nome: dados.nome || '' };
 }
 
@@ -192,16 +191,14 @@ function cpfValido(c){
 /* de hora em hora: pastas de PENDENTES cujo cliente já foi protocolado vão para PROTOCOLADOS */
 function gatilho(){
   var props = PropertiesService.getScriptProperties();
-  // leitura dos documentos das pastas novas a cada 10 minutos
-  if (!ScriptApp.getProjectTriggers().some(function(t){ return t.getHandlerFunction() === 'lerPendentes'; }))
-    ScriptApp.newTrigger('lerPendentes').timeBased().everyMinutes(10).create();
+  // a IA só lê quando o escritório clica em "Ler documentos da pasta" no BI: desliga a leitura automática antiga
+  ScriptApp.getProjectTriggers().forEach(function(t){ if (t.getHandlerFunction() === 'lerPendentes') ScriptApp.deleteTrigger(t); });
   if (props.getProperty('gatilho_ok')) return;
   if (!ScriptApp.getProjectTriggers().some(function(t){ return t.getHandlerFunction() === 'moverProtocolados'; }))
     ScriptApp.newTrigger('moverProtocolados').timeBased().everyHours(1).create();
   props.setProperty('gatilho_ok', '1');
 }
 function moverProtocolados(){
-  try { lerPendentes(); } catch (x){ console.log('leitura automática: ' + x); }
   var raiz = DriveApp.getFolderById(PASTA_CLIENTES);
   var destino = { pendente: subpasta(raiz, PENDENTES), protocolado: subpasta(raiz, PROTOCOLADOS), arquivado: subpasta(raiz, ARQUIVADOS) };
   var porId = {}, onde = {};

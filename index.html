@@ -3753,7 +3753,7 @@ section.vw-dash{gap:10px!important}
     var box = $('f-pasta');
     if (r && r.pastaUrl){ box.innerHTML = '<div class="pasta-acoes"><a class="folder" href="' + esc(r.pastaUrl) + '" target="_blank" rel="noopener"><svg class="i"><use href="#i-folder"/></svg>Abrir pasta no Drive</a>' +
       (r.pastaId ? '<button type="button" class="btn" id="f-pasta-ler" title="A IA lê RG, CPF, conta de luz e procuração que estiverem na pasta e preenche os campos vazios">Ler documentos da pasta</button>' : '') + '</div>' +
-      '<span class="small" id="f-pasta-msg">Jogue na pasta as fotos ou PDFs do RG, CPF, conta de luz e procuração. A IA lê sozinha de hora em hora, ou na hora pelo botão.</span>'; return; }
+      '<span class="small" id="f-pasta-msg">Jogue na pasta as fotos ou PDFs do RG, CPF, conta de luz e procuração e clique em Ler documentos da pasta para a IA preencher os campos (ou preencha à mão).</span>'; return; }
     var colar = '<details class="pasta-colar"><summary>Já tem pasta antiga? Colar o link</summary><input id="f-pasta-url" type="url" placeholder="Cole aqui o link da pasta no Google Drive" style="width:100%"></details>';
     if (!r){ box.innerHTML = '<div class="pasta-auto"><svg class="i"><use href="#i-folder"/></svg><span>A pasta é criada sozinha no Drive ao salvar, em <b>CLIENTES › PENDENTES DE PROTOCOLO</b>.</span></div>' + colar; return; }
     box.innerHTML = '<button type="button" class="btn" id="f-pasta-criar"><svg class="i"><use href="#i-folder"/></svg>Criar pasta no Drive</button>' + colar;
