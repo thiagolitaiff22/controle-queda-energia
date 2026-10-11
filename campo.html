@@ -433,7 +433,7 @@ body{background:transparent!important}
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 14;
+  var APP_VERSAO = 15;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
@@ -1310,16 +1310,17 @@ body{background:transparent!important}
       .then(function(d){ if (tempo) clearTimeout(tempo); if (!d.ok) throw new Error(d.erro || 'falhou'); return d; },
             function(e){ if (tempo) clearTimeout(tempo); throw new Error(e && e.name === 'AbortError' ? 'o envio demorou demais (internet fraca)' : e && /Failed to fetch|Load failed|NetworkError|network/i.test(e.message) ? 'sem conexão com o servidor' : (e && e.message) || 'falhou'); });
   }
+  // envio simples (fetch, sem 'consulta prévia', que o Google recusa); o andamento é estimado pela velocidade medida
+  var velocidade = 120000;   // bytes por segundo (começa conservador e aprende com cada arquivo enviado)
   function postComAndamento(corpo, andamento){
-    return new Promise(function(ok, falha){
-      var x = new XMLHttpRequest(), txt = JSON.stringify(corpo);
-      x.open('POST', quem.envioUrl); x.setRequestHeader('Content-Type', 'text/plain;charset=utf-8'); x.timeout = 300000;
-      if (x.upload) x.upload.onprogress = function(e){ if (e.lengthComputable && andamento) andamento(e.loaded / e.total); };
-      x.onload = function(){ var d = null; try { d = JSON.parse(x.responseText); } catch(er){} if (!d) return falha(new Error('o servidor respondeu com erro (' + x.status + ')')); if (!d.ok) return falha(new Error(d.erro || 'falhou')); ok(d); };
-      x.onerror = function(){ falha(new Error('sem conexão com o servidor')); };
-      x.ontimeout = function(){ falha(new Error('o envio demorou demais (internet fraca)')); };
-      x.send(txt);
-    });
+    var txt = JSON.stringify(corpo), tam = txt.length, ini = Date.now();
+    var timer = setInterval(function(){ if (andamento) andamento(Math.min(0.92, (Date.now() - ini) / 1000 * velocidade / tam)); }, 400);
+    return post(corpo).then(function(d){
+      clearInterval(timer);
+      var seg = Math.max(0.3, (Date.now() - ini) / 1000); velocidade = Math.max(20000, Math.round(velocidade * 0.4 + tam / seg * 0.6));
+      if (andamento) andamento(1);
+      return d;
+    }, function(e){ clearInterval(timer); throw e; });
   }
   /* barra de envio, fixa acima das abas */
   function barraEnvio(o){
