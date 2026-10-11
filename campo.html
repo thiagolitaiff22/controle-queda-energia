@@ -94,6 +94,20 @@ input[type=file]{display:none}
 .ver .ctl .boa{background:var(--ok);color:#fff}
 .ver .ctl .denovo{background:rgba(255,255,255,.15);color:#fff}
 .ver .ctl .linha{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+/* recorte do documento */
+.rec{position:fixed;inset:0;background:#000;z-index:22;display:flex;flex-direction:column;touch-action:none}
+.rec .topo{color:#fff;padding:calc(12px + env(safe-area-inset-top)) 16px 6px;font-weight:700;font-size:17px;text-align:center}
+.rec .topo small{display:block;font-weight:500;opacity:.8;font-size:14px}
+.rec .area{flex:1;position:relative;margin:8px 14px}
+.rec canvas{position:absolute}
+.rec svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.rec polygon{fill:rgba(74,222,128,.18);stroke:#4ade80;stroke-width:3}
+.rec circle{fill:rgba(74,222,128,.35);stroke:#fff;stroke-width:3}
+.rec .ctl{display:grid;gap:8px;padding:10px 16px calc(14px + env(safe-area-inset-bottom))}
+.rec .ctl button{height:56px;border:0;border-radius:14px;font:inherit;font-size:18px;font-weight:800}
+.rec .ctl .boa{background:var(--ok);color:#fff}
+.rec .ctl .linha{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.rec .ctl .linha button{background:rgba(255,255,255,.15);color:#fff;font-size:16px}
 </style>
 </head>
 <body>
@@ -300,7 +314,7 @@ input[type=file]{display:none}
         // recorta da imagem da câmera só a área da moldura (com uma pequena folga)
         var W = c.clientWidth, H = c.clientHeight, vw = v.videoWidth, vh = v.videoHeight;
         var k = Math.max(W / vw, H / vh), ox = (vw * k - W) / 2, oy = (vh * k - H) / 2;
-        var r = m.getBoundingClientRect(), fol = tipo === 'rosto' ? 0.25 : 0.06;
+        var r = m.getBoundingClientRect(), fol = tipo === 'rosto' ? 0.25 : 0.12;
         var x = r.left - r.width * fol, y = r.top - r.height * fol, w = r.width * (1 + 2 * fol), h = r.height * (1 + 2 * fol);
         var sx = Math.max(0, (x + ox) / k), sy = Math.max(0, (y + oy) / k), sw = Math.min(vw - sx, w / k), sh = Math.min(vh - sy, h / k);
         if (frente) sx = Math.max(0, vw - sx - sw);
@@ -315,7 +329,122 @@ input[type=file]{display:none}
     });
   }
   // guarda a foto tratada e abre para conferir
-  function usarFoto(d, im){
+  // documento: abre o recorte; foto do cliente vai direto
+  function usarFoto(d, im){ return d.k === 'cliente' ? guardarFoto(d, im) : recortar(d, im); }
+
+  /* ---------- recorte estilo scanner ---------- */
+  // acha o papel na foto: a maior região clara que não é o fundo inteiro; devolve os 4 cantos (ou null)
+  function acharBordas(c){
+    var S = 240, k = S / Math.max(c.width, c.height), w = Math.max(8, Math.round(c.width * k)), h = Math.max(8, Math.round(c.height * k));
+    var t = document.createElement('canvas'); t.width = w; t.height = h;
+    var x = t.getContext('2d'); x.drawImage(c, 0, 0, w, h);
+    var px = x.getImageData(0, 0, w, h).data, g = new Uint8Array(w * h), hist = new Array(256).fill(0);
+    for (var i = 0; i < w * h; i++){ var v = (px[i * 4] * 0.3 + px[i * 4 + 1] * 0.59 + px[i * 4 + 2] * 0.11) | 0; g[i] = v; hist[v]++; }
+    // limiar de Otsu
+    var tot = w * h, soma = 0, sB = 0, wB = 0, melhor = 0, lim = 128;
+    for (i = 0; i < 256; i++) soma += i * hist[i];
+    for (i = 0; i < 256; i++){ wB += hist[i]; if (!wB) continue; var wF = tot - wB; if (!wF) break; sB += i * hist[i];
+      var mB = sB / wB, mF = (soma - sB) / wF, entre = wB * wF * (mB - mF) * (mB - mF); if (entre > melhor){ melhor = entre; lim = i; } }
+    var rot = new Int32Array(w * h), pilha = new Int32Array(w * h), achado = null, maior = 0;
+    for (var p0 = 0; p0 < w * h; p0++){
+      if (rot[p0] || g[p0] <= lim) continue;
+      var n = 0, topo = 0, bordas = 0, a = { tl: [0, 0, 1e9], tr: [0, 0, -1e9], bl: [0, 0, 1e9], br: [0, 0, -1e9] };
+      pilha[topo++] = p0; rot[p0] = 1;
+      while (topo){
+        var p = pilha[--topo], px0 = p % w, py0 = (p / w) | 0; n++;
+        if (px0 === 0) bordas |= 1; if (px0 === w - 1) bordas |= 2; if (py0 === 0) bordas |= 4; if (py0 === h - 1) bordas |= 8;
+        var sm = px0 + py0, df = px0 - py0;
+        if (sm < a.tl[2]) a.tl = [px0, py0, sm]; if (sm > a.br[2]) a.br = [px0, py0, sm];
+        if (df > a.tr[2]) a.tr = [px0, py0, df]; if (df < a.bl[2]) a.bl = [px0, py0, df];
+        var viz = [px0 > 0 ? p - 1 : -1, px0 < w - 1 ? p + 1 : -1, py0 > 0 ? p - w : -1, py0 < h - 1 ? p + w : -1];
+        for (var j = 0; j < 4; j++){ var q = viz[j]; if (q >= 0 && !rot[q] && g[q] > lim){ rot[q] = 1; pilha[topo++] = q; } }
+      }
+      if (bordas === 15) continue;                 // encosta nos 4 lados: é o fundo, não o papel
+      if (n > maior){ maior = n; achado = a; }
+    }
+    if (!achado || maior < w * h * 0.12) return null;
+    var e = 1 / k;
+    return [achado.tl, achado.tr, achado.br, achado.bl].map(function(c2){ return [c2[0] * e, c2[1] * e]; });
+  }
+  // endireita o quadrilátero (cantos tl, tr, br, bl) num retângulo
+  function endireitar(src, q){
+    var dist = function(a, b){ return Math.hypot(a[0] - b[0], a[1] - b[1]); };
+    var W = Math.max(dist(q[0], q[1]), dist(q[3], q[2])), H = Math.max(dist(q[0], q[3]), dist(q[1], q[2]));
+    var k = Math.min(1, 1800 / Math.max(W, H)); W = Math.max(20, Math.round(W * k)); H = Math.max(20, Math.round(H * k));
+    var x0 = q[0][0], y0 = q[0][1], x1 = q[1][0], y1 = q[1][1], x2 = q[2][0], y2 = q[2][1], x3 = q[3][0], y3 = q[3][1];
+    var dx1 = x1 - x2, dx2 = x3 - x2, dx3 = x0 - x1 + x2 - x3, dy1 = y1 - y2, dy2 = y3 - y2, dy3 = y0 - y1 + y2 - y3;
+    var den = dx1 * dy2 - dx2 * dy1 || 1e-9, G = (dx3 * dy2 - dx2 * dy3) / den, Hh = (dx1 * dy3 - dx3 * dy1) / den;
+    var A = x1 - x0 + G * x1, B = x3 - x0 + Hh * x3, C = x0, Dd = y1 - y0 + G * y1, E = y3 - y0 + Hh * y3, F = y0;
+    var sw = src.width, sh = src.height, sd = src.getContext('2d').getImageData(0, 0, sw, sh).data;
+    var out = document.createElement('canvas'); out.width = W; out.height = H;
+    var ox = out.getContext('2d'), od = ox.createImageData(W, H), o = od.data;
+    for (var v = 0; v < H; v++){
+      var vv = (v + 0.5) / H;
+      for (var u = 0; u < W; u++){
+        var uu = (u + 0.5) / W, z = G * uu + Hh * vv + 1, sx = (A * uu + B * vv + C) / z - 0.5, sy = (Dd * uu + E * vv + F) / z - 0.5;
+        if (sx < 0) sx = 0; if (sy < 0) sy = 0; if (sx > sw - 1.001) sx = sw - 1.001; if (sy > sh - 1.001) sy = sh - 1.001;
+        var ix = sx | 0, iy = sy | 0, fx = sx - ix, fy = sy - iy, i00 = (iy * sw + ix) * 4, i10 = i00 + 4, i01 = i00 + sw * 4, i11 = i01 + 4, oi = (v * W + u) * 4;
+        for (var c = 0; c < 3; c++) o[oi + c] = (sd[i00 + c] * (1 - fx) + sd[i10 + c] * fx) * (1 - fy) + (sd[i01 + c] * (1 - fx) + sd[i11 + c] * fx) * fy;
+        o[oi + 3] = 255;
+      }
+    }
+    ox.putImageData(od, 0, 0);
+    return out;
+  }
+  function recortar(d, im){
+    // trabalha numa cópia de até 2400 px (rápido no celular e com boa leitura)
+    var iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height, k = Math.min(1, 2400 / Math.max(iw, ih));
+    var src = document.createElement('canvas'); src.width = Math.round(iw * k); src.height = Math.round(ih * k);
+    src.getContext('2d').drawImage(im, 0, 0, src.width, src.height);
+    var W = src.width, H = src.height, m = Math.min(W, H) * 0.06;
+    var cantos = acharBordas(src) || [[m, m], [W - m, m], [W - m, H - m], [m, H - m]];
+    falar('Ajuste os cantos verdes nas pontas do documento e aperte recortar.');
+    var t = document.createElement('div'); t.className = 'rec';
+    t.innerHTML = '<div class="topo">' + esc(d.t) + ' · recortar<small>Arraste os cantos verdes até as pontas do documento</small></div>' +
+      '<div class="area"><canvas></canvas><svg><polygon></polygon><circle r="16"></circle><circle r="16"></circle><circle r="16"></circle><circle r="16"></circle></svg></div>' +
+      '<div class="ctl"><button type="button" class="boa">Recortar</button><div class="linha"><button type="button" data-a="inteira">Usar a foto inteira</button><button type="button" data-a="denovo">Tirar de novo</button></div></div>';
+    document.body.appendChild(t);
+    var area = t.querySelector('.area'), cv = t.querySelector('canvas'), svg = t.querySelector('svg'), pol = t.querySelector('polygon'), bol = t.querySelectorAll('circle');
+    var esc2 = 1, offX = 0, offY = 0;
+    function desenhar(){
+      var aw = area.clientWidth, ah = area.clientHeight; esc2 = Math.min(aw / W, ah / H);
+      var dw = W * esc2, dh = H * esc2; offX = (aw - dw) / 2; offY = (ah - dh) / 2;
+      cv.width = Math.round(dw); cv.height = Math.round(dh); cv.style.left = offX + 'px'; cv.style.top = offY + 'px'; cv.style.width = dw + 'px'; cv.style.height = dh + 'px';
+      cv.getContext('2d').drawImage(src, 0, 0, cv.width, cv.height);
+      marcar();
+    }
+    function marcar(){
+      var pts = cantos.map(function(c){ return [offX + c[0] * esc2, offY + c[1] * esc2]; });
+      pol.setAttribute('points', pts.map(function(p){ return p.join(','); }).join(' '));
+      pts.forEach(function(p, i){ bol[i].setAttribute('cx', p[0]); bol[i].setAttribute('cy', p[1]); });
+    }
+    var arrasta = -1;
+    svg.addEventListener('pointerdown', function(e){
+      var r = area.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top, perto = 1e9;
+      cantos.forEach(function(c, i){ var dd = Math.hypot(offX + c[0] * esc2 - x, offY + c[1] * esc2 - y); if (dd < perto){ perto = dd; arrasta = i; } });
+      if (perto > 70){ arrasta = -1; return; }
+      svg.setPointerCapture(e.pointerId); e.preventDefault();
+    });
+    svg.addEventListener('pointermove', function(e){
+      if (arrasta < 0) return;
+      var r = area.getBoundingClientRect();
+      cantos[arrasta] = [Math.max(0, Math.min(W, (e.clientX - r.left - offX) / esc2)), Math.max(0, Math.min(H, (e.clientY - r.top - offY) / esc2))];
+      marcar();
+    });
+    var solta = function(){ arrasta = -1; };
+    svg.addEventListener('pointerup', solta); svg.addEventListener('pointercancel', solta);
+    window.addEventListener('resize', desenhar);
+    var fim = function(){ window.removeEventListener('resize', desenhar); t.remove(); };
+    t.querySelector('.boa').onclick = function(){
+      this.disabled = true; this.textContent = 'Recortando…';
+      setTimeout(function(){ var r; try { r = endireitar(src, cantos); } catch(e){ r = src; } fim(); guardarFoto(d, r); }, 30);
+    };
+    t.querySelector('[data-a="inteira"]').onclick = function(){ fim(); guardarFoto(d, src); };
+    t.querySelector('[data-a="denovo"]').onclick = function(){ fim(); fotografar(d); };
+    requestAnimationFrame(desenhar);
+    return Promise.resolve();
+  }
+  function guardarFoto(d, im){
     return tratar(im, d.k !== 'cliente').then(function(r){
       r.url = URL.createObjectURL(r.blob);
       fotos[d.k] = d.multi ? (fotos[d.k] || []).concat([r]) : [r];
