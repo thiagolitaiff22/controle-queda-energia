@@ -440,7 +440,7 @@ body{background:transparent!important}
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 16;
+  var APP_VERSAO = 17;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
@@ -1366,10 +1366,19 @@ body{background:transparent!important}
     if (!o){ b.hidden = true; return; }
     b.hidden = false; b.className = o.erro ? 'erro' : o.ok ? 'ok' : '';
     b.innerHTML = o.erro ? '<div class="be-l"><b>Não enviou: ' + esc(o.nome || '') + '</b><span>' + esc(o.erro) + ' · tenta de novo sozinho</span></div><button type="button" id="be-tenta">Tentar de novo</button>'
-      : o.ok ? '<div class="be-l"><b>Enviado ✓ ' + esc(o.nome || '') + '</b><span>Já está no sistema do escritório</span></div>'
+      : o.ok ? '<div class="be-l"><b>No sistema ✓ ' + esc(o.nome || '') + '</b><span>Conferido: já está no sistema do escritório</span></div>'
       : '<div class="be-l"><b>Enviando ' + esc(o.nome || '') + '…</b><span>' + esc(o.passo || '') + ' · ' + Math.round((o.pct || 0) * 100) + '%</span><i><em style="width:' + Math.round((o.pct || 0) * 100) + '%"></em></i></div>';
     if ($('be-tenta')) $('be-tenta').onclick = function(){ barraEnvio({ nome: o.nome, pct: 0, passo: 'tentando de novo' }); proximo(true); };
     if (o.ok) barraEnvio.t = setTimeout(function(){ b.hidden = true; }, 5000);
+  }
+  function noSistema(idCliente){
+    return fetch(CFG.url + '/rest/v1/rpc/campo_painel', { method: 'POST', headers: { apikey: CFG.key, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_token: token }) })
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if (!d || !d.clientes) throw new Error('não deu para conferir no sistema');
+        painel = d; lsSet('campo_painel', JSON.stringify(d));
+        return d.clientes.some(function(c){ return c.id === idCliente; });
+      }, function(){ throw new Error('não deu para conferir no sistema'); });
   }
   function mandar(envio){
     if (enviando || !quem || !quem.envioUrl) return Promise.resolve();
@@ -1403,9 +1412,15 @@ body{background:transparent!important}
         if (envio.completar) return post({ acao: 'completar', token: envio.token, envio: envio.id, completar: envio.completar, docs: envio.docs });
         return post({ acao: 'fechar', token: envio.token, envio: envio.id, cliente: envio.cliente || '', contato: envio.contato, local: envio.local, docs: envio.docs, faltam: envio.faltam }); })
       .then(function(d){
-        return filaTira(envio.id).then(function(){ return histMuda(envio.id, { enviado: new Date().toISOString() }); }).then(function(){
+        // só tira da fila depois de ver o cliente no sistema
+        if (envio.completar) return d;
+        barraEnvio({ nome: envio.cliente, pct: 0.99, passo: 'conferindo no sistema' });
+        return noSistema('campo-' + envio.id).then(function(ok){ if (!ok) throw new Error('o sistema não confirmou o cadastro'); return d; });
+      })
+      .then(function(d){
+        return filaTira(envio.id).then(function(){ return histMuda(envio.id, { enviado: new Date().toISOString(), confirmado: true, erro: null }); }).then(function(){
           enviando = false; mostrarFila(); sincronia(); carregarPainel();
-          barraEnvio({ ok: true, nome: envio.cliente });
+          barraEnvio({ ok: true, nome: envio.cliente, passo: 'no sistema' });
           return proximo();
         });
       })
@@ -1448,10 +1463,25 @@ body{background:transparent!important}
       var pend = h.filter(function(x){ return !x.enviado; }).length, hoje = new Date().toDateString();
       var dt = function(t){ var d = new Date(t); return d.toDateString() === hoje ? 'hoje ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }); };
       $('fila').innerHTML = h.length ? '<div class="sec">Cadastros neste celular · ' + h.length + (pend ? ' · ' + pend + ' na fila' : '') + '</div><div class="lista">' + h.slice(0, 100).map(function(x){
-        var e = naFila[x.id], st = x.enviado ? ['ok', 'Enviado'] : e && e.erro ? ['red', 'Não enviou: ' + e.erro] : e ? ['warn', 'Na fila para enviar'] : ['ok', 'Enviado'];
-        return '<div data-envio="' + esc(x.id) + '"' + (e ? ' data-pend="' + esc(x.id) + '"' : '') + '><i class="' + st[0] + '"></i><span style="min-width:0"><b style="display:block;font-weight:600;overflow-wrap:anywhere">' + esc(x.cliente || 'Sem nome') + '</b><span style="font-size:13px;color:var(--ink2)">' + dt(x.criado) + '</span></span><small>' + st[1] + '</small></div>';
+        var e = naFila[x.id], comp = / · documentos$/.test(x.cliente || ''), lista = painel && painel.clientes;
+        var noSis = lista && lista.some(function(c){ return c.id === 'campo-' + x.id; });
+        var st = e ? (e.erro ? ['red', 'Não enviou: ' + e.erro] : ['warn', 'Na fila para enviar'])
+          : comp ? ['ok', x.enviado ? 'Enviado' : 'Não confirmado']
+          : noSis ? ['ok', 'No sistema ✓']
+          : lista ? ['red', 'Não chegou ao sistema'] : ['warn', 'Conferindo…'];
+        var perdido = !e && !comp && lista && !noSis;
+        return '<div data-envio="' + esc(x.id) + '"' + (e ? ' data-pend="' + esc(x.id) + '"' : '') + (perdido ? ' data-perdido="' + esc(x.id) + '"' : '') + '><i class="' + st[0] + '"></i><span style="min-width:0"><b style="display:block;font-weight:600;overflow-wrap:anywhere">' + esc(x.cliente || 'Sem nome') + '</b><span style="font-size:13px;color:var(--ink2)">' + dt(x.criado) + '</span></span><small>' + st[1] + '</small></div>';
       }).join('') + '</div>' + (pend ? '<div class="barra" style="position:static;padding:10px 0 0;background:none"><button class="enviar" id="reenviar" style="background:var(--warn);height:52px;font-size:17px">Enviar agora</button></div>' : '') : '';
       if ($('fila')) $('fila').onclick = function(ev){
+        var pr = ev.target.closest('[data-perdido]');
+        if (pr){
+          var hx = h.filter(function(x){ return x.id === pr.dataset.perdido; })[0] || {};
+          var t2 = tela('<b>' + esc(hx.cliente || 'Cadastro') + '</b><p>Este cadastro não está no sistema do escritório e as fotos dele não estão mais neste celular. Faça o cadastro de novo.</p>' +
+            '<button id="t-apaga2">Apagar da lista</button><button class="sec2" id="t-fecha2">Fechar</button>');
+          t2.querySelector('#t-fecha2').onclick = function(){ t2.remove(); };
+          t2.querySelector('#t-apaga2').onclick = function(){ t2.remove(); hist('readwrite', function(st2){ st2.delete(hx.id); }).then(mostrarFila, mostrarFila); };
+          return;
+        }
         var row = ev.target.closest('[data-pend]'); if (!row) return;
         var e2 = naFila[row.dataset.pend]; if (!e2) return;
         var t = tela('<b>' + esc(e2.cliente || 'Cadastro') + '</b><p>' + (e2.erro ? 'Último erro: ' + esc(e2.erro) + '.' : 'Esperando para enviar.') + '</p>' +
