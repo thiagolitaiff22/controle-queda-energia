@@ -340,65 +340,92 @@ function completar(p, quem){
 
 /* ---------- organização das pastas que vieram do celular (cadastros antigos) ----------
  * Junta RG, CPF e talão de luz em DOCUMENTOS PESSOAIS.pdf; renomeia PROCURAÇÃO.pdf e FOTO DO CLIENTE.jpg;
- * os arquivos juntados vão para a lixeira do Drive (dá para recuperar). Rodar pelo editor: organizarExistentes */
-function carregarPdfLib_(){
-  if (typeof PDFLib !== 'undefined') return PDFLib;
-  globalThis.setTimeout = globalThis.setTimeout || function(f){ f(); return 0; };
-  eval(UrlFetchApp.fetch('https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js').getContentText());
-  return globalThis.PDFLib;
-}
-async function juntarPdfs_(arquivos, nome, pasta){
-  var L = carregarPdfLib_(), saida = await L.PDFDocument.create();
-  for (var i = 0; i < arquivos.length; i++){
-    var a = arquivos[i], bytes = a.getBlob().getBytes();
-    if (a.getMimeType() === 'application/pdf'){
-      var doc = await L.PDFDocument.load(new Uint8Array(bytes));
-      var pags = await saida.copyPages(doc, doc.getPageIndices());
-      pags.forEach(function(pg){ saida.addPage(pg); });
-    } else {
-      var img = /png/i.test(a.getMimeType()) ? await saida.embedPng(new Uint8Array(bytes)) : await saida.embedJpg(new Uint8Array(bytes));
-      var pg2 = saida.addPage([595.28, 841.89]), k = Math.min(567 / img.width, 813 / img.height);
-      pg2.drawImage(img, { x: (595.28 - img.width * k) / 2, y: (841.89 - img.height * k) / 2, width: img.width * k, height: img.height * k });
-    }
+ * os arquivos juntados vão para a lixeira do Drive (dá para recuperar). Rodar pelo editor: organizarExistentes.
+ * Tudo síncrono (sem biblioteca): os PDFs do aplicativo são só imagens JPEG, uma por página. */
+function bytesParaTexto_(b){ var s = [], i, n = b.length; for (i = 0; i < n; i += 8192) s.push(String.fromCharCode.apply(null, b.slice(i, i + 8192).map(function(x){ return x & 255; }))); return s.join(''); }
+// imagens JPEG de um PDF (ou o próprio JPEG): [{ w, h, dados: [bytes] }]
+function jpegsDe_(arquivo){
+  var b = arquivo.getBlob().getBytes();
+  if (/jpe?g/i.test(arquivo.getMimeType())){
+    var t0 = bytesParaTexto_(b.slice(0, 65536)), m0 = /\xFF[\xC0\xC2][\s\S]{3}([\s\S]{2})([\s\S]{2})/.exec(t0);
+    var h0 = m0 ? (m0[1].charCodeAt(0) << 8) + m0[1].charCodeAt(1) : 1000, w0 = m0 ? (m0[2].charCodeAt(0) << 8) + m0[2].charCodeAt(1) : 1000;
+    return [{ w: w0, h: h0, dados: b }];
   }
-  var out = await saida.save();
-  return pasta.createFile(Utilities.newBlob(Array.prototype.slice.call(out), 'application/pdf', nome));
+  var t = bytesParaTexto_(b), out = [], pos = 0;
+  while ((pos = t.indexOf('/DCTDecode', pos)) >= 0){
+    var ini = t.lastIndexOf('<<', pos), fim = t.indexOf('>>', pos), dic = t.slice(ini, fim);
+    var w = +(/\/Width\s+(\d+)/.exec(dic) || [])[1], h = +(/\/Height\s+(\d+)/.exec(dic) || [])[1], len = +(/\/Length\s+(\d+)/.exec(dic) || [])[1];
+    var st = t.indexOf('stream', fim); st += 6; if (t.charAt(st) === '\r') st++; if (t.charAt(st) === '\n') st++;
+    if (w && h && len) out.push({ w: w, h: h, dados: b.slice(st, st + len) });
+    pos = st + (len || 1);
+  }
+  return out;
 }
-async function organizarPasta_(pasta){
+// monta um PDF A4 com uma imagem por página
+function pdfDeJpegs_(imgs){
+  var partes = [], tam = 0, offs = [];
+  function txt(s){ var by = Utilities.newBlob(s).getBytes(); partes.push(by); tam += by.length; }
+  function bin(by){ partes.push(by); tam += by.length; }
+  var n = imgs.length, kids = [];
+  for (var i = 0; i < n; i++) kids.push((3 + i * 3) + ' 0 R');
+  txt('%PDF-1.4\n');
+  offs[1] = tam; txt('1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n');
+  offs[2] = tam; txt('2 0 obj\n<< /Type /Pages /Kids [' + kids.join(' ') + '] /Count ' + n + ' >>\nendobj\n');
+  imgs.forEach(function(im, i){
+    var pg = 3 + i * 3, ct = pg + 1, io = pg + 2, W = 595.28, H = 841.89, M = 22.68;
+    var k = Math.min((W - 2 * M) / im.w, (H - 2 * M) / im.h), dw = im.w * k, dh = im.h * k, x = (W - dw) / 2, y = (H - dh) / 2;
+    var conteudo = 'q ' + dw.toFixed(2) + ' 0 0 ' + dh.toFixed(2) + ' ' + x.toFixed(2) + ' ' + y.toFixed(2) + ' cm /Im' + i + ' Do Q';
+    offs[pg] = tam; txt(pg + ' 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + W + ' ' + H + '] /Resources << /XObject << /Im' + i + ' ' + io + ' 0 R >> >> /Contents ' + ct + ' 0 R >>\nendobj\n');
+    offs[ct] = tam; txt(ct + ' 0 obj\n<< /Length ' + conteudo.length + ' >>\nstream\n' + conteudo + '\nendstream\nendobj\n');
+    offs[io] = tam; txt(io + ' 0 obj\n<< /Type /XObject /Subtype /Image /Width ' + im.w + ' /Height ' + im.h + ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + im.dados.length + ' >>\nstream\n');
+    bin(im.dados); txt('\nendstream\nendobj\n');
+  });
+  var total = 3 + n * 3, xref = tam, linhas = ['xref\n0 ' + total + '\n0000000000 65535 f \n'];
+  for (var o = 1; o < total; o++) linhas.push(('0000000000' + offs[o]).slice(-10) + ' 00000 n \n');
+  txt(linhas.join('') + 'trailer\n<< /Size ' + total + ' /Root 1 0 R >>\nstartxref\n' + xref + '\n%%EOF');
+  var tudo = []; partes.forEach(function(p){ for (var j = 0; j < p.length; j++) tudo.push(p[j]); });
+  return Utilities.newBlob(tudo, 'application/pdf');
+}
+function organizarPasta_(pasta){
   var todos = [], it = pasta.getFiles(); while (it.hasNext()) todos.push(it.next());
   var sub = pasta.getFoldersByName('Imagens escaneadas'); if (sub.hasNext()){ var it2 = sub.next().getFiles(); while (it2.hasNext()) todos.push(it2.next()); }
-  var acha = function(re, so){ return todos.filter(function(a){ return re.test(a.getName()) && (!so || so.test(a.getMimeType())); }); };
-  var pessoais = [].concat(acha(/^RG - frente/i, /pdf/), acha(/^RG - verso/i, /pdf/), acha(/^CPF/i, /pdf/), acha(/^Conta de luz/i, /pdf/));
+  var acha = function(re, so){ return todos.filter(function(a){ return !a.isTrashed() && re.test(a.getName()) && (!so || so.test(a.getMimeType())); }); };
   var feito = [];
+  var pessoais = [].concat(acha(/^RG - frente/i, /pdf/), acha(/^RG - verso/i, /pdf/), acha(/^CPF/i, /pdf/), acha(/^Conta de luz/i, /pdf/));
   if (pessoais.length && !acha(/^DOCUMENTOS PESSOAIS\.pdf$/i).length){
-    await juntarPdfs_(pessoais, 'DOCUMENTOS PESSOAIS.pdf', pasta);
-    pessoais.forEach(function(a){ a.setTrashed(true); });
-    feito.push('documentos pessoais (' + pessoais.length + ' arquivos)');
+    var imgs = []; pessoais.forEach(function(a){ imgs = imgs.concat(jpegsDe_(a)); });
+    if (imgs.length){
+      pasta.createFile(pdfDeJpegs_(imgs).setName('DOCUMENTOS PESSOAIS.pdf'));
+      pessoais.forEach(function(a){ a.setTrashed(true); });
+      feito.push('documentos pessoais (' + pessoais.length + ' arquivos, ' + imgs.length + ' páginas)');
+    }
   }
   acha(/^Procura[çc][ãa]o.*\.pdf$/i).forEach(function(a, i){ if (a.getName() !== 'PROCURAÇÃO.pdf'){ a.setName(i ? 'PROCURAÇÃO ' + (i + 1) + '.pdf' : 'PROCURAÇÃO.pdf'); feito.push('procuração'); } });
-  // as fotos soltas do documento (versões antigas mandavam também em JPG) não são mais necessárias
   acha(/^(RG - frente|RG - verso|CPF|Conta de luz|Procuração|Documento a rogo|Documentos de quem assina a rogo|Outro documento)/i, /jpe?g/).forEach(function(a){ a.setTrashed(true); });
   acha(/^00 - Documentos completos/i).forEach(function(a){ a.setTrashed(true); });
-  var foto = acha(/^Foto do cliente/i, /image/)[0];
+  var foto = acha(/^(Foto do cliente|FOTO DO CLIENTE)/i, /image/)[0];
   if (foto){
     if (foto.getName() !== 'FOTO DO CLIENTE.jpg'){ foto.setName('FOTO DO CLIENTE.jpg'); try { foto.moveTo(pasta); } catch (x){} feito.push('foto'); }
-    var seg = PropertiesService.getScriptProperties().getProperty('SEGREDO_SISTEMA'), mini = foto.getThumbnail();
-    if (seg && mini) rpc('campo_foto_pasta', { p_segredo: seg, p_pasta: pasta.getId(), p_foto: 'data:image/png;base64,' + Utilities.base64Encode(mini.getBytes()) });
+    var seg = PropertiesService.getScriptProperties().getProperty('SEGREDO_SISTEMA'), mini = null;
+    try { mini = foto.getThumbnail(); } catch (x){}
+    if (seg && mini){ rpc('campo_foto_pasta', { p_segredo: seg, p_pasta: pasta.getId(), p_foto: 'data:image/png;base64,' + Utilities.base64Encode(mini.getBytes()) }); feito.push('foto no sistema'); }
   }
   return feito;
 }
-async function organizarExistentes(){
+function organizarExistentes(){
   var raiz = DriveApp.getFolderById(PASTA_CLIENTES), log = [];
-  for (var n of [PENDENTES, PROTOCOLADOS]){
+  [PENDENTES, PROTOCOLADOS].forEach(function(n){
     var it = subpasta(raiz, n).getFolders();
     while (it.hasNext()){
       var f = it.next();
       // só as pastas que vieram do celular (têm os nomes de arquivo do aplicativo)
-      if (!f.getFilesByName('Procuração.pdf').hasNext() && !f.searchFiles("title contains 'Foto do cliente'").hasNext() && !f.searchFiles("title contains 'Conta de luz'").hasNext()) continue;
-      try { var r = await organizarPasta_(f); if (r.length) log.push(f.getName() + ': ' + r.join(', ')); }
+      var doCelular = f.searchFiles("title contains 'Procuração' or title contains 'Foto do cliente' or title contains 'Conta de luz' or title contains 'RG - frente'").hasNext();
+      if (!doCelular){ var s2 = f.getFoldersByName('Imagens escaneadas'); doCelular = s2.hasNext() && s2.next().searchFiles("title contains 'Foto do cliente'").hasNext(); }
+      if (!doCelular) continue;
+      try { var r = organizarPasta_(f); if (r.length) log.push(f.getName() + ': ' + r.join(', ')); }
       catch (x){ log.push(f.getName() + ': ERRO ' + x); }
     }
-  }
+  });
   console.log(log.length ? log.join('\n') : 'nada para organizar');
   return log;
 }
