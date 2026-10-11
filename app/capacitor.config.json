@@ -1,0 +1,6 @@
+{
+  "appId": "br.com.rodrigueslitaiff.prospectador",
+  "appName": "Cadastro Âmbar",
+  "webDir": "www",
+  "android": { "allowMixedContent": false }
+}

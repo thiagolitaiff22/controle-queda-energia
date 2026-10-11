@@ -136,6 +136,7 @@ input[type=file]{display:none}
 <script>
 (function(){
   'use strict';
+  var APP_VERSAO = 1;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
@@ -163,8 +164,11 @@ input[type=file]{display:none}
   var dbP = null;
   function db(){
     return dbP = dbP || new Promise(function(ok, erro){
-      var r = indexedDB.open('campo', 1);
-      r.onupgradeneeded = function(){ r.result.createObjectStore('envios', { keyPath: 'id' }); };
+      var r = indexedDB.open('campo', 2);
+      r.onupgradeneeded = function(){
+        if (!r.result.objectStoreNames.contains('envios')) r.result.createObjectStore('envios', { keyPath: 'id' });
+        if (!r.result.objectStoreNames.contains('historico')) r.result.createObjectStore('historico', { keyPath: 'id' });
+      };
       r.onsuccess = function(){ ok(r.result); }; r.onerror = function(){ erro(r.error); };
     });
   }
@@ -185,9 +189,14 @@ input[type=file]{display:none}
     }).catch(function(){});
   }
   // aviso antes de sair da página com fotos ainda não enviadas
-  window.addEventListener('beforeunload', function(e){ if (Object.keys(fotos).length){ e.preventDefault(); e.returnValue = ''; } });
+  window.addEventListener('beforeunload', function(e){ if (!window.Capacitor && Object.keys(fotos).length){ e.preventDefault(); e.returnValue = ''; } });
   var filaPor = function(e){ return tx('readwrite', function(s){ s.put(e); }); };
   var filaTira = function(id){ return tx('readwrite', function(s){ s.delete(id); }); };
+  function hist(modo, f){ return db().then(function(d){ return new Promise(function(ok, erro){ var t = d.transaction('historico', modo), st = t.objectStore('historico'), res = f(st); t.oncomplete = function(){ ok(res && res.result !== undefined ? res.result : res); }; t.onerror = function(){ erro(t.error); }; }); }); }
+  var histTodos = function(){ return hist('readonly', function(s){ return s.getAll(); }).then(function(l){ return (l || []).filter(function(x){ return x.token === token; }); }).catch(function(){ return []; }); };
+  var histPor = function(e){ return hist('readwrite', function(s){ s.put(e); }).catch(function(){}); };
+  var histMuda = function(id, campos){ return hist('readwrite', function(s){ var g = s.get(id); g.onsuccess = function(){ if (g.result) s.put(Object.assign(g.result, campos)); }; }).catch(function(){}); };
+  try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch(e){}
 
   /* ---------- foto → imagem "escaneada" (fundo branco, texto escuro) ---------- */
   function carregar(arq){
@@ -544,13 +553,14 @@ input[type=file]{display:none}
      .then(function(){
        var envio = { id: id, token: token, criado: new Date().toISOString(), contato: ($('fone') || {}).value || '', cliente: (($('nome') || {}).value || '').replace(/\s+/g, ' ').trim().toUpperCase(), local: local, faltam: falta.map(function(d){ return d.k; }),
          docs: DOCS.filter(function(d){ return fotos[d.k]; }).map(function(d){ return d.k; }), arquivos: arquivos.map(function(a){ return { nome: a.nome, mime: a.mime, blob: a.blob, ok: false }; }) };
-       return filaPor(envio).then(function(){ return envio; });
+       return filaPor(envio).then(function(){ return histPor({ id: envio.id, token: token, cliente: envio.cliente, criado: envio.criado, enviado: null }); }).then(function(){ return envio; });
      })
      .then(function(envio){
        fotos = {}; local = null; lsSet('campo_fone', ''); lsSet('campo_nome', '');
-       t.remove(); telaInicial();
-       if (!quem.envioUrl){ falar('O cadastro ficou guardado no celular.'); mostrarFila(); return; }
-       mandar(envio);
+       t.remove(); telaInicial(); window.scrollTo(0, 0);
+       var ok = tela('<svg viewBox="0 0 24 24" style="stroke:var(--ok)"><use href="#i-ok"/></svg><b>Cadastro guardado</b><p>' + esc(envio.cliente || '') + '<br>Ele vai para o escritório sozinho quando tiver internet. Pode cadastrar o próximo cliente.</p><button id="t-ok">Cadastrar o próximo</button>');
+       ok.querySelector('#t-ok').onclick = function(){ ok.remove(); };
+       proximo();
      })
      .catch(function(e){ t.remove(); alert('Erro ao preparar: ' + (e && e.message || e)); });
   }
@@ -565,8 +575,7 @@ input[type=file]{display:none}
     if (enviando || !quem || !quem.envioUrl) return Promise.resolve();
     enviando = true;
     var tot = envio.arquivos.length + 1, feitos = envio.arquivos.filter(function(a){ return a.ok; }).length;
-    var t = tela('<svg viewBox="0 0 24 24" style="stroke:var(--ok)"><use href="#i-nuvem"/></svg><b>Enviando…</b><p>Não feche esta tela</p><div class="prog"><span id="t-prog"></span></div><small id="t-txt"></small>');
-    var barra = function(){ var e = t.querySelector('#t-prog'); if (e) e.style.width = Math.round(feitos / tot * 100) + '%'; var x = t.querySelector('#t-txt'); if (x) x.textContent = feitos + ' de ' + tot; };
+    var barra = function(){ var e = document.querySelector('[data-envio="' + envio.id + '"] small'); if (e) e.textContent = 'Enviando ' + Math.round(feitos / tot * 100) + '%'; var i = document.querySelector('[data-envio="' + envio.id + '"] i'); if (i) i.className = 'blue'; };
     barra();
     var p = Promise.resolve();
     envio.arquivos.forEach(function(a){
@@ -574,65 +583,106 @@ input[type=file]{display:none}
       p = p.then(function(){ return b64(a.blob); }).then(function(dados){ return post({ acao: 'arquivo', token: envio.token, envio: envio.id, cliente: envio.cliente || '', nome: a.nome, mime: a.mime, b64: dados }); })
            .then(function(){ a.ok = true; feitos++; barra(); return filaPor(envio); });
     });
-    return p.then(function(){ t.querySelector('b').textContent = 'Lendo os documentos…'; t.querySelector('p').textContent = 'A inteligência artificial está lendo a procuração';
+    return p.then(function(){
         return post({ acao: 'fechar', token: envio.token, envio: envio.id, cliente: envio.cliente || '', contato: envio.contato, local: envio.local, docs: envio.docs, faltam: envio.faltam }); })
       .then(function(d){
-        return filaTira(envio.id).then(function(){
-          t.remove(); enviando = false;
-          falar('Cadastro enviado. Obrigado.' + (d.nome ? ' Cliente ' + d.nome + '.' : ''));
-          var ok = tela('<svg viewBox="0 0 24 24" style="stroke:var(--ok)"><use href="#i-ok"/></svg><b>Cadastro enviado!</b><p>' + (d.nome ? esc(d.nome) : 'O escritório vai conferir os dados') + '</p><button id="t-ok">Cadastrar outro cliente</button>');
-          ok.querySelector('#t-ok').onclick = function(){ ok.remove(); atualizarQuem().then(telaInicial); };
+        return filaTira(envio.id).then(function(){ return histMuda(envio.id, { enviado: new Date().toISOString() }); }).then(function(){
+          enviando = false; mostrarFila();
           return proximo();
         });
       })
-      .catch(function(){
-        t.remove(); enviando = false;
-        falar('Sem internet agora. O cadastro ficou guardado no celular e vai ser enviado quando a internet voltar.');
-        var e = tela('<svg viewBox="0 0 24 24" style="stroke:var(--warn)"><use href="#i-nuvem"/></svg><b>Ficou guardado no celular</b><p>Sem internet agora. Quando o sinal voltar, abra esta página que o envio continua sozinho.</p><button id="t-ok">Entendi</button>');
-        e.querySelector('#t-ok').onclick = function(){ e.remove(); telaInicial(); };
-      });
+      .catch(function(){ enviando = false; mostrarFila(); });   // sem internet: tenta de novo mais tarde, sozinho
   }
-  function proximo(){ return filaTodos().then(function(l){ var e = l.filter(function(x){ return x.token === token; })[0]; if (e) return mandar(e); }); }
+  // manda o que estiver guardado; sem o endereço do envio ainda, busca primeiro (ex.: abriu o app sem internet)
+  function proximo(){
+    if (enviando || navigator.onLine === false) return Promise.resolve();
+    var vai = quem && quem.envioUrl ? Promise.resolve(quem) : atualizarQuem();
+    return vai.then(function(){ return filaTodos(); }).then(function(l){ var e = l.filter(function(x){ return x.token === token; })[0]; if (e && quem && quem.envioUrl) return mandar(e); }).catch(function(){});
+  }
   window.addEventListener('online', function(){ proximo(); });
+  setInterval(proximo, 60000);
+  document.addEventListener('visibilitychange', function(){ if (!document.hidden) proximo(); });
 
   function mostrarFila(){
-    filaTodos().then(function(l){
-      l = l.filter(function(x){ return x.token === token; });
+    Promise.all([filaTodos().catch(function(){ return []; }), histTodos()]).then(function(r){
+      var fila = r[0].filter(function(x){ return x.token === token; }), h = r[1], naFila = {};
+      fila.forEach(function(e){ naFila[e.id] = e; });
+      // cadastros antigos que estão na fila mas não no histórico (feitos antes desta versão)
+      fila.forEach(function(e){ if (!h.some(function(x){ return x.id === e.id; })) h.push({ id: e.id, cliente: e.cliente, criado: e.criado, enviado: null }); });
+      h.sort(function(a, b){ return String(b.criado).localeCompare(String(a.criado)); });
       if (!$('fila')) return;
-      $('fila').innerHTML = l.length ? '<div class="sec">Guardados no celular, esperando internet</div><div class="lista">' + l.map(function(e){
-        var f = e.arquivos.filter(function(a){ return a.ok; }).length;
-        return '<div><i class="warn"></i>' + (e.cliente ? esc(e.cliente) + ' · ' : '') + new Date(e.criado).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + '<small>' + f + ' de ' + e.arquivos.length + ' enviados</small></div>';
-      }).join('') + '</div><div class="barra" style="position:static;padding:10px 0 0;background:none"><button class="enviar" id="reenviar" style="background:var(--warn)">Tentar enviar agora</button></div>' : '';
-      if ($('reenviar')) $('reenviar').onclick = proximo;
+      var pend = h.filter(function(x){ return !x.enviado; }).length, hoje = new Date().toDateString();
+      var dt = function(t){ var d = new Date(t); return d.toDateString() === hoje ? 'hoje ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }); };
+      $('fila').innerHTML = h.length ? '<div class="sec">Cadastros neste celular · ' + h.length + (pend ? ' · ' + pend + ' esperando internet' : '') + '</div><div class="lista">' + h.slice(0, 100).map(function(x){
+        var e = naFila[x.id], st = x.enviado ? ['ok', 'Enviado'] : e ? ['warn', 'Guardado no celular'] : ['ok', 'Enviado'];
+        return '<div data-envio="' + esc(x.id) + '"><i class="' + st[0] + '"></i><span style="min-width:0"><b style="display:block;font-weight:600;overflow-wrap:anywhere">' + esc(x.cliente || 'Sem nome') + '</b><span style="font-size:13px;color:var(--ink2)">' + dt(x.criado) + '</span></span><small>' + st[1] + '</small></div>';
+      }).join('') + '</div>' + (pend ? '<div class="barra" style="position:static;padding:10px 0 0;background:none"><button class="enviar" id="reenviar" style="background:var(--warn);height:52px;font-size:17px">Enviar agora</button></div>' : '') : '';
+      if ($('reenviar')) $('reenviar').onclick = function(){ if (navigator.onLine === false) return alert('Sem internet agora. O envio vai sozinho quando o sinal voltar.'); proximo(); };
     }).catch(function(){});
   }
   function mostrarMeus(){
     var l = (quem && quem.cadastros) || [];
     if (!$('meus') || !l.length) return;
     var ET = { sem_protocolo: ['warn', 'Preparando a ação'], protocolado: ['blue', 'Ação protocolada'], audiencia: ['ok', 'Audiência marcada'] };
-    $('meus').innerHTML = '<div class="sec">Meus clientes cadastrados · ' + l.length + '</div><div class="lista">' + l.slice(0, 30).map(function(c){
+    $('meus').innerHTML = '<div class="sec">Andamento no escritório · ' + l.length + '</div><div class="lista">' + l.slice(0, 30).map(function(c){
       var e = ET[c.etapa] || ET.sem_protocolo;
       return '<div><i class="' + e[0] + '"></i>' + esc(c.nome) + '<small>' + e[1] + '</small></div>';
     }).join('') + '</div>';
   }
 
   function atualizarQuem(){
+    if (!token) return Promise.resolve(quem);
     return fetch(CFG.url + '/rest/v1/rpc/campo_quem', { method: 'POST', headers: { apikey: CFG.key, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_token: token }) })
       .then(function(r){ return r.json(); }).then(function(d){ if (d && d.prospId){ quem = d; lsSet('campo_quem', JSON.stringify(d)); } else if (d === null){ quem = null; lsSet('campo_quem', ''); } return quem; })
       .catch(function(){ return quem; });
   }
 
-  if (!token){ $('app').innerHTML = '<div class="aviso"><b>Link incompleto</b>Peça ao escritório o seu link de cadastro.</div>'; return; }
-  lsSet('campo_token', token);
-  if (location.hash) history.replaceState(null, '', location.pathname);
-  try { quem = JSON.parse(lsGet('campo_quem') || 'null'); } catch(e){}
-  abrirRascunho().then(atualizarQuem).then(function(q){
-    if (!q){ $('app').innerHTML = '<div class="aviso"><b>Link cancelado</b>Este link não vale mais. Peça um novo ao escritório.</div>'; return; }
-    telaInicial();
-    if (!q.envioUrl){ tela('<b>Quase pronto</b><p>O escritório ainda está ligando o envio para o Drive. Você já pode tirar as fotos: elas ficam guardadas no celular.</p><button onclick="this.closest(\'.tela\').remove()">Entendi</button>'); }
-    else proximo();
-  });
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('campo-sw.js').catch(function(){});
+  var APP = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+  function pedirLink(msg){
+    $('app').innerHTML = '<div class="aviso" style="text-align:left"><b>Entrar</b><p style="margin:0 0 12px;color:var(--ink2)">' + (msg || 'Cole aqui o link de cadastro que o escritório mandou para você (pelo WhatsApp).') + '</p>' +
+      '<label class="fone" style="margin:0"><input id="link" placeholder="Cole o link aqui" autocomplete="off" style="font-size:16px"></label>' +
+      '<button class="enviar" id="entrar" style="margin-top:12px;height:56px">Entrar</button></div>';
+    $('entrar').onclick = function(){
+      var v = $('link').value.trim(), t = (v.match(/t=([A-Za-z0-9_-]+)/) || [])[1] || (/^[A-Za-z0-9_-]{20,}$/.test(v) ? v : '');
+      if (!t) return alert('Link inválido. Copie o link inteiro que o escritório mandou.');
+      token = t; iniciar();
+    };
+  }
+  function iniciar(){
+    if (!token) return pedirLink();
+    lsSet('campo_token', token);
+    if (location.hash) history.replaceState(null, '', location.pathname);
+    try { quem = JSON.parse(lsGet('campo_quem') || 'null'); } catch(e){}
+    var semRede = false;
+    abrirRascunho().then(function(){
+      return fetch(CFG.url + '/rest/v1/rpc/campo_quem', { method: 'POST', headers: { apikey: CFG.key, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_token: token }) })
+        .then(function(r){ return r.json(); }).then(function(d){ if (d && d.prospId){ quem = d; lsSet('campo_quem', JSON.stringify(d)); return quem; } if (d === null){ lsSet('campo_quem', ''); return null; } return quem; })
+        .catch(function(){ semRede = true; return quem; });
+    }).then(function(q){
+      if (!q && !semRede){ lsSet('campo_token', ''); token = ''; return pedirLink('Este link não vale mais. Peça um novo ao escritório e cole aqui.'); }
+      if (!q) quem = { nome: 'Prospectador', cadastros: [] };   // primeira vez sem internet: cadastra e envia depois
+      telaInicial();
+      if (quem.envioUrl) proximo();
+    });
+  }
+  iniciar();
+  if (!APP && 'serviceWorker' in navigator) navigator.serviceWorker.register('campo-sw.js').catch(function(){});
+  if (APP){
+    // botão voltar do Android: fecha a tela aberta (câmera, recorte, conferir); na tela inicial, só minimiza
+    var Pl = window.Capacitor.Plugins || {};
+    if (Pl.App) Pl.App.addListener('backButton', function(){
+      var cam = document.querySelector('.cam .fechar'); if (cam) return cam.click();
+      var rec = document.querySelector('.rec'); if (rec){ rec.remove(); return; }
+      var ver = document.querySelector('.ver .boa'); if (ver) return ver.click();
+      var tl = document.querySelector('.tela'); if (tl){ tl.remove(); return; }
+      Pl.App.minimizeApp();
+    });
+    if (Pl.App) Pl.App.addListener('resume', function(){ proximo(); });
+    // aviso de versão nova do aplicativo
+    fetch('https://thiagolitaiff22.github.io/controle-queda-energia/app/versao.json?' + Date.now()).then(function(r){ return r.json(); }).then(function(v){
+      if (v && v.versao > APP_VERSAO){ var b = document.createElement('a'); b.href = v.url; b.textContent = 'Nova versão do aplicativo: toque para baixar'; b.style.cssText = 'display:block;background:#2563eb;color:#fff;text-align:center;padding:10px;font-weight:700;text-decoration:none'; document.body.insertBefore(b, document.body.firstChild); }
+    }).catch(function(){});
+  }
 })();
 </script>
 </body>
