@@ -1718,9 +1718,13 @@ section.vw-dash{gap:10px!important}
 
 <dialog id="dlg-campo">
   <form class="f" method="dialog">
-    <div class="f-head"><div class="ph-tile" style="margin:0"><svg class="i"><use href="#i-phone"/></svg></div><h2 id="cp-title">Link do celular</h2></div>
+    <div class="f-head"><div class="ph-tile" style="margin:0"><svg class="i"><use href="#i-phone"/></svg></div><h2 id="cp-title">Acesso do prospectador</h2></div>
     <div class="f-body">
-      <div class="field full"><span class="hint">O prospectador abre este link no celular, tira as fotos (procuração, RG, talão de luz e o rosto do cliente) e aperta <b>Enviar</b>. O sistema cria a pasta no Drive, lê os dados com a inteligência artificial e o cliente aparece em <b>Sem protocolo</b>, já na conta deste prospectador. Não precisa de senha: quem tem o link cadastra em nome dele.</span></div>
+      <div class="field full"><div class="sec-rot" style="margin:0">Aplicativo (Android)</div><span class="hint">O prospectador instala o aplicativo <b>Cadastro Âmbar</b>, entra com o usuário e a senha abaixo e cadastra os clientes mesmo sem internet. Os cadastros sobem sozinhos quando tiver sinal e aparecem em <b>Cadastro</b>, na conta deste prospectador.</span></div>
+      <div class="field"><label for="cp-usuario">Usuário</label><input id="cp-usuario" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="ex.: lene"></div>
+      <div class="field"><label for="cp-senha">Senha</label><div style="display:flex;gap:6px"><input id="cp-senha" autocomplete="new-password" placeholder="nova senha" style="flex:1;min-width:0"><button class="btn" type="button" id="cp-gerar" title="Gera uma senha fácil de digitar">Gerar</button></div></div>
+      <div class="field full"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class="btn primary" type="button" id="cp-salvar-login">Salvar usuário e senha</button><button class="btn" type="button" id="cp-whats-app">Mandar acesso no WhatsApp</button><a class="btn" id="cp-apk" target="_blank" rel="noopener">Baixar o aplicativo</a></div><span class="small" id="cp-login-status"></span></div>
+      <div class="field full" style="margin-top:6px"><div class="sec-rot" style="margin:0">Ou pelo navegador (link)</div><span class="hint">Quem tem o link cadastra em nome deste prospectador, sem senha.</span></div>
       <div class="field full"><label for="cp-link">Link</label><input id="cp-link" readonly></div>
       <div class="field full" id="cp-aviso" hidden><span class="rep-aviso">O envio para o Drive ainda não está ligado: veja em Configurações › Cadastro pelo celular. Até lá, as fotos ficam guardadas no celular do prospectador.</span></div>
     </div>
@@ -2093,7 +2097,7 @@ section.vw-dash{gap:10px!important}
   /* "Dados do cliente": abre embaixo da linha ao clicar no nome */
   var clAberto = {};
   // RG no formato 2960881-3; sem RG, nos documentos (como a petição inicial) vale o número do CPF
-  function formatarRG(v){ var d = String(v || '').replace(/D/g, ''); return /^d{5,13}$/.test(d) && !/[-.]/.test(String(v)) ? d.slice(0, -1) + '-' + d.slice(-1) : String(v || '').trim(); }
+  function formatarRG(v){ var d = String(v || '').replace(/\D/g, ''); return /^\d{5,13}$/.test(d) && !/[-.]/.test(String(v)) ? d.slice(0, -1) + '-' + d.slice(-1) : String(v || '').trim(); }
   function rgDoc(r){ return String(r.rg || '').trim() || String(r.cpf || '').trim(); }
   document.addEventListener('blur', function(e){ if (e.target && e.target.id === 'f-rg' && e.target.value.trim()) e.target.value = formatarRG(e.target.value); }, true);
   function fichaCliente(r){
@@ -2526,7 +2530,7 @@ section.vw-dash{gap:10px!important}
         '<div class="prosp-nums"><div><b>' + mine.length + '</b><span>clientes</span></div><div><b>' + av + '</b><span>avisados</span></div><div><b>' + aAvisar + '</b><span>a avisar</span></div><div><b>' + sc + '</b><span>sem contato</span></div></div>' +
         pautaProsp(p, fut) +
         ((p.palavrasEndereco || []).length ? '<div class="small">Endereços com: ' + p.palavrasEndereco.map(function(k){ return '<span class="tag-kw">' + esc(k) + '</span>'; }).join('') + '</div>' : '') +
-        '<div class="prosp-actions"><button type="button" class="btn" data-pact="ver" data-id="' + esc(p.id) + '">Ver clientes</button>' + (isAdmin() ? '<button type="button" class="btn" data-pact="link" data-id="' + esc(p.id) + '"><svg class="i"><use href="#i-phone"/></svg>Link do celular</button>' : '') + '<button type="button" class="btn" data-pact="edit" data-id="' + esc(p.id) + '">Editar</button>' +
+        '<div class="prosp-actions"><button type="button" class="btn" data-pact="ver" data-id="' + esc(p.id) + '">Ver clientes</button>' + (isAdmin() ? '<button type="button" class="btn" data-pact="link" data-id="' + esc(p.id) + '"><svg class="i"><use href="#i-phone"/></svg>Aplicativo</button>' : '') + '<button type="button" class="btn" data-pact="edit" data-id="' + esc(p.id) + '">Editar</button>' +
           (soltos ? '<button type="button" class="btn" data-pact="aplicar" data-id="' + esc(p.id) + '">Atribuir ' + soltos + ' cliente(s) do endereço</button>' : '') + '</div>' +
       '</div>';
     }).join('');
@@ -3216,16 +3220,52 @@ section.vw-dash{gap:10px!important}
     try {
       var r = await SB.rpc('campo_link', { p_prosp: p.id, p_novo: !!novo }); if (r.error) throw r.error;
       var u = linkCampo(r.data);
-      $('cp-title').textContent = 'Link do celular · ' + p.nome;
+      $('cp-title').textContent = 'Acesso do prospectador · ' + p.nome;
       $('cp-link').value = u;
       var dig = String(p.telefone || p.contato || '').replace(/\D/g, '');
       var txt = 'Olá, ' + String(p.nome || '').split(' ')[0] + '! Este é o seu link para cadastrar clientes pelo celular. É só abrir, tirar as fotos dos documentos e apertar Enviar:\n' + u;
       $('cp-whats').href = 'https://wa.me/' + (dig.length >= 10 ? '55' + dig.replace(/^55/, '') : '') + '?text=' + encodeURIComponent(txt);
       var st = await SB.rpc('campo_url_status'); $('cp-aviso').hidden = !!(st && st.data);
+      // acesso do aplicativo (usuário e senha)
+      $('cp-senha').value = ''; cpSenhaNova = '';
+      $('cp-apk').href = APK_URL;
+      var lg = await SB.rpc('campo_login_status', { p_prosp: p.id });
+      if (lg.error){ $('cp-login-status').textContent = 'Rode o arquivo supabase/13_login_app.sql no Supabase para liberar usuário e senha.'; $('cp-usuario').value = ''; }
+      else if (lg.data){ $('cp-usuario').value = lg.data.usuario; $('cp-login-status').textContent = 'Usuário ' + lg.data.usuario + ' ativo. A senha não aparece aqui; para trocar, digite uma nova e salve.'; }
+      else { $('cp-usuario').value = sugerirUsuario(p.nome); $('cp-login-status').textContent = 'Ainda sem usuário e senha. Confira o usuário, gere uma senha e salve.'; }
       if (!$('dlg-campo').open) $('dlg-campo').showModal();
       if (novo) toast('Link novo gerado. O antigo não funciona mais.');
     } catch(err){ toast(errMsg(err)); }
   }
+  var APK_URL = location.origin + location.pathname.replace(/[^/]*$/, '') + 'app/download/cadastro-ambar.apk', cpSenhaNova = '';
+  function sugerirUsuario(nome){
+    var p = String(nome || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/^(dona|seu|sr|sra)\.?\s+/, '').split(/\s+/).filter(Boolean);
+    return (p[0] || 'prospectador').replace(/[^a-z0-9]/g, '').slice(0, 20);
+  }
+  $('cp-gerar').addEventListener('click', function(){
+    // senha fácil de digitar no celular: só números (6) , sem sequência óbvia
+    var a = new Uint32Array(6); crypto.getRandomValues(a);
+    $('cp-senha').value = Array.prototype.map.call(a, function(x){ return x % 10; }).join('');
+  });
+  $('cp-salvar-login').addEventListener('click', async function(){
+    if (!cpProsp) return;
+    var u = $('cp-usuario').value.trim().toLowerCase(), pw = $('cp-senha').value.trim();
+    if (!/^[a-z0-9._-]{3,30}$/.test(u)) return toast('Usuário: de 3 a 30 letras ou números, sem espaço nem acento');
+    if (pw.length < 6) return toast('A senha precisa ter pelo menos 6 caracteres (use Gerar)');
+    var r = await SB.rpc('campo_definir_login', { p_prosp: cpProsp.id, p_usuario: u, p_senha: pw });
+    if (r.error) return toast(errMsg(r.error));
+    cpSenhaNova = pw; $('cp-usuario').value = r.data;
+    $('cp-login-status').textContent = 'Salvo: usuário ' + r.data + ' e a senha digitada. Mande o acesso para o prospectador agora (a senha não fica visível depois).';
+    toast('Usuário e senha salvos');
+  });
+  $('cp-whats-app').addEventListener('click', function(){
+    if (!cpProsp) return;
+    var u = $('cp-usuario').value.trim().toLowerCase();
+    if (!cpSenhaNova) return toast('Salve uma senha nova primeiro (a senha antiga não fica guardada para mandar de novo)');
+    var dig = String(cpProsp.telefone || cpProsp.contato || '').replace(/\D/g, '');
+    var txt = 'Olá, ' + String(cpProsp.nome || '').split(' ')[0] + '! Este é o aplicativo para cadastrar os clientes, funciona mesmo sem internet.\n\n1. Baixe e instale: ' + APK_URL + '\n2. Abra o Cadastro Âmbar e entre com:\nUsuário: ' + u + '\nSenha: ' + cpSenhaNova;
+    window.open('https://wa.me/' + (dig.length >= 10 ? '55' + dig.replace(/^55/, '') : '') + '?text=' + encodeURIComponent(txt), '_blank', 'noopener');
+  });
   $('cp-copiar').addEventListener('click', function(){ var v = $('cp-link').value; (navigator.clipboard ? navigator.clipboard.writeText(v) : Promise.reject()).then(function(){ toast('Link copiado'); }, function(){ $('cp-link').select(); document.execCommand('copy'); toast('Link copiado'); }); });
   $('cp-novo').addEventListener('click', function(){ if (cpProsp && confirm('Gerar outro link para ' + cpProsp.nome + '? O link antigo para de funcionar.')) abrirLinkCampo(cpProsp, true); });
   /* chave do Claude: gravada no banco como a do LiderHub; só o script do Google lê */

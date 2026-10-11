@@ -58,6 +58,8 @@ header span{font-size:14px;color:var(--ink2)}
 .prog{height:10px;border-radius:6px;background:var(--line);overflow:hidden;margin:12px 0 4px}
 .prog span{display:block;height:100%;background:var(--ok);width:0;transition:width .3s}
 input[type=file]{display:none}
+.entrar{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 18px;margin-top:24px}
+.entrar details summary{cursor:pointer;text-align:center}
 .dados{display:grid;gap:10px;margin:0 0 16px}
 .dados .fone{margin:0}
 .dados .fone.falta{border-color:var(--red)}
@@ -108,6 +110,48 @@ input[type=file]{display:none}
 .rec .ctl .boa{background:var(--ok);color:#fff}
 .rec .ctl .linha{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .rec .ctl .linha button{background:rgba(255,255,255,.15);color:#fff;font-size:16px}
+
+/* ---------- mesmo visual do sistema (BI) ---------- */
+:root{--bg:#ffffff;--card:#ffffff;--soft:#f4f4f5;--ink:#09090b;--ink2:#52525b;--line:#e4e4e7;--line2:#d4d4d8;--ok:#10b981;--okbg:rgba(16,185,129,.1);--warn:#f59e0b;--red:#ef4444;--blue:#3b82f6;--pri:#18181b;--onpri:#fafafa;--shadow:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04)}
+@media (prefers-color-scheme:dark){:root{--bg:#111113;--card:#18181b;--soft:#1f1f23;--ink:#fafafa;--ink2:#a1a1aa;--line:#2a2a2e;--line2:#3f3f46;--ok:#34d399;--okbg:rgba(52,211,153,.12);--warn:#fbbf24;--red:#f87171;--blue:#60a5fa;--pri:#fafafa;--onpri:#18181b;--shadow:none}}
+html,body{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.doc,.fone,.lista,.enviar,.aviso,.entrar,.tela > div,.tela button,.som,.ver .ctl button,.rec .ctl button,.cam .ctl button:not(.disparo),.doc .marca,.doc .apagar,.ver .fotos img,.ver .fotos .tira,.ver .fotos figcaption{border-radius:4px!important}
+header{border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:14px}
+header .ava{border-radius:4px;background:var(--soft);color:var(--ink);border:1px solid var(--line)}
+.sec,.rot{font-size:12.5px;font-weight:600;color:var(--ink2);text-transform:uppercase;letter-spacing:.04em;margin:20px 0 8px}
+.fone{border:1px solid var(--line2);box-shadow:var(--shadow)}
+.fone.falta{border-color:var(--red)}
+.fone svg{color:var(--ink2)}
+/* cartões dos documentos: borda fina e linha colorida embaixo (âmbar = obrigatório, verde = feito) */
+.doc{border:1px solid var(--line)!important;border-bottom:2px solid var(--line2)!important;box-shadow:var(--shadow);min-height:132px}
+.doc.req{border-bottom-color:var(--warn)!important}
+.doc.feito{border:1px solid var(--line)!important;border-bottom:2px solid var(--ok)!important;background:var(--card)}
+.doc .estrela{color:var(--warn);font-size:11px;font-weight:700;top:8px;left:8px;text-transform:uppercase;letter-spacing:.04em}
+.doc .estrela::after{content:" obrigatório";font-weight:600}
+.doc svg{width:38px;height:38px;color:var(--ink2)}
+.doc .t{font-size:14.5px}
+.doc .s{font-size:12px}
+/* botão principal no padrão do sistema */
+.enviar{background:var(--pri);color:var(--onpri);font-size:18px;height:58px;box-shadow:var(--shadow)}
+.enviar svg{stroke:var(--onpri)}
+.enviar[disabled]{background:var(--soft);color:var(--ink2);box-shadow:none}
+.enviar[disabled] svg{stroke:var(--ink2)}
+.barra{background:linear-gradient(transparent,var(--bg) 35%)}
+/* lista numerada, com a linha de destaque à esquerda */
+.lista{border:1px solid var(--line);box-shadow:var(--shadow);counter-reset:linha}
+.lista > div{position:relative;padding-left:44px!important;counter-increment:linha;box-shadow:inset 3px 0 0 var(--line2)}
+.lista > div::before{content:counter(linha);position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:12.5px;font-weight:700;color:var(--ink2);font-variant-numeric:tabular-nums}
+.lista > div:has(i.ok){box-shadow:inset 3px 0 0 var(--ok)}
+.lista > div:has(i.warn){box-shadow:inset 3px 0 0 var(--warn)}
+.lista > div:has(i.blue){box-shadow:inset 3px 0 0 var(--blue)}
+.lista i{display:none}
+.lista small{font-weight:600}
+.lista > div:has(i.ok) small{color:var(--ok)}
+.lista > div:has(i.warn) small{color:var(--warn)}
+.lista > div:has(i.blue) small{color:var(--blue)}
+.tela > div{border:1px solid var(--line)}
+.entrar{box-shadow:var(--shadow)}
+.entrar .ava{border-radius:4px!important}
 </style>
 </head>
 <body>
@@ -136,7 +180,7 @@ input[type=file]{display:none}
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 1;
+  var APP_VERSAO = 2;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
@@ -266,17 +310,17 @@ input[type=file]{display:none}
     var n = Object.keys(fotos).length;
     var falta = DOCS.filter(function(d){ return d.req && !fotos[d.k]; });
     $('app').innerHTML =
-      '<header><div class="ava">' + esc((quem.nome || 'P').trim().charAt(0).toUpperCase()) + '</div><div><b>' + esc(quem.nome || 'Prospectador') + '</b><span>Novo cliente: nome, número e fotos</span></div>' +
+      '<header><div class="ava">' + esc((quem.nome || 'P').trim().charAt(0).toUpperCase()) + '</div><div><b>' + esc(quem.nome || 'Prospectador') + '</b><span>Cadastro de clientes</span></div>' +
         (falandoOk ? '<button class="som" id="som" aria-label="Ouvir instruções"><svg><use href="#i-som"/></svg></button>' : '') + '</header>' +
-      '<div class="dados">' +
+      '<div class="rot" style="margin-top:0">Dados do cliente</div><div class="dados">' +
         '<label class="fone' + (lsGet('campo_nome').trim() ? '' : ' falta') + '" id="l-nome"><svg viewBox="0 0 24 24"><use href="#i-pessoa"/></svg><input id="nome" autocomplete="off" autocapitalize="characters" placeholder="Nome completo do cliente" value="' + esc(lsGet('campo_nome')) + '"></label>' +
         '<label class="fone"><svg viewBox="0 0 24 24"><use href="#i-fone"/></svg><input id="fone" inputmode="tel" placeholder="Número de telefone" value="' + esc(lsGet('campo_fone')) + '"></label>' +
       '</div>' +
-      '<div class="grid">' + DOCS.map(function(d){
+      '<div class="rot">Documentos</div><div class="grid">' + DOCS.map(function(d){
         var f = fotos[d.k];
         if (f && f.length) return '<button class="doc feito" data-k="' + d.k + '"><div class="thumbs">' + f.slice(0, 3).map(function(x){ return '<img alt="" src="' + x.url + '">'; }).join('') + '</div>' +
           '<span class="apagar" data-apagar="' + d.k + '" aria-label="Apagar">×</span><div class="marca"><svg viewBox="0 0 24 24"><use href="#i-ok"/></svg>' + esc(d.t) + (f.length > 1 ? ' · ' + f.length : '') + ' · ver' + '</div></button>';
-        return '<button class="doc' + (d.req ? ' req' : '') + '" data-k="' + d.k + '">' + (d.req ? '<span class="estrela">*</span>' : '') + '<svg><use href="#' + d.ic + '"/></svg><span class="t">' + esc(d.t) + '</span><span class="s">' + esc(d.s) + '</span></button>';
+        return '<button class="doc' + (d.req ? ' req' : '') + '" data-k="' + d.k + '">' + (d.req ? '<span class="estrela"></span>' : '') + '<svg><use href="#' + d.ic + '"/></svg><span class="t">' + esc(d.t) + '</span><span class="s">' + esc(d.s) + '</span></button>';
       }).join('') + '</div>' +
       '<div id="fila"></div><div id="meus"></div>' +
       '<div class="barra"><button class="enviar" id="enviar"' + (n ? '' : ' disabled') + '><svg viewBox="0 0 24 24"><use href="#i-env"/></svg>Enviar cadastro</button></div>';
@@ -638,15 +682,37 @@ input[type=file]{display:none}
   }
 
   var APP = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+  // entrada: usuário e senha que o escritório cadastrou (ou o link antigo, se a pessoa tiver)
   function pedirLink(msg){
-    $('app').innerHTML = '<div class="aviso" style="text-align:left"><b>Entrar</b><p style="margin:0 0 12px;color:var(--ink2)">' + (msg || 'Cole aqui o link de cadastro que o escritório mandou para você (pelo WhatsApp).') + '</p>' +
-      '<label class="fone" style="margin:0"><input id="link" placeholder="Cole o link aqui" autocomplete="off" style="font-size:16px"></label>' +
-      '<button class="enviar" id="entrar" style="margin-top:12px;height:56px">Entrar</button></div>';
+    $('app').innerHTML = '<div class="entrar"><div class="ava" style="margin:8px auto 14px;width:64px;height:64px;font-size:26px;background:var(--ok);color:#fff"><svg viewBox="0 0 24 24" style="width:34px;height:34px;fill:none;stroke:#fff;stroke-width:2"><use href="#i-pessoa"/></svg></div>' +
+      '<b style="display:block;text-align:center;font-size:21px">Cadastro de clientes</b><p style="text-align:center;margin:4px 0 18px;color:var(--ink2)">' + esc(msg || 'Entre com o usuário e a senha que o escritório passou para você.') + '</p>' +
+      '<label class="fone" style="margin:0 0 10px"><svg viewBox="0 0 24 24"><use href="#i-pessoa"/></svg><input id="usuario" placeholder="Usuário" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false"></label>' +
+      '<label class="fone" style="margin:0"><svg viewBox="0 0 24 24"><use href="#i-pena"/></svg><input id="senha" type="password" placeholder="Senha" autocomplete="current-password"><button type="button" id="ver-senha" style="border:0;background:none;color:var(--ink2);font:inherit;font-size:14px">mostrar</button></label>' +
+      '<button class="enviar" id="entrar" style="margin-top:14px;height:58px">Entrar</button>' +
+      '<p style="text-align:center;margin:16px 0 0;font-size:14px;color:var(--ink2)">Precisa de internet só para entrar. Depois o aplicativo funciona sem sinal.</p>' +
+      '<details style="margin-top:18px;font-size:14px;color:var(--ink2)"><summary>Tenho um link do escritório</summary><label class="fone" style="margin:10px 0 0"><input id="link" placeholder="Cole o link aqui" autocomplete="off" style="font-size:15px"></label><button class="enviar" id="entrar-link" style="margin-top:10px;height:48px;font-size:16px;background:var(--pri);color:var(--onpri)">Entrar com o link</button></details></div>';
+    $('ver-senha').onclick = function(){ var e = $('senha'); e.type = e.type === 'password' ? 'text' : 'password'; this.textContent = e.type === 'password' ? 'mostrar' : 'esconder'; };
+    $('senha').addEventListener('keydown', function(e){ if (e.key === 'Enter') $('entrar').click(); });
     $('entrar').onclick = function(){
+      var u = $('usuario').value.trim(), p = $('senha').value, b = this;
+      if (!u || !p) return alert('Digite o usuário e a senha.');
+      if (navigator.onLine === false) return alert('Sem internet agora. Para entrar a primeira vez precisa de sinal.');
+      b.disabled = true; b.textContent = 'Entrando…';
+      fetch(CFG.url + '/rest/v1/rpc/campo_entrar', { method: 'POST', headers: { apikey: CFG.key, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_usuario: u, p_senha: p }) })
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          if (d && d.token){ lsSet('campo_usuario', u); token = d.token; return iniciar(); }
+          alert((d && (d.erro || d.message)) || 'Não foi possível entrar.');
+        })
+        .catch(function(){ alert('Sem internet agora. Para entrar a primeira vez precisa de sinal.'); })
+        .then(function(){ if (document.body.contains(b)){ b.disabled = false; b.textContent = 'Entrar'; } });
+    };
+    $('entrar-link').onclick = function(){
       var v = $('link').value.trim(), t = (v.match(/t=([A-Za-z0-9_-]+)/) || [])[1] || (/^[A-Za-z0-9_-]{20,}$/.test(v) ? v : '');
       if (!t) return alert('Link inválido. Copie o link inteiro que o escritório mandou.');
       token = t; iniciar();
     };
+    var uu = lsGet('campo_usuario'); if (uu) $('usuario').value = uu;
   }
   function iniciar(){
     if (!token) return pedirLink();
@@ -659,7 +725,7 @@ input[type=file]{display:none}
         .then(function(r){ return r.json(); }).then(function(d){ if (d && d.prospId){ quem = d; lsSet('campo_quem', JSON.stringify(d)); return quem; } if (d === null){ lsSet('campo_quem', ''); return null; } return quem; })
         .catch(function(){ semRede = true; return quem; });
     }).then(function(q){
-      if (!q && !semRede){ lsSet('campo_token', ''); token = ''; return pedirLink('Este link não vale mais. Peça um novo ao escritório e cole aqui.'); }
+      if (!q && !semRede){ lsSet('campo_token', ''); token = ''; return pedirLink('Seu acesso mudou. Entre de novo com o usuário e a senha.'); }
       if (!q) quem = { nome: 'Prospectador', cadastros: [] };   // primeira vez sem internet: cadastra e envia depois
       telaInicial();
       if (quem.envioUrl) proximo();
