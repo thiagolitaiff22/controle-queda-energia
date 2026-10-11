@@ -153,7 +153,7 @@ input[type=file]{display:none}
   var $ = function(id){ return document.getElementById(id); };
   var esc = function(t){ return String(t == null ? '' : t).replace(/[&<>"']/g, function(c){ return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
   var token = (location.hash.match(/t=([A-Za-z0-9_-]+)/) || [])[1] || lsGet('campo_token');
-  var quem = null, fotos = {}, atual = null, local = null, falandoOk = 'speechSynthesis' in window;
+  var quem = null, fotos = {}, atual = null, local = null, falandoOk = false; // sem voz: as instruções ficam só escritas na tela
 
   function lsGet(k){ try { return localStorage.getItem(k) || ''; } catch(e){ return ''; } }
   function lsSet(k, v){ try { localStorage.setItem(k, v); } catch(e){} }
