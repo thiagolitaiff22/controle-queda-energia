@@ -1720,7 +1720,7 @@ section.vw-dash{gap:10px!important}
   <form class="f" method="dialog">
     <div class="f-head"><div class="ph-tile" style="margin:0"><svg class="i"><use href="#i-phone"/></svg></div><h2 id="cp-title">Acesso do prospectador</h2></div>
     <div class="f-body">
-      <div class="field full"><div class="sec-rot" style="margin:0">Aplicativo (Android)</div><span class="hint">O prospectador instala o aplicativo <b>Cadastro Âmbar</b>, entra com o usuário e a senha abaixo e cadastra os clientes mesmo sem internet. Os cadastros sobem sozinhos quando tiver sinal e aparecem em <b>Cadastro</b>, na conta deste prospectador.</span></div>
+      <div class="field full"><div class="sec-rot" style="margin:0">Aplicativo (Android)</div><span class="hint">O prospectador instala o aplicativo <b>RL Advogados</b>, entra com o usuário e a senha abaixo e cadastra os clientes mesmo sem internet. Os cadastros sobem sozinhos quando tiver sinal e aparecem em <b>Cadastro</b>, na conta deste prospectador.</span></div>
       <div class="field"><label for="cp-usuario">Usuário</label><input id="cp-usuario" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="ex.: lene"></div>
       <div class="field"><label for="cp-senha">Senha</label><div style="display:flex;gap:6px"><input id="cp-senha" autocomplete="new-password" placeholder="digite ou gere" style="flex:1;min-width:0"><button class="btn" type="button" id="cp-gerar" title="Gera uma senha fácil de digitar">Gerar</button><button class="btn primary" type="button" id="cp-salvar-senha" title="Salva e já vale no aplicativo">Salvar</button></div></div>
       <div class="field full"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class="btn" type="button" id="cp-whats-app">Mandar acesso no WhatsApp</button><a class="btn" id="cp-apk" target="_blank" rel="noopener">Baixar o aplicativo</a></div><span class="small" id="cp-login-status"></span></div>
@@ -3238,7 +3238,7 @@ section.vw-dash{gap:10px!important}
       if (novo) toast('Link novo gerado. O antigo não funciona mais.');
     } catch(err){ toast(errMsg(err)); }
   }
-  var APK_URL = location.origin + location.pathname.replace(/[^/]*$/, '') + 'app/download/cadastro-ambar.apk', cpSenhaNova = '';
+  var APK_URL = location.origin + location.pathname.replace(/[^/]*$/, '') + 'app/download/rl-advogados.apk', cpSenhaNova = '';
   function sugerirUsuario(nome){
     var p = String(nome || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/^(dona|seu|sr|sra)\.?\s+/, '').split(/\s+/).filter(Boolean);
     return (p[0] || 'prospectador').replace(/[^a-z0-9]/g, '').slice(0, 20);
@@ -3266,7 +3266,7 @@ section.vw-dash{gap:10px!important}
     if (!cpSenhaNova) return toast('Digite ou gere a senha e clique em Salvar primeiro');
     if ($('cp-senha').value.trim() !== cpSenhaNova) return toast('A senha do campo ainda não foi salva: clique em Salvar');
     var dig = String(cpProsp.telefone || cpProsp.contato || '').replace(/\D/g, '');
-    var txt = 'Olá, ' + String(cpProsp.nome || '').split(' ')[0] + '! Este é o aplicativo para cadastrar os clientes, funciona mesmo sem internet.\n\n1. Baixe e instale: ' + APK_URL + '\n2. Abra o Cadastro Âmbar e entre com:\nUsuário: ' + u + '\nSenha: ' + cpSenhaNova;
+    var txt = 'Olá, ' + String(cpProsp.nome || '').split(' ')[0] + '! Este é o aplicativo para cadastrar os clientes, funciona mesmo sem internet.\n\n1. Baixe e instale: ' + APK_URL + '\n2. Abra o aplicativo RL Advogados e entre com:\nUsuário: ' + u + '\nSenha: ' + cpSenhaNova;
     window.open('https://wa.me/' + (dig.length >= 10 ? '55' + dig.replace(/^55/, '') : '') + '?text=' + encodeURIComponent(txt), '_blank', 'noopener');
   });
   $('cp-copiar').addEventListener('click', function(){ var v = $('cp-link').value; (navigator.clipboard ? navigator.clipboard.writeText(v) : Promise.reject()).then(function(){ toast('Link copiado'); }, function(){ $('cp-link').select(); document.execCommand('copy'); toast('Link copiado'); }); });

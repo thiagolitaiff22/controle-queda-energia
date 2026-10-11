@@ -11,7 +11,7 @@ npx cap sync android > /dev/null
 (cd android && ./gradlew.bat assembleRelease --no-daemon -q 2>&1 | grep -iv "warning\|deprecat\|unchecked\|Xlint" || true)
 V=$(grep -o 'var APP_VERSAO = [0-9]*' ../campo.html | grep -o '[0-9]*$')
 mkdir -p download
-cp android/app/build/outputs/apk/release/app-release.apk download/cadastro-ambar.apk
-printf '{"versao": %s, "url": "https://thiagolitaiff22.github.io/controle-queda-energia/app/download/cadastro-ambar.apk"}\n' "$V" > versao.json
-"$T/sdk/build-tools/35.0.0/apksigner.bat" verify --print-certs download/cadastro-ambar.apk | grep -i "signer #1 certificate DN"
-echo "APK pronto: app/download/cadastro-ambar.apk (versão $V)"
+cp android/app/build/outputs/apk/release/app-release.apk download/rl-advogados.apk
+printf '{"versao": %s, "url": "https://thiagolitaiff22.github.io/controle-queda-energia/app/download/rl-advogados.apk"}\n' "$V" > versao.json
+"$T/sdk/build-tools/35.0.0/apksigner.bat" verify --print-certs download/rl-advogados.apk | grep -i "signer #1 certificate DN"
+echo "APK pronto: app/download/rl-advogados.apk (versão $V)"

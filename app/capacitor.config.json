@@ -1,9 +1,14 @@
 {
   "appId": "br.com.rodrigueslitaiff.prospectador",
-  "appName": "Cadastro Âmbar",
+  "appName": "RL Advogados",
   "webDir": "www",
-  "android": { "allowMixedContent": false },
+  "android": {
+    "allowMixedContent": false
+  },
   "plugins": {
-    "SystemBars": { "insetsHandling": "css", "initialViewportFitValueHint": "auto" }
+    "SystemBars": {
+      "insetsHandling": "css",
+      "initialViewportFitValueHint": "auto"
+    }
   }
 }
