@@ -333,21 +333,24 @@ body{background:linear-gradient(168deg,#0f2348 0%,#08142b 55%,#08142b 100%) fixe
 /* fundo do aplicativo no html (sem faixa no topo do iPhone) */
 html{background:linear-gradient(170deg,#0f2348 0%,#08142b 60%) fixed!important;min-height:100%}
 body{background:transparent!important}
-/* tela de entrada */
-.login{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
-.login-topo{flex:1 0 auto;min-height:34vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:calc(28px + env(safe-area-inset-top)) 24px 34px;position:relative;overflow:hidden}
-.login-topo::before{content:"";position:absolute;width:420px;height:420px;left:50%;top:40%;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(37,99,235,.45),rgba(37,99,235,0) 65%);pointer-events:none}
-.login-topo .marca-rl{position:relative;width:68%;max-width:270px;margin:0}
-.login-topo span{position:relative;font-size:12.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#93c5fd}
-.login .entrar{margin:0!important;border-radius:28px 28px 0 0!important;border:0!important;border-top:1px solid rgba(147,197,253,.18)!important;background:#0c1d3f!important;backdrop-filter:none!important;padding:26px 22px calc(26px + env(safe-area-inset-bottom))!important;box-shadow:0 -12px 40px rgba(2,8,23,.5)!important}
-.login-t{display:block;font-size:24px;font-weight:700}
-.login-s{margin:4px 0 20px;color:rgba(219,234,254,.7);font-size:14.5px}
-.login-rot{display:block;font-size:13px;font-weight:600;color:rgba(219,234,254,.85);margin:0 0 6px 2px}
-.login .fone{background:rgba(255,255,255,.06)!important;border:1px solid rgba(147,197,253,.22)!important}
-.login .fone:focus-within{border-color:#3b82f6!important;box-shadow:0 0 0 3px rgba(59,130,246,.25)}
-.login .enviar{background:linear-gradient(135deg,#2563eb,#1d4ed8)!important;box-shadow:0 10px 24px rgba(37,99,235,.35)!important}
-.login-nota{text-align:center;margin:16px 0 0;font-size:13.5px;color:rgba(219,234,254,.6)}
-.login details{text-align:center}
+/* tela de entrada: compacta, centralizada */
+.login{min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:calc(24px + env(safe-area-inset-top)) 22px calc(24px + env(safe-area-inset-bottom));position:relative;overflow:hidden}
+.login::before{content:"";position:absolute;width:520px;height:520px;left:50%;top:-180px;transform:translateX(-50%);background:radial-gradient(circle,rgba(37,99,235,.28),rgba(37,99,235,0) 62%);pointer-events:none}
+.login .entrar{position:relative;width:100%;max-width:340px;margin:0!important;padding:0!important;background:none!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.login-logo{display:block;width:150px;height:auto;margin:0 auto 28px}
+.login-t{display:block;font-size:20px;font-weight:700;text-align:center}
+.login-s{margin:6px 0 22px;color:rgba(219,234,254,.62);font-size:13.5px;text-align:center;line-height:1.45}
+.login-rot{display:block;font-size:12.5px;font-weight:600;color:rgba(219,234,254,.75);margin:0 0 6px 2px}
+.login .fone{height:48px;padding:0 12px!important;gap:10px!important;border-radius:12px!important;background:rgba(255,255,255,.05)!important;border:1px solid rgba(147,197,253,.18)!important;box-shadow:none!important}
+.login .fone svg{width:19px!important;height:19px!important;opacity:.8}
+.login .fone input{font-size:16px!important}
+.login .fone:focus-within{border-color:#3b82f6!important;box-shadow:0 0 0 3px rgba(59,130,246,.2)!important}
+.login #ver-senha{font-size:12.5px!important}
+.login .enviar{height:48px!important;margin-top:20px;font-size:16px!important;border-radius:12px!important;background:#2563eb!important;box-shadow:0 8px 20px rgba(37,99,235,.28)!important}
+.login-nota{text-align:center;margin:16px 0 0;font-size:12.5px;color:rgba(219,234,254,.5)}
+.login details{margin-top:10px!important;font-size:12.5px!important;text-align:center}
+.login details .enviar{height:44px!important;margin-top:10px}
+
 /* botão principal azul, sem neon */
 .enviar:not([disabled]){background:linear-gradient(135deg,#2563eb,#1d4ed8)!important;box-shadow:0 10px 24px rgba(37,99,235,.3)!important}
 .ver .ctl .boa,.rec .ctl .boa{background:linear-gradient(135deg,#2563eb,#1d4ed8)!important}
@@ -411,7 +414,7 @@ body{background:transparent!important}
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 7;
+  var APP_VERSAO = 8;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
@@ -1168,11 +1171,11 @@ body{background:transparent!important}
   var APP = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
   // entrada: usuário e senha que o escritório cadastrou (ou o link antigo, se a pessoa tiver)
   function pedirLink(msg){
-    $('app').innerHTML = '<div class="login"><div class="login-topo"><img class="marca-rl" src="img/logo-rl-completa.png" alt="Rodrigues Litaiff Advogados Associados"><span>Cadastro de clientes</span></div>' +
-      '<div class="entrar"><b class="login-t">Entrar</b><p class="login-s">' + esc(msg || 'Use o usuário e a senha que o escritório passou para você.') + '</p>' +
+    $('app').innerHTML = '<div class="login"><div class="entrar"><img class="login-logo" src="img/logo-rl-completa.png" alt="Rodrigues Litaiff Advogados Associados">' +
+      '<b class="login-t">Acesse sua conta</b><p class="login-s">' + esc(msg || 'Use o usuário e a senha que o escritório passou para você.') + '</p>' +
       '<label class="login-rot" for="usuario">Usuário</label><label class="fone" style="margin:0 0 14px"><svg viewBox="0 0 24 24"><use href="#i-pessoa"/></svg><input id="usuario" placeholder="seu usuário" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false"></label>' +
       '<label class="login-rot" for="senha">Senha</label><label class="fone" style="margin:0"><svg viewBox="0 0 24 24"><use href="#i-cadeado"/></svg><input id="senha" type="password" placeholder="sua senha" autocomplete="current-password"><button type="button" id="ver-senha" style="border:0;background:none;color:var(--ink2);font:inherit;font-size:14px">mostrar</button></label>' +
-      '<button class="enviar" id="entrar" style="margin-top:22px;height:56px">Entrar</button>' +
+      '<button class="enviar" id="entrar">Entrar</button>' +
       '<p class="login-nota">Precisa de internet só para entrar. Depois o aplicativo funciona sem sinal.</p>' +
       '<details style="margin-top:18px;font-size:14px;color:var(--ink2)"><summary>Tenho um link do escritório</summary><label class="fone" style="margin:10px 0 0"><input id="link" placeholder="Cole o link aqui" autocomplete="off" style="font-size:15px"></label><button class="enviar" id="entrar-link" style="margin-top:10px;height:48px;font-size:16px;background:var(--pri);color:var(--onpri)">Entrar com o link</button></details></div></div>';
     $('ver-senha').onclick = function(){ var e = $('senha'); e.type = e.type === 'password' ? 'text' : 'password'; this.textContent = e.type === 'password' ? 'mostrar' : 'esconder'; };
