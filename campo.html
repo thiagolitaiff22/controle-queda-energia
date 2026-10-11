@@ -331,9 +331,9 @@ body{background:linear-gradient(168deg,#0f2348 0%,#08142b 55%,#08142b 100%) fixe
 .cam .deteccao polygon{fill:rgba(56,189,248,.14);stroke:#fbbf24;stroke-width:3;stroke-linejoin:round;opacity:0;transition:opacity .2s}
 .cam.achou .deteccao polygon{opacity:1}
 .cam.certo .deteccao polygon{stroke:#4ade80;fill:rgba(74,222,128,.16)}
-.cam .moldura.guia{border-style:dashed;border-color:rgba(255,255,255,.55);box-shadow:none}
+.cam .moldura.guia{border-style:dashed;border-color:rgba(255,255,255,.6);box-shadow:0 0 0 9999px rgba(0,0,0,.25)}
 .cam .moldura.guia i{display:none}
-.cam.achou .moldura.guia{opacity:0}
+.cam.achou .moldura.guia{opacity:.35}
 #barra-envio{position:fixed;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:7;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:16px;background:#1e40af;color:#fff;box-shadow:0 10px 24px rgba(2,8,23,.45)}
 #barra-envio[hidden]{display:none}
 #barra-envio.ok{background:#15803d}
@@ -440,7 +440,7 @@ body{background:transparent!important}
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 17;
+  var APP_VERSAO = 18;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
@@ -454,7 +454,7 @@ body{background:transparent!important}
   ];
   // formato do enquadramento: cartão (RG/CPF, deitado), folha (A4, em pé) ou rosto (oval)
   var MOLDURA = { procuracao: 'folha', rg_frente: 'cartao', rg_verso: 'cartao', luz: 'folha', cpf: 'cartao', arogo: 'cartao', outro: 'folha', cliente: 'livre' };
-  var DICA = { cartao: 'Aponte para o documento: a linha verde se encaixa sozinha', folha: 'Aponte para a folha inteira: a linha verde se encaixa sozinha', livre: 'Rosto do cliente dentro do círculo' };
+  var DICA = { cartao: 'Coloque o documento dentro do quadro e segure firme', folha: 'Coloque a folha inteira dentro do quadro e segure firme', livre: 'Rosto do cliente dentro do círculo' };
   var $ = function(id){ return document.getElementById(id); };
   var esc = function(t){ return String(t == null ? '' : t).replace(/[&<>"']/g, function(c){ return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
   var token = (location.hash.match(/t=([A-Za-z0-9_-]+)/) || [])[1] || lsGet('campo_token');
@@ -924,7 +924,7 @@ body{background:transparent!important}
       }
       posicionar(); window.addEventListener('resize', posicionar);
       // detecção ao vivo: procura as bordas do papel no vídeo e desenha a linha verde em cima
-      var ultimoQ = null, quandoQ = 0, suave = null, vivo = tipo !== 'livre', pol = c.querySelector('.deteccao polygon'), peq = document.createElement('canvas');
+      var ultimoQ = null, quandoQ = 0, suave = null, ant = null, firmes = 0, vivo = tipo !== 'livre', pol = c.querySelector('.deteccao polygon'), peq = document.createElement('canvas');
       function detectarVivo(){
         if (!vivo || !c.isConnected) return;
         var vw = v.videoWidth, vh = v.videoHeight;
@@ -933,13 +933,17 @@ body{background:transparent!important}
           peq.getContext('2d').drawImage(v, 0, 0, peq.width, peq.height);
           var r = null; try { r = bordasPorLinhas(peq); } catch(e){}
           var W = c.clientWidth, H = c.clientHeight, k = Math.max(W / vw, H / vh), ox = (vw * k - W) / 2, oy = (vh * k - H) / 2;
-          if (r && r.q){
-            var rel = r.q.map(function(p){ return [p[0] / peq.width, p[1] / peq.height]; });
-            suave = suave ? suave.map(function(p, i){ return [p[0] * 0.45 + rel[i][0] * 0.55, p[1] * 0.45 + rel[i][1] * 0.55]; }) : rel;
+          // só mostra a linha quando tem certeza e ela fica parada por 3 leituras seguidas (sem "pular")
+          var rel = r && r.conf ? r.q.map(function(p){ return [p[0] / peq.width, p[1] / peq.height]; }) : null;
+          var mexeu = rel && ant ? Math.max.apply(null, rel.map(function(p, i){ return Math.max(Math.abs(p[0] - ant[i][0]), Math.abs(p[1] - ant[i][1])); })) : 1;
+          firmes = rel && mexeu < 0.035 ? firmes + 1 : (rel ? 1 : 0);
+          ant = rel;
+          if (rel && firmes >= 3){
+            suave = suave ? suave.map(function(p, i){ return [p[0] * 0.6 + rel[i][0] * 0.4, p[1] * 0.6 + rel[i][1] * 0.4]; }) : rel;
             ultimoQ = suave; quandoQ = Date.now();
             pol.setAttribute('points', suave.map(function(p){ return (p[0] * vw * k - ox) + ',' + (p[1] * vh * k - oy); }).join(' '));
-            c.classList.add('achou'); c.classList.toggle('certo', !!r.conf);
-          } else if (Date.now() - quandoQ > 900){ c.classList.remove('achou', 'certo'); suave = null; }
+            c.classList.add('achou', 'certo');
+          } else if (Date.now() - quandoQ > 700){ c.classList.remove('achou', 'certo'); suave = null; ultimoQ = null; }
         }
         setTimeout(detectarVivo, 250);
       }
@@ -952,13 +956,14 @@ body{background:transparent!important}
         if (!v.videoWidth || this.disabled) return;
         this.disabled = true; this.style.opacity = '.5';
         var W = c.clientWidth, H = c.clientHeight, vw = v.videoWidth, vh = v.videoHeight;
-        if (tipo !== 'livre'){
-          // documento: foto inteira (resolução cheia quando o celular deixa) e as bordas que a linha verde mostrava
+        var bordas = tipo !== 'livre' && c.classList.contains('certo') && ultimoQ && Date.now() - quandoQ < 800 ? ultimoQ.map(function(p){ return p.slice(); }) : null;
+        if (bordas){
+          // linha verde na tela: foto inteira (resolução cheia quando o celular deixa) recortada exatamente por ela
           var cheio = document.createElement('canvas'); cheio.width = vw; cheio.height = vh; cheio.getContext('2d').drawImage(v, 0, 0, vw, vh);
-          var bordas = ultimoQ && Date.now() - quandoQ < 1500 ? ultimoQ.map(function(p){ return p.slice(); }) : null;
           vivo = false;
           return fotoCheia(fluxo, vw, vh, [0, 0, vw, vh]).then(function(full){ sair(); usarFoto(d, full || cheio, { cantosRel: bordas }); });
         }
+        vivo = false;
         // foto do cliente: recorta a área da tela
         var k = Math.max(W / vw, H / vh), ox = (vw * k - W) / 2, oy = (vh * k - H) / 2;
         var r = tipo === 'livre' ? c.getBoundingClientRect() : m.getBoundingClientRect(), fol = tipo === 'livre' ? 0 : 0.12;
