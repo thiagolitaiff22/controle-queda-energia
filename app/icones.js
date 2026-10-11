@@ -2,7 +2,7 @@
 const sharp = require('sharp'), fs = require('fs'), path = require('path');
 const RES = path.join(__dirname, 'android/app/src/main/res');
 const IMG = path.join(__dirname, '../img');
-const ROXO = '#5936b4', ROXO2 = '#362a84', FUNDO = '#2e335a', FUNDO2 = '#1c1b33';
+const ROXO = '#1d4fd7', ROXO2 = '#0f2f7a', FUNDO = '#0f2348', FUNDO2 = '#08142b';   // azul do escritório
 const icone = fs.readFileSync(path.join(IMG, 'logo-rl-icone.png'));
 const completa = fs.readFileSync(path.join(IMG, 'logo-rl-completa.png'));
 const degrade = (w, h, a, b, raio) => Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><rect width="${w}" height="${h}" rx="${raio || 0}" fill="url(#g)"/></svg>`);

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#2e335a">
+<meta name="theme-color" content="#0f2348">
 <meta name="robots" content="noindex">
 <title>RL Advogados</title>
 <link rel="manifest" href="campo.webmanifest">
@@ -251,19 +251,19 @@ header .ava{border-radius:4px;background:var(--soft);color:var(--ink);border:1px
 .entrar .ava{border-radius:4px!important}
 
 /* ================= visual do modelo (Figma · Weather App UI) ================= */
-:root,:root:not([x]){--bg:#1c1b33;--card:rgba(255,255,255,.07);--soft:rgba(255,255,255,.1);--ink:#ffffff;--ink2:rgba(235,235,245,.62);--line:rgba(255,255,255,.12);--line2:rgba(255,255,255,.22);
-  --ok:#4ade80;--okbg:rgba(74,222,128,.14);--warn:#fbbf24;--red:#fb7185;--blue:#60a5fa;--pri:#ffffff;--onpri:#2e335a;--roxo:#5936b4;--roxo2:#362a84;--lilas:#c427fb;--shadow:0 10px 30px rgba(10,6,40,.35)}
-html,body{background:#1c1b33;color:#fff}
-body{background:linear-gradient(168deg,#2e335a 0%,#1c1b33 55%,#1c1b33 100%) fixed;min-height:100vh}
+:root,:root:not([x]){--bg:#08142b;--card:rgba(255,255,255,.07);--soft:rgba(255,255,255,.1);--ink:#ffffff;--ink2:rgba(235,235,245,.62);--line:rgba(255,255,255,.12);--line2:rgba(255,255,255,.22);
+  --ok:#4ade80;--okbg:rgba(74,222,128,.14);--warn:#fbbf24;--red:#fb7185;--blue:#60a5fa;--pri:#ffffff;--onpri:#0f2348;--roxo:#1d4fd7;--roxo2:#0f2f7a;--lilas:#38bdf8;--shadow:0 10px 30px rgba(2,8,23,.35)}
+html,body{background:#08142b;color:#fff}
+body{background:linear-gradient(168deg,#0f2348 0%,#08142b 55%,#08142b 100%) fixed;min-height:100vh}
 .doc,.fone,.lista,.enviar,.aviso,.entrar,.tela > div,.tela button,.som,.ver .ctl button,.rec .ctl button,.cam .ctl button:not(.disparo),.doc .marca,.doc .apagar,.ver .fotos img,.ver .fotos .tira,.ver .fotos figcaption{border-radius:18px!important}
 /* barra de cima transparente */
-.topo{background:rgba(28,27,51,.72);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-bottom:0}
-.topo .logo{border-radius:14px;background:linear-gradient(135deg,#7b4dff,#c427fb);box-shadow:0 6px 16px rgba(196,39,251,.35)}
+.topo{background:rgba(8,20,43,.72);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-bottom:0}
+.topo .logo{border-radius:14px;background:linear-gradient(135deg,#2563eb,#38bdf8);box-shadow:0 6px 16px rgba(56,189,248,.35)}
 .sinc{border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:#fff}
 .rot,.sec{color:var(--ink2);letter-spacing:.06em}
 /* cartão principal do painel (o "19°" do modelo) */
-.hero{position:relative;overflow:hidden;border-radius:28px;padding:20px 20px 18px;background:linear-gradient(140deg,#5936b4 0%,#362a84 100%);box-shadow:0 18px 40px rgba(54,42,132,.45);margin-bottom:14px}
-.hero::after{content:"";position:absolute;right:-40px;top:-60px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(196,39,251,.55),rgba(196,39,251,0) 70%)}
+.hero{position:relative;overflow:hidden;border-radius:28px;padding:20px 20px 18px;background:linear-gradient(140deg,#1d4fd7 0%,#0f2f7a 100%);box-shadow:0 18px 40px rgba(15,47,122,.45);margin-bottom:14px}
+.hero::after{content:"";position:absolute;right:-40px;top:-60px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(56,189,248,.55),rgba(56,189,248,0) 70%)}
 .hero small{display:block;font-size:13px;color:rgba(235,235,245,.75);font-weight:500}
 .hero .num{display:block;font-size:72px;line-height:1;font-weight:300;letter-spacing:-.02em;margin:6px 0 4px}
 .hero .lin{display:flex;gap:14px;flex-wrap:wrap;font-size:13.5px;color:rgba(235,235,245,.85);position:relative;z-index:1}
@@ -271,7 +271,7 @@ body{background:linear-gradient(168deg,#2e335a 0%,#1c1b33 55%,#1c1b33 100%) fixe
 .ola b{font-size:22px;font-weight:600}
 /* cartões de números */
 .kpis{gap:12px}
-.kpi{border:0!important;border-radius:22px!important;background:linear-gradient(150deg,rgba(89,54,180,.85),rgba(54,42,132,.85));box-shadow:0 10px 24px rgba(10,6,40,.35);padding:14px 14px 12px;position:relative;overflow:hidden}
+.kpi{border:0!important;border-radius:22px!important;background:linear-gradient(150deg,rgba(29,79,215,.85),rgba(15,47,122,.85));box-shadow:0 10px 24px rgba(2,8,23,.35);padding:14px 14px 12px;position:relative;overflow:hidden}
 .kpi::before{content:"";position:absolute;left:14px;right:14px;bottom:0;height:3px;border-radius:3px 3px 0 0;background:var(--c, rgba(255,255,255,.3))}
 .kpi small{color:rgba(235,235,245,.7);letter-spacing:.03em;font-size:11px}
 .kpi b{font-size:34px;font-weight:300}
@@ -280,66 +280,87 @@ body{background:linear-gradient(168deg,#2e335a 0%,#1c1b33 55%,#1c1b33 100%) fixe
 /* listas e cartões de vidro */
 .lista,.auds,.vazio,.aviso-fila{background:rgba(255,255,255,.06)!important;border:1px solid rgba(255,255,255,.1)!important;border-radius:20px!important;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:none!important;overflow:hidden}
 .lista > div,.auds > div{border-top-color:rgba(255,255,255,.08)!important}
-.auds .dia{border:0;border-radius:14px;background:linear-gradient(150deg,#5936b4,#362a84)}
+.auds .dia{border:0;border-radius:14px;background:linear-gradient(150deg,#1d4fd7,#0f2f7a)}
 .lig{border-radius:999px;border-color:rgba(255,255,255,.2);color:#fff;background:rgba(255,255,255,.06)}
 .aviso-fila{border-left:3px solid var(--warn)!important}
 .aviso-fila button,.sair{border-radius:999px!important;background:rgba(255,255,255,.08)!important;border:1px solid rgba(255,255,255,.14)!important;color:#fff!important}
 /* busca e filtros */
 .busca{border-radius:16px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);box-shadow:none}
 .chips button{border-radius:999px;background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.12);color:rgba(235,235,245,.8)}
-.chips button[aria-pressed="true"]{background:#fff;border-color:#fff;color:#2e335a}
+.chips button[aria-pressed="true"]{background:#fff;border-color:#fff;color:#0f2348}
 /* formulário de cadastro */
 .fone{border-radius:16px!important;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);box-shadow:none}
 .fone.falta{border-color:rgba(251,113,133,.7)}
 .fone svg{color:rgba(235,235,245,.7)}
 .doc{border:1px solid rgba(255,255,255,.1)!important;border-radius:22px!important;background:rgba(255,255,255,.06);box-shadow:none;color:#fff}
 .doc.req{border-bottom:1px solid rgba(255,255,255,.1)!important}
-.doc .estrela{color:#e0b3ff;background:rgba(196,39,251,.18);border-radius:999px;padding:2px 8px;font-size:10px;top:10px;left:10px}
-.doc svg{color:#e0d9ff}
+.doc .estrela{color:#bfdbfe;background:rgba(56,189,248,.18);border-radius:999px;padding:2px 8px;font-size:10px;top:10px;left:10px}
+.doc svg{color:#dbeafe}
 .doc.feito{border:1px solid rgba(74,222,128,.6)!important;background:rgba(74,222,128,.08)}
-.doc .marca{background:rgba(28,27,51,.82);backdrop-filter:blur(8px)}
-.enviar{border-radius:20px!important;background:linear-gradient(135deg,#7b4dff,#c427fb);color:#fff;box-shadow:0 12px 26px rgba(196,39,251,.35)}
+.doc .marca{background:rgba(8,20,43,.82);backdrop-filter:blur(8px)}
+.enviar{border-radius:20px!important;background:linear-gradient(135deg,#2563eb,#38bdf8);color:#fff;box-shadow:0 12px 26px rgba(56,189,248,.35)}
 .enviar svg{stroke:#fff}
 .enviar[disabled]{background:rgba(255,255,255,.1);color:rgba(235,235,245,.5);box-shadow:none}
 .enviar[disabled] svg{stroke:rgba(235,235,245,.5)}
-.barra{background:linear-gradient(rgba(28,27,51,0),#1c1b33 40%)}
+.barra{background:linear-gradient(rgba(8,20,43,0),#08142b 40%)}
 /* barra de abas flutuante com o + no meio */
-.abas{left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom));padding-bottom:0;border:1px solid rgba(255,255,255,.12);border-radius:26px;background:rgba(46,51,90,.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:0 14px 34px rgba(10,6,40,.5);overflow:visible}
+.abas{left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom));padding-bottom:0;border:1px solid rgba(255,255,255,.12);border-radius:26px;background:rgba(15,35,72,.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:0 14px 34px rgba(2,8,23,.5);overflow:visible}
 .abas button{color:rgba(235,235,245,.6);padding:10px 0 9px}
 .abas button[aria-current="true"]{color:#fff;box-shadow:none}
 .abas button[data-aba="novo"]{color:#fff}
-.abas button[data-aba="novo"] svg{width:58px;height:58px;margin-top:-34px;margin-bottom:1px;padding:15px;border-radius:50%;background:linear-gradient(135deg,#ffffff,#e0d9ff);color:#5936b4;stroke-width:2.4;box-shadow:0 10px 24px rgba(10,6,40,.45),0 0 0 6px rgba(28,27,51,.85)}
+.abas button[data-aba="novo"] svg{width:58px;height:58px;margin-top:-34px;margin-bottom:1px;padding:15px;border-radius:50%;background:linear-gradient(135deg,#ffffff,#dbeafe);color:#1d4fd7;stroke-width:2.4;box-shadow:0 10px 24px rgba(2,8,23,.45),0 0 0 6px rgba(8,20,43,.85)}
 .abas .bolha{top:-30px;left:calc(50% + 14px)}
 .vista{padding-bottom:calc(110px + env(safe-area-inset-bottom))}
 .vista.novo{padding-bottom:calc(185px + env(safe-area-inset-bottom))}
 .barra{bottom:calc(76px + env(safe-area-inset-bottom))}
 /* ficha do cliente */
-.folha{background:rgba(10,8,30,.6);backdrop-filter:blur(4px)}
-.folha > div{background:linear-gradient(170deg,#3a3b6e,#24234a);border:1px solid rgba(255,255,255,.12);border-radius:30px 30px 0 0}
-.tempo .pt{background:#2a2a52}
+.folha{background:rgba(2,8,23,.6);backdrop-filter:blur(4px)}
+.folha > div{background:linear-gradient(170deg,#16305f,#0b1c3d);border:1px solid rgba(255,255,255,.12);border-radius:30px 30px 0 0}
+.tempo .pt{background:#0f2348}
 /* entrada */
 .entrar{background:rgba(255,255,255,.07)!important;border:1px solid rgba(255,255,255,.12)!important;border-radius:28px!important;backdrop-filter:blur(16px)}
-.entrar .ava{border-radius:20px!important;background:linear-gradient(135deg,#7b4dff,#c427fb)!important;box-shadow:0 10px 24px rgba(196,39,251,.4)}
+.entrar .ava{border-radius:20px!important;background:linear-gradient(135deg,#2563eb,#38bdf8)!important;box-shadow:0 10px 24px rgba(56,189,248,.4)}
 /* telas por cima (avisos) */
-.tela > div{background:linear-gradient(170deg,#3a3b6e,#24234a);border:1px solid rgba(255,255,255,.12);border-radius:26px!important}
-.tela button{border-radius:16px!important;background:#fff;color:#2e335a}
+.tela > div{background:linear-gradient(170deg,#16305f,#0b1c3d);border:1px solid rgba(255,255,255,.12);border-radius:26px!important}
+.tela button{border-radius:16px!important;background:#fff;color:#0f2348}
 .tela button.sec2{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.2)}
-.ver .ctl .boa,.rec .ctl .boa{background:linear-gradient(135deg,#7b4dff,#c427fb)!important;color:#fff}
+.ver .ctl .boa,.rec .ctl .boa{background:linear-gradient(135deg,#2563eb,#38bdf8)!important;color:#fff}
 .versao{color:rgba(235,235,245,.45)}
 .abas .bolha[hidden]{display:none}
 /* iPhone: respeita o entalhe e a barra de baixo */
 .topo{padding-top:calc(10px + env(safe-area-inset-top))}
 #app > .entrar{margin-top:calc(max(24px, 10vh) + env(safe-area-inset-top))!important}
+/* fundo do aplicativo no html (sem faixa no topo do iPhone) */
+html{background:linear-gradient(170deg,#0f2348 0%,#08142b 60%) fixed!important;min-height:100%}
+body{background:transparent!important}
+/* tela de entrada */
+.login{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
+.login-topo{flex:1 0 auto;min-height:34vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:calc(28px + env(safe-area-inset-top)) 24px 34px;position:relative;overflow:hidden}
+.login-topo::before{content:"";position:absolute;width:420px;height:420px;left:50%;top:40%;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(37,99,235,.45),rgba(37,99,235,0) 65%);pointer-events:none}
+.login-topo .marca-rl{position:relative;width:68%;max-width:270px;margin:0}
+.login-topo span{position:relative;font-size:12.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#93c5fd}
+.login .entrar{margin:0!important;border-radius:28px 28px 0 0!important;border:0!important;border-top:1px solid rgba(147,197,253,.18)!important;background:#0c1d3f!important;backdrop-filter:none!important;padding:26px 22px calc(26px + env(safe-area-inset-bottom))!important;box-shadow:0 -12px 40px rgba(2,8,23,.5)!important}
+.login-t{display:block;font-size:24px;font-weight:700}
+.login-s{margin:4px 0 20px;color:rgba(219,234,254,.7);font-size:14.5px}
+.login-rot{display:block;font-size:13px;font-weight:600;color:rgba(219,234,254,.85);margin:0 0 6px 2px}
+.login .fone{background:rgba(255,255,255,.06)!important;border:1px solid rgba(147,197,253,.22)!important}
+.login .fone:focus-within{border-color:#3b82f6!important;box-shadow:0 0 0 3px rgba(59,130,246,.25)}
+.login .enviar{background:linear-gradient(135deg,#2563eb,#1d4ed8)!important;box-shadow:0 10px 24px rgba(37,99,235,.35)!important}
+.login-nota{text-align:center;margin:16px 0 0;font-size:13.5px;color:rgba(219,234,254,.6)}
+.login details{text-align:center}
+/* botão principal azul, sem neon */
+.enviar:not([disabled]){background:linear-gradient(135deg,#2563eb,#1d4ed8)!important;box-shadow:0 10px 24px rgba(37,99,235,.3)!important}
+.ver .ctl .boa,.rec .ctl .boa{background:linear-gradient(135deg,#2563eb,#1d4ed8)!important}
 #link{font-size:16px!important}
 .aviso-docs{display:flex;align-items:center;gap:12px;width:100%;text-align:left;font:inherit;color:#fff;margin:0 0 14px;padding:12px 14px;border-radius:20px;border:1px solid rgba(251,113,133,.45);background:rgba(251,113,133,.12)}
-.aviso-docs .n{flex:none;min-width:40px;height:40px;border-radius:14px;background:#fb7185;color:#2e335a;font-size:20px;font-weight:700;display:grid;place-items:center}
+.aviso-docs .n{flex:none;min-width:40px;height:40px;border-radius:14px;background:#fb7185;color:#0f2348;font-size:20px;font-weight:700;display:grid;place-items:center}
 .aviso-docs b{display:block;font-size:14.5px}
 .aviso-docs small{display:block;font-size:12.5px;color:rgba(235,235,245,.7)}
 .lista .falta-l{color:#fb7185!important;font-weight:600}
 .falta-box{border:1px solid rgba(251,113,133,.45);background:rgba(251,113,133,.1);border-radius:18px;padding:12px 14px;margin-bottom:14px}
 .falta-box b{display:block;color:#fb7185;font-size:14px}
 .falta-box span{display:block;font-size:14px;margin-top:2px}
-.completar{position:relative;border-radius:22px;padding:14px 16px;margin-bottom:6px;background:linear-gradient(140deg,#5936b4,#362a84)}
+.completar{position:relative;border-radius:22px;padding:14px 16px;margin-bottom:6px;background:linear-gradient(140deg,#1d4fd7,#0f2f7a)}
 .completar small{display:block;font-size:12px;color:rgba(235,235,245,.75)}
 .completar b{display:block;font-size:17px;margin:2px 80px 2px 0}
 .completar span{font-size:13px;color:rgba(235,235,245,.85)}
@@ -348,9 +369,9 @@ body{background:linear-gradient(168deg,#2e335a 0%,#1c1b33 55%,#1c1b33 100%) fixe
 .ver .topo small,.rec .topo small{display:block;margin-top:2px}
 .cam .lados{display:inline-flex;margin-top:10px;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:3px;text-shadow:none}
 .cam .lados button{border:0;background:none;color:#fff;font:inherit;font-size:15px;font-weight:700;padding:7px 18px;border-radius:999px}
-.cam .lados button[aria-pressed="true"]{background:#fff;color:#2e335a}
+.cam .lados button[aria-pressed="true"]{background:#fff;color:#0f2348}
 .ver .falta-lado{border:1px dashed rgba(255,255,255,.3);border-radius:12px;padding:28px 12px;text-align:center;color:rgba(255,255,255,.7);font-weight:600}
-.topo .logo{background:linear-gradient(140deg,#5936b4,#362a84)!important}
+.topo .logo{background:linear-gradient(140deg,#1d4fd7,#0f2f7a)!important}
 .topo .logo img{height:24px;width:auto;display:block}
 .marca-rl{display:block;width:72%;max-width:250px;height:auto;margin:6px auto 18px}
 #app > .entrar{margin-top:max(24px, 12vh)!important}
@@ -390,7 +411,7 @@ body{background:linear-gradient(168deg,#2e335a 0%,#1c1b33 55%,#1c1b33 100%) fixe
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 6;
+  var APP_VERSAO = 7;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
@@ -1147,13 +1168,13 @@ body{background:linear-gradient(168deg,#2e335a 0%,#1c1b33 55%,#1c1b33 100%) fixe
   var APP = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
   // entrada: usuário e senha que o escritório cadastrou (ou o link antigo, se a pessoa tiver)
   function pedirLink(msg){
-    $('app').innerHTML = '<div class="entrar" style="margin:24px 16px"><img class="marca-rl" src="img/logo-rl-completa.png" alt="Rodrigues Litaiff Advogados Associados">' +
-      '<b style="display:block;text-align:center;font-size:19px">Cadastro de clientes</b><p style="text-align:center;margin:4px 0 18px;color:var(--ink2)">' + esc(msg || 'Entre com o usuário e a senha que o escritório passou para você.') + '</p>' +
-      '<label class="fone" style="margin:0 0 10px"><svg viewBox="0 0 24 24"><use href="#i-pessoa"/></svg><input id="usuario" placeholder="Usuário" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false"></label>' +
-      '<label class="fone" style="margin:0"><svg viewBox="0 0 24 24"><use href="#i-cadeado"/></svg><input id="senha" type="password" placeholder="Senha" autocomplete="current-password"><button type="button" id="ver-senha" style="border:0;background:none;color:var(--ink2);font:inherit;font-size:14px">mostrar</button></label>' +
-      '<button class="enviar" id="entrar" style="margin-top:14px;height:58px">Entrar</button>' +
-      '<p style="text-align:center;margin:16px 0 0;font-size:14px;color:var(--ink2)">Precisa de internet só para entrar. Depois o aplicativo funciona sem sinal.</p>' +
-      '<details style="margin-top:18px;font-size:14px;color:var(--ink2)"><summary>Tenho um link do escritório</summary><label class="fone" style="margin:10px 0 0"><input id="link" placeholder="Cole o link aqui" autocomplete="off" style="font-size:15px"></label><button class="enviar" id="entrar-link" style="margin-top:10px;height:48px;font-size:16px;background:var(--pri);color:var(--onpri)">Entrar com o link</button></details></div>';
+    $('app').innerHTML = '<div class="login"><div class="login-topo"><img class="marca-rl" src="img/logo-rl-completa.png" alt="Rodrigues Litaiff Advogados Associados"><span>Cadastro de clientes</span></div>' +
+      '<div class="entrar"><b class="login-t">Entrar</b><p class="login-s">' + esc(msg || 'Use o usuário e a senha que o escritório passou para você.') + '</p>' +
+      '<label class="login-rot" for="usuario">Usuário</label><label class="fone" style="margin:0 0 14px"><svg viewBox="0 0 24 24"><use href="#i-pessoa"/></svg><input id="usuario" placeholder="seu usuário" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false"></label>' +
+      '<label class="login-rot" for="senha">Senha</label><label class="fone" style="margin:0"><svg viewBox="0 0 24 24"><use href="#i-cadeado"/></svg><input id="senha" type="password" placeholder="sua senha" autocomplete="current-password"><button type="button" id="ver-senha" style="border:0;background:none;color:var(--ink2);font:inherit;font-size:14px">mostrar</button></label>' +
+      '<button class="enviar" id="entrar" style="margin-top:22px;height:56px">Entrar</button>' +
+      '<p class="login-nota">Precisa de internet só para entrar. Depois o aplicativo funciona sem sinal.</p>' +
+      '<details style="margin-top:18px;font-size:14px;color:var(--ink2)"><summary>Tenho um link do escritório</summary><label class="fone" style="margin:10px 0 0"><input id="link" placeholder="Cole o link aqui" autocomplete="off" style="font-size:15px"></label><button class="enviar" id="entrar-link" style="margin-top:10px;height:48px;font-size:16px;background:var(--pri);color:var(--onpri)">Entrar com o link</button></details></div></div>';
     $('ver-senha').onclick = function(){ var e = $('senha'); e.type = e.type === 'password' ? 'text' : 'password'; this.textContent = e.type === 'password' ? 'mostrar' : 'esconder'; };
     $('senha').addEventListener('keydown', function(e){ if (e.key === 'Enter') $('entrar').click(); });
     $('entrar').onclick = function(){
