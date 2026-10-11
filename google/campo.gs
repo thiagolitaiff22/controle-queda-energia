@@ -88,6 +88,12 @@ function validar(token){
   return quem;
 }
 
+// nome no sistema no mesmo padrão dos outros clientes: "Eliel dos Santos" (a pasta no Drive continua em maiúsculas)
+function nomeProprio(s){
+  return String(s || '').toLowerCase()
+    .replace(/(^|[\s'-])([a-zà-ÿ])/g, function(m, a, b){ return a + b.toUpperCase(); })
+    .replace(/\s(De|Da|Do|Dos|Das|E)(?=\s)/g, function(m){ return m.toLowerCase(); });
+}
 function nomeDigitado(p){ return String(p.cliente || '').replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, ' ').trim().toUpperCase().slice(0, 150); }
 function pastaDoEnvio(envio, quem, cliente){
   var props = PropertiesService.getScriptProperties(), id = props.getProperty('pasta_' + envio);
@@ -135,6 +141,7 @@ function fechar(p, quem){
   if (digitado && dados.nome && String(dados.nome).toUpperCase() !== digitado) nota.push('Nome nos documentos: ' + String(dados.nome).toUpperCase() + ' (o prospectador digitou ' + digitado + ').');
   if (digitado) dados.nome = digitado;
   if (dados.nome) pasta.setName(String(dados.nome).toUpperCase());
+  dados.nome = nomeProprio(dados.nome);
   var id = rpc('campo_cadastrar', {
     p_token: p.token, p_envio: p.envio,
     p_dados: { nome: dados.nome, cpf: dados.cpf, rg: dados.rg, nascimento: dados.nascimento, endereco: dados.endereco,
