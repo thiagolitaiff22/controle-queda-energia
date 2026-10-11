@@ -1255,6 +1255,10 @@ section.vw-dash{gap:10px!important}
 #form.novo .f-body > .field:has(#f-uc){display:flex!important;order:5}
 #form.novo .f-body > .field:has(#f-periodo){display:flex!important;order:6}
 #form.novo .f-body > .field:has(#f-dtcad){display:flex!important;order:7}
+.ficha-foto{display:flex;align-items:center;gap:12px;margin:8px 0 12px}
+.ficha-foto img{width:96px;height:96px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.ficha-foto span{font-size:12.5px;color:var(--ink-3)}
+.av-foto{flex:none;width:28px;height:28px;border-radius:50%;object-fit:cover;border:1px solid var(--line)}
 .falta-tag{flex:none;font-size:11px;font-weight:700;color:var(--red);background:var(--red-soft);border:1px solid currentColor;border-radius:4px;padding:0 6px;white-space:nowrap;max-width:220px;overflow:hidden;text-overflow:ellipsis}
 .falta-docs{margin:12px 0 0;padding:10px 12px;border:1px solid var(--red);background:var(--red-soft);border-radius:4px}
 .falta-docs b{display:block;color:var(--red);font-size:13px}
@@ -2136,7 +2140,8 @@ section.vw-dash{gap:10px!important}
     ];
     var fl = faltaDocs(r);
     var ok = '<i class="fc-ok"><svg class="i"><use href="#i-check"/></svg></i>', nada = '<i class="fc-nao">–</i>';
-    return '<div class="ficha"><div class="ficha-t">Dados do cliente</div><div class="ficha-g">' + campos.map(function(c){
+    var fotoOk = /^data:image\/(jpeg|png);base64,/.test(r.fotoCliente || '');
+    return '<div class="ficha"><div class="ficha-t">Dados do cliente</div>' + (fotoOk ? '<div class="ficha-foto"><img src="' + r.fotoCliente + '" alt="Foto de ' + esc(r.nome) + '"><span>Foto tirada pelo prospectador</span></div>' : '') + '<div class="ficha-g">' + campos.map(function(c){
       var v = c[1] == null ? '' : String(c[1]).trim();
       return '<div class="ficha-i">' + (v ? ok : nada) + '<div><span>' + c[0] + '</span><b>' + (v ? esc(v) : '—') + '</b></div></div>';
     }).join('') + '</div>' +
@@ -2599,7 +2604,7 @@ section.vw-dash{gap:10px!important}
     lista.slice(0, 300).forEach(function(r){
       var st = situacaoCad(r);
       html += '<div class="row' + (cadAberto[r.id] ? ' aberto' : '') + '" data-linha="' + esc(r.id) + '">' +
-        '<div class="c-name"><div class="name"><button type="button" class="nome-abrir" data-act="abrir" data-id="' + esc(r.id) + '">' + esc(r.nome) + '</button>' + pastaIco(r) + (faltaDocs(r).length ? '<span class="falta-tag" title="Documentos que o prospectador ainda precisa mandar">Falta: ' + esc(faltaTexto(r)) + '</span>' : '') + '</div><div class="addr">' + (r.cpf ? 'CPF ' + esc(r.cpf) : 'CPF não informado') + '</div></div>' +
+        '<div class="c-name"><div class="name">' + (/^data:image\/(jpeg|png);base64,/.test(r.fotoCliente || '') ? '<img class="av-foto" src="' + r.fotoCliente + '" alt="">' : '') + '<button type="button" class="nome-abrir" data-act="abrir" data-id="' + esc(r.id) + '">' + esc(r.nome) + '</button>' + pastaIco(r) + (faltaDocs(r).length ? '<span class="falta-tag" title="Documentos que o prospectador ainda precisa mandar">Falta: ' + esc(faltaTexto(r)) + '</span>' : '') + '</div><div class="addr">' + (r.cpf ? 'CPF ' + esc(r.cpf) : 'CPF não informado') + '</div></div>' +
         '<div><span class="lbl">Prospectador</span><div class="val">' + esc(prospName(r.responsavelId) || '—') + '</div></div>' +
         '<div><span class="lbl">Contato</span>' + telCell(r) + '</div>' +
         '<div><span class="lbl">Cadastrado em</span><div class="val">' + (r.dataCadastro || r.criadoEm ? fmtShort(String(r.dataCadastro || r.criadoEm).slice(0, 10)) : '—') + '</div></div>' +

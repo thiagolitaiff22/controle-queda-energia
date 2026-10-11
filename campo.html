@@ -440,7 +440,7 @@ body{background:transparent!important}
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 18;
+  var APP_VERSAO = 19;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
@@ -1305,27 +1305,38 @@ body{background:transparent!important}
   }
   function montar(falta){
     var t = tela('<svg viewBox="0 0 24 24" style="stroke:var(--ok)"><use href="#i-nuvem"/></svg><b>Preparando…</b><p id="t-prep">Montando os documentos</p>');
-    var nDocs = DOCS.filter(function(d){ return fotos[d.k] && d.k !== 'cliente'; }).length, nFeito = 0;
+    // arquivos que vão para a pasta: procuração separada; RG + CPF + talão juntos em DOCUMENTOS PESSOAIS
+    var GRUPOS_ARQ = [
+      { nome: 'PROCURAÇÃO', ks: ['procuracao'] },
+      { nome: 'DOCUMENTOS PESSOAIS', ks: ['rg_frente', 'rg_verso', 'cpf', 'luz'] },
+      { nome: 'DOCUMENTOS A ROGO', ks: ['arogo'] },
+      { nome: 'OUTROS DOCUMENTOS', ks: ['outro'] }
+    ];
+    var nDocs = GRUPOS_ARQ.filter(function(g){ return g.ks.some(function(k){ return fotos[k]; }); }).length, nFeito = 0;
     var id = Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
-    var arquivos = [], todas = [], comp = completando;
+    var arquivos = [], comp = completando, fotoMini = '';
     // complemento: nome dos arquivos com a data, para não confundir com os que já estão na pasta
     var sufixo = comp ? ' - complemento ' + new Date().toLocaleDateString('pt-BR').replace(/\//g, '-') : '';
     var p = Promise.resolve();
-    DOCS.forEach(function(d){
-      var f0 = fotos[d.k]; if (!f0) return;
-      f0.filter(function(x){ return x.pdf; }).forEach(function(x, i){ arquivos.push({ nome: d.arq + sufixo + ' - anexo ' + (i + 1) + '.pdf', mime: 'application/pdf', blob: x.blob }); });
-      var f = f0.filter(function(x){ return !x.pdf; }); if (!f.length) return;
-      // foto do cliente vai como imagem; documentos vão só em PDF (metade do tamanho, envio mais rápido)
-      if (d.k === 'cliente') f.forEach(function(x, i){ arquivos.push({ nome: d.arq + sufixo + (f.length > 1 ? ' ' + (i + 1) : '') + '.jpg', mime: 'image/jpeg', blob: x.blob }); });
-      if (d.k !== 'cliente'){
-        todas = todas.concat(f);
-        p = p.then(function(){ var pe = $('t-prep'); if (pe) pe.textContent = 'Montando documento ' + (++nFeito) + ' de ' + nDocs + '…'; return new Promise(function(ok){ setTimeout(ok, 30); }); })
-             .then(function(){ return pdfDe(f).then(function(pdf){ arquivos.push({ nome: d.arq + sufixo + '.pdf', mime: 'application/pdf', blob: pdf }); }); });
-      }
+    GRUPOS_ARQ.forEach(function(g){
+      var imgs = [], pdfs = [];
+      g.ks.forEach(function(k){ (fotos[k] || []).forEach(function(x){ (x.pdf ? pdfs : imgs).push(x); }); });
+      // PDF anexado (WhatsApp) vai como veio, com o nome do grupo
+      pdfs.forEach(function(x, i){ arquivos.push({ nome: g.nome + sufixo + ' - anexo ' + (i + 1) + '.pdf', mime: 'application/pdf', blob: x.blob }); });
+      if (!imgs.length) return;
+      p = p.then(function(){ var pe = $('t-prep'); if (pe) pe.textContent = 'Montando ' + g.nome.toLowerCase() + ' (' + (++nFeito) + ' de ' + nDocs + ')…'; return new Promise(function(ok){ setTimeout(ok, 30); }); })
+           .then(function(){ return pdfDe(imgs).then(function(pdf){ arquivos.push({ nome: g.nome + sufixo + '.pdf', mime: 'application/pdf', blob: pdf }); }); });
     });
-    p.then(function(){ return false && todas.length && !comp ? pdfDe(todas).then(function(pdf){ arquivos.push({ nome: '00 - Documentos completos.pdf', mime: 'application/pdf', blob: pdf }); }) : null; })
-     .then(function(){
-       var envio = { id: id, token: token, criado: new Date().toISOString(), completar: comp ? comp.id : '', contato: ($('fone') || {}).value || '', cliente: comp ? comp.nome : (($('nome') || {}).value || '').replace(/\s+/g, ' ').trim().toUpperCase(), local: local, faltam: falta.map(function(d){ return d.k; }),
+    // foto do cliente: imagem na pasta + miniatura para aparecer no sistema
+    var fc = (fotos.cliente || []).filter(function(x){ return !x.pdf; });
+    fc.forEach(function(x, i){ arquivos.push({ nome: 'FOTO DO CLIENTE' + sufixo + (fc.length > 1 ? ' ' + (i + 1) : '') + '.jpg', mime: 'image/jpeg', blob: x.blob }); });
+    if (fc.length) p = p.then(function(){ return carregar(fc[0].blob).then(function(im){
+      var k = Math.min(1, 360 / Math.max(im.naturalWidth, im.naturalHeight)), cv = document.createElement('canvas');
+      cv.width = Math.round(im.naturalWidth * k); cv.height = Math.round(im.naturalHeight * k);
+      cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height); fotoMini = cv.toDataURL('image/jpeg', 0.72);
+    }).catch(function(){}); });
+    p     .then(function(){
+       var envio = { id: id, token: token, criado: new Date().toISOString(), completar: comp ? comp.id : '', foto: fotoMini, contato: ($('fone') || {}).value || '', cliente: comp ? comp.nome : (($('nome') || {}).value || '').replace(/\s+/g, ' ').trim().toUpperCase(), local: local, faltam: falta.map(function(d){ return d.k; }),
          docs: DOCS.filter(function(d){ return fotos[d.k]; }).map(function(d){ return d.k; }), arquivos: [] };
        return Promise.all(arquivos.map(function(a){ return paraBytes(a.blob).then(function(b){ return { nome: a.nome, mime: a.mime, buf: b, tam: b.byteLength, ok: false }; }, function(){ return { nome: a.nome, mime: a.mime, blob: a.blob, tam: a.blob.size, ok: false }; }); }))
          .then(function(l){ envio.arquivos = l; return filaPor(envio); }).then(function(){ return histPor({ id: envio.id, token: token, cliente: envio.cliente + (comp ? ' · documentos' : ''), criado: envio.criado, enviado: null }); }).then(function(){ return envio; });
@@ -1415,7 +1426,7 @@ body{background:transparent!important}
     return p.then(function(){
         barraEnvio({ nome: envio.cliente, pct: 0.99, passo: 'registrando no sistema' });
         if (envio.completar) return post({ acao: 'completar', token: envio.token, envio: envio.id, completar: envio.completar, docs: envio.docs });
-        return post({ acao: 'fechar', token: envio.token, envio: envio.id, cliente: envio.cliente || '', contato: envio.contato, local: envio.local, docs: envio.docs, faltam: envio.faltam }); })
+        return post({ acao: 'fechar', token: envio.token, envio: envio.id, cliente: envio.cliente || '', contato: envio.contato, local: envio.local, docs: envio.docs, faltam: envio.faltam, foto: envio.foto || '' }); })
       .then(function(d){
         // só tira da fila depois de ver o cliente no sistema
         if (envio.completar) return d;

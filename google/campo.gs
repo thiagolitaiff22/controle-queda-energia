@@ -111,7 +111,7 @@ function pastaDoCliente(p){
 function arquivo(p, quem){
   var pasta = p.completar ? pastaDoCliente(p) : pastaDoEnvio(p.envio, quem, nomeDigitado(p));
   var nome = String(p.nome || 'arquivo').replace(/[\\/:*?"<>|]/g, '').slice(0, 120);
-  var sub = /\.pdf$/i.test(nome) ? pasta : subpasta(pasta, 'Imagens escaneadas');
+  var sub = /\.pdf$/i.test(nome) || /^FOTO DO CLIENTE/i.test(nome) ? pasta : subpasta(pasta, 'Imagens escaneadas');
   var ja = sub.getFilesByName(nome);
   if (!ja.hasNext()) sub.createFile(Utilities.newBlob(Utilities.base64Decode(p.b64), p.mime || 'application/octet-stream', nome));
   return { ok: true };
@@ -138,7 +138,7 @@ function fechar(p, quem){
   var id = rpc('campo_cadastrar', {
     p_token: p.token, p_envio: p.envio,
     p_dados: { nome: dados.nome, cpf: dados.cpf, rg: dados.rg, nascimento: dados.nascimento, endereco: dados.endereco,
-      contato: p.contato || '', pastaUrl: pasta.getUrl(), pastaId: pasta.getId(), docs: p.docs || [], faltam: p.faltam || [], local: p.local || null, leitura: nota.join('\n') }
+      contato: p.contato || '', pastaUrl: pasta.getUrl(), pastaId: pasta.getId(), docs: p.docs || [], faltam: p.faltam || [], local: p.local || null, foto: /^data:image\/jpeg;base64,/.test(p.foto || '') ? p.foto : '', leitura: nota.join('\n') }
   });
   PropertiesService.getScriptProperties().deleteProperty('pasta_' + p.envio);
   return { ok: true, id: id, nome: dados.nome || '' };
@@ -336,4 +336,69 @@ function renomearArquivos(arquivos, tipos){
 function completar(p, quem){
   var resta = rpc('campo_completar', { p_token: p.token, p_cliente: String(p.completar || ''), p_docs: p.docs || [] });
   return { ok: true, restam: resta || [] };
+}
+
+/* ---------- organização das pastas que vieram do celular (cadastros antigos) ----------
+ * Junta RG, CPF e talão de luz em DOCUMENTOS PESSOAIS.pdf; renomeia PROCURAÇÃO.pdf e FOTO DO CLIENTE.jpg;
+ * os arquivos juntados vão para a lixeira do Drive (dá para recuperar). Rodar pelo editor: organizarExistentes */
+function carregarPdfLib_(){
+  if (typeof PDFLib !== 'undefined') return PDFLib;
+  globalThis.setTimeout = globalThis.setTimeout || function(f){ f(); return 0; };
+  eval(UrlFetchApp.fetch('https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js').getContentText());
+  return globalThis.PDFLib;
+}
+async function juntarPdfs_(arquivos, nome, pasta){
+  var L = carregarPdfLib_(), saida = await L.PDFDocument.create();
+  for (var i = 0; i < arquivos.length; i++){
+    var a = arquivos[i], bytes = a.getBlob().getBytes();
+    if (a.getMimeType() === 'application/pdf'){
+      var doc = await L.PDFDocument.load(new Uint8Array(bytes));
+      var pags = await saida.copyPages(doc, doc.getPageIndices());
+      pags.forEach(function(pg){ saida.addPage(pg); });
+    } else {
+      var img = /png/i.test(a.getMimeType()) ? await saida.embedPng(new Uint8Array(bytes)) : await saida.embedJpg(new Uint8Array(bytes));
+      var pg2 = saida.addPage([595.28, 841.89]), k = Math.min(567 / img.width, 813 / img.height);
+      pg2.drawImage(img, { x: (595.28 - img.width * k) / 2, y: (841.89 - img.height * k) / 2, width: img.width * k, height: img.height * k });
+    }
+  }
+  var out = await saida.save();
+  return pasta.createFile(Utilities.newBlob(Array.prototype.slice.call(out), 'application/pdf', nome));
+}
+async function organizarPasta_(pasta){
+  var todos = [], it = pasta.getFiles(); while (it.hasNext()) todos.push(it.next());
+  var sub = pasta.getFoldersByName('Imagens escaneadas'); if (sub.hasNext()){ var it2 = sub.next().getFiles(); while (it2.hasNext()) todos.push(it2.next()); }
+  var acha = function(re, so){ return todos.filter(function(a){ return re.test(a.getName()) && (!so || so.test(a.getMimeType())); }); };
+  var pessoais = [].concat(acha(/^RG - frente/i, /pdf/), acha(/^RG - verso/i, /pdf/), acha(/^CPF/i, /pdf/), acha(/^Conta de luz/i, /pdf/));
+  var feito = [];
+  if (pessoais.length && !acha(/^DOCUMENTOS PESSOAIS\.pdf$/i).length){
+    await juntarPdfs_(pessoais, 'DOCUMENTOS PESSOAIS.pdf', pasta);
+    pessoais.forEach(function(a){ a.setTrashed(true); });
+    feito.push('documentos pessoais (' + pessoais.length + ' arquivos)');
+  }
+  acha(/^Procura[çc][ãa]o.*\.pdf$/i).forEach(function(a, i){ if (a.getName() !== 'PROCURAÇÃO.pdf'){ a.setName(i ? 'PROCURAÇÃO ' + (i + 1) + '.pdf' : 'PROCURAÇÃO.pdf'); feito.push('procuração'); } });
+  // as fotos soltas do documento (versões antigas mandavam também em JPG) não são mais necessárias
+  acha(/^(RG - frente|RG - verso|CPF|Conta de luz|Procuração|Documento a rogo|Documentos de quem assina a rogo|Outro documento)/i, /jpe?g/).forEach(function(a){ a.setTrashed(true); });
+  acha(/^00 - Documentos completos/i).forEach(function(a){ a.setTrashed(true); });
+  var foto = acha(/^Foto do cliente/i, /image/)[0];
+  if (foto){
+    if (foto.getName() !== 'FOTO DO CLIENTE.jpg'){ foto.setName('FOTO DO CLIENTE.jpg'); try { foto.moveTo(pasta); } catch (x){} feito.push('foto'); }
+    var seg = PropertiesService.getScriptProperties().getProperty('SEGREDO_SISTEMA'), mini = foto.getThumbnail();
+    if (seg && mini) rpc('campo_foto_pasta', { p_segredo: seg, p_pasta: pasta.getId(), p_foto: 'data:image/png;base64,' + Utilities.base64Encode(mini.getBytes()) });
+  }
+  return feito;
+}
+async function organizarExistentes(){
+  var raiz = DriveApp.getFolderById(PASTA_CLIENTES), log = [];
+  for (var n of [PENDENTES, PROTOCOLADOS]){
+    var it = subpasta(raiz, n).getFolders();
+    while (it.hasNext()){
+      var f = it.next();
+      // só as pastas que vieram do celular (têm os nomes de arquivo do aplicativo)
+      if (!f.getFilesByName('Procuração.pdf').hasNext() && !f.searchFiles("title contains 'Foto do cliente'").hasNext() && !f.searchFiles("title contains 'Conta de luz'").hasNext()) continue;
+      try { var r = await organizarPasta_(f); if (r.length) log.push(f.getName() + ': ' + r.join(', ')); }
+      catch (x){ log.push(f.getName() + ': ERRO ' + x); }
+    }
+  }
+  console.log(log.length ? log.join('\n') : 'nada para organizar');
+  return log;
 }
