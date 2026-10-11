@@ -155,7 +155,23 @@ input[type=file]{display:none}
     });
   }
   function tx(modo, f){ return db().then(function(d){ return new Promise(function(ok, erro){ var t = d.transaction('envios', modo), s = t.objectStore('envios'), res = f(s); t.oncomplete = function(){ ok(res && res.result !== undefined ? res.result : res); }; t.onerror = function(){ erro(t.error); }; }); }); }
-  var filaTodos = function(){ return tx('readonly', function(s){ return s.getAll(); }); };
+  var filaTodos = function(){ return tx('readonly', function(s){ return s.getAll(); }).then(function(l){ return (l || []).filter(function(x){ return !x.rascunho; }); }); };
+  // rascunho: as fotos do cliente que está sendo cadastrado ficam no celular até o envio
+  // (se o celular fechar ou recarregar a página, nada se perde, mesmo sem internet)
+  var RASC = function(){ return 'rascunho:' + token; };
+  function guardarRascunho(){
+    var f = {}; Object.keys(fotos).forEach(function(k){ f[k] = fotos[k].map(function(x){ return { blob: x.blob, w: x.w, h: x.h }; }); });
+    return (Object.keys(f).length ? tx('readwrite', function(s){ s.put({ id: RASC(), rascunho: true, fotos: f, local: local }); }) : tx('readwrite', function(s){ s.delete(RASC()); })).catch(function(){});
+  }
+  function abrirRascunho(){
+    return tx('readonly', function(s){ return s.get(RASC()); }).then(function(r){
+      if (!r || !r.fotos) return;
+      Object.keys(r.fotos).forEach(function(k){ fotos[k] = r.fotos[k].map(function(x){ return { blob: x.blob, w: x.w, h: x.h, url: URL.createObjectURL(x.blob) }; }); });
+      if (r.local) local = r.local;
+    }).catch(function(){});
+  }
+  // aviso antes de sair da página com fotos ainda não enviadas
+  window.addEventListener('beforeunload', function(e){ if (Object.keys(fotos).length){ e.preventDefault(); e.returnValue = ''; } });
   var filaPor = function(e){ return tx('readwrite', function(s){ s.put(e); }); };
   var filaTira = function(id){ return tx('readwrite', function(s){ s.delete(id); }); };
 
@@ -210,6 +226,7 @@ input[type=file]{display:none}
 
   /* ---------- telas ---------- */
   function telaInicial(){
+    guardarRascunho();
     var n = Object.keys(fotos).length;
     var falta = DOCS.filter(function(d){ return d.req && !fotos[d.k]; });
     $('app').innerHTML =
@@ -451,7 +468,7 @@ input[type=file]{display:none}
   lsSet('campo_token', token);
   if (location.hash) history.replaceState(null, '', location.pathname);
   try { quem = JSON.parse(lsGet('campo_quem') || 'null'); } catch(e){}
-  atualizarQuem().then(function(q){
+  abrirRascunho().then(atualizarQuem).then(function(q){
     if (!q){ $('app').innerHTML = '<div class="aviso"><b>Link cancelado</b>Este link não vale mais. Peça um novo ao escritório.</div>'; return; }
     telaInicial();
     if (!q.envioUrl){ tela('<b>Quase pronto</b><p>O escritório ainda está ligando o envio para o Drive. Você já pode tirar as fotos: elas ficam guardadas no celular.</p><button onclick="this.closest(\'.tela\').remove()">Entendi</button>'); }
