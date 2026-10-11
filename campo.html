@@ -327,6 +327,7 @@ body{background:linear-gradient(168deg,#0f2348 0%,#08142b 55%,#08142b 100%) fixe
 .ver .ctl .boa,.rec .ctl .boa{background:linear-gradient(135deg,#2563eb,#38bdf8)!important;color:#fff}
 .versao{color:rgba(235,235,245,.45)}
 .abas .bolha[hidden]{display:none}
+.ver .fotos .ajustar.filtro{left:auto;right:8px}
 .ver .fotos .ajustar{position:absolute;left:8px;bottom:8px;border:0;background:rgba(8,20,43,.85);color:#fff;font:inherit;font-size:13px;font-weight:700;border-radius:999px;padding:7px 12px}
 /* iPhone: respeita o entalhe e a barra de baixo */
 .topo{padding-top:calc(10px + env(safe-area-inset-top))}
@@ -415,7 +416,7 @@ body{background:transparent!important}
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 9;
+  var APP_VERSAO = 10;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
@@ -488,11 +489,11 @@ body{background:transparent!important}
   // escanear: "folha" (procuração, conta: papel branco e letra preta) ou "cartao" (RG/CPF: mais leve, mantém a foto da pessoa)
   function tratar(im, escanear){
     var iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height;
-    var max = escanear === 'folha' ? 3300 : escanear ? 2200 : 1400, k = Math.min(1, max / Math.max(iw, ih));
+    var max = escanear === 'folha' || escanear === 'original' ? 3300 : escanear ? 2200 : 1400, k = Math.min(1, max / Math.max(iw, ih));
     var w = Math.round(iw * k), h = Math.round(ih * k);
     var c = document.createElement('canvas'); c.width = w; c.height = h;
     var x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(im, 0, 0, w, h);
-    if (escanear){
+    if (escanear && escanear !== 'original'){
       var px = x.getImageData(0, 0, w, h), d = px.data, i, j, v;
       if (escanear === 'folha'){
         // papel: estima o fundo (versão bem pequena e borrada) e divide por ele -> some a sombra, papel fica branco
@@ -1061,9 +1062,10 @@ body{background:transparent!important}
     return Promise.resolve();
   }
   function guardarFoto(d, im, orig){
-    return tratar(im, d.k === 'cliente' ? false : (MOLDURA[d.k] === 'cartao' ? 'cartao' : 'folha')).then(function(r){
+    var modo = d.k === 'cliente' ? false : orig && orig.semFiltro ? 'original' : (MOLDURA[d.k] === 'cartao' ? 'cartao' : 'folha');
+    return tratar(im, modo).then(function(r){
       r.url = URL.createObjectURL(r.blob);
-      if (orig){ r.orig = { src: orig.src, q: orig.q }; }   // só na memória: permite "Ajustar recorte"
+      if (orig){ r.orig = { src: orig.src, q: orig.q }; r.reto = im; r.semFiltro = !!orig.semFiltro; }   // só na memória: permite "Ajustar recorte"
       if (orig && orig.troca != null && fotos[d.k] && fotos[d.k][orig.troca]) fotos[d.k][orig.troca] = r;
       else fotos[d.k] = d.multi ? (fotos[d.k] || []).concat([r]) : [r];
       telaInicial();
@@ -1079,6 +1081,11 @@ body{background:transparent!important}
       var bt = document.createElement('button'); bt.type = 'button'; bt.className = 'ajustar'; bt.textContent = 'Ajustar recorte';
       bt.onclick = function(e){ e.stopPropagation(); t.remove(); recortar(it.doc, it.foto.orig.src, { manual: true, cantos: it.foto.orig.q.map(function(c){ return c.slice(); }), troca: it.i }); };
       fig.appendChild(bt);
+      if (it.foto.reto){
+        var bf = document.createElement('button'); bf.type = 'button'; bf.className = 'ajustar filtro'; bf.textContent = it.foto.semFiltro ? 'Com filtro' : 'Sem filtro';
+        bf.onclick = function(e){ e.stopPropagation(); t.remove(); guardarFoto(it.doc, it.foto.reto, { src: it.foto.orig.src, q: it.foto.orig.q, troca: it.i, semFiltro: !it.foto.semFiltro }); };
+        fig.appendChild(bf);
+      }
     });
   }
   function conferirRG(nova, tirada){
