@@ -149,7 +149,7 @@ input[type=file]{display:none}
   ];
   // formato do enquadramento: cartão (RG/CPF, deitado), folha (A4, em pé) ou rosto (oval)
   var MOLDURA = { procuracao: 'folha', rg_frente: 'cartao', rg_verso: 'cartao', luz: 'folha', cpf: 'cartao', arogo: 'folha', outro: 'folha', cliente: 'livre' };
-  var DICA = { cartao: 'Deite o documento e encaixe nos cantos verdes', folha: 'Encaixe a folha inteira dentro do quadro', livre: 'Foto do cliente, de frente, com a câmera de trás' };
+  var DICA = { cartao: 'Deite o documento e encaixe nos cantos verdes', folha: 'Encaixe a folha inteira dentro do quadro', livre: 'Rosto do cliente dentro do círculo' };
   var $ = function(id){ return document.getElementById(id); };
   var esc = function(t){ return String(t == null ? '' : t).replace(/[&<>"']/g, function(c){ return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
   var token = (location.hash.match(/t=([A-Za-z0-9_-]+)/) || [])[1] || lsGet('campo_token');
@@ -292,7 +292,7 @@ input[type=file]{display:none}
       fluxo = st;
       var c = document.createElement('div'); c.className = 'cam';
       c.innerHTML = '<video playsinline autoplay muted' + (frente ? ' class="espelho"' : '') + '></video>' +
-        '<div class="moldura' + (frente ? ' oval' : '') + '"><i></i><i></i><i></i><i></i></div>' +
+        '<div class="moldura' + (tipo === 'livre' ? ' oval' : '') + '"><i></i><i></i><i></i><i></i></div>' +
         '<div class="dica">' + esc(d.t + (d.s && d.k !== 'cliente' ? ' · ' + d.s : '')) + '<small>' + DICA[tipo] + '</small></div>' +
         '<div class="ctl"><button type="button" class="fechar">Voltar</button><button type="button" class="disparo" aria-label="Tirar foto"></button><button type="button" class="galeria">Galeria</button></div>';
       document.body.appendChild(c);
@@ -301,9 +301,9 @@ input[type=file]{display:none}
       function posicionar(){
         var W = c.clientWidth, H = c.clientHeight, w, h;
         if (tipo === 'cartao'){ w = Math.min(W * 0.9, (H - 260) * 1.585); h = w / 1.585; }
-        else if (tipo === 'livre'){ w = W; h = H; m.style.visibility = 'hidden'; }
+        else if (tipo === 'livre'){ w = Math.min(W * 0.72, (H - 260) * 0.78); h = w / 0.78; }
         else { h = Math.min(H - 220, W * 0.92 * 1.414); w = h / 1.414; }
-        m.style.width = w + 'px'; m.style.height = h + 'px'; m.style.left = (W - w) / 2 + 'px'; m.style.top = (tipo === 'livre' ? 0 : (H - h) / 2 - 10) + 'px';
+        m.style.width = w + 'px'; m.style.height = h + 'px'; m.style.left = (W - w) / 2 + 'px'; m.style.top = (H - h) / 2 - 10 + 'px';
       }
       posicionar(); window.addEventListener('resize', posicionar);
       function sair(){ window.removeEventListener('resize', posicionar); pararCamera(); c.remove(); }
@@ -314,7 +314,7 @@ input[type=file]{display:none}
         // recorta da imagem da câmera só a área da moldura (com uma pequena folga)
         var W = c.clientWidth, H = c.clientHeight, vw = v.videoWidth, vh = v.videoHeight;
         var k = Math.max(W / vw, H / vh), ox = (vw * k - W) / 2, oy = (vh * k - H) / 2;
-        var r = m.getBoundingClientRect(), fol = tipo === 'livre' ? 0 : 0.12;
+        var r = tipo === 'livre' ? c.getBoundingClientRect() : m.getBoundingClientRect(), fol = tipo === 'livre' ? 0 : 0.12;
         var x = r.left - r.width * fol, y = r.top - r.height * fol, w = r.width * (1 + 2 * fol), h = r.height * (1 + 2 * fol);
         var sx = Math.max(0, (x + ox) / k), sy = Math.max(0, (y + oy) / k), sw = Math.min(vw - sx, w / k), sh = Math.min(vh - sy, h / k);
         if (frente) sx = Math.max(0, vw - sx - sw);
