@@ -250,6 +250,7 @@ header .ava{border-radius:4px;background:var(--soft);color:var(--ink);border:1px
       im.src = u;
     });
   }
+  // escanear: "folha" (procuração, conta: papel branco e letra preta) ou "cartao" (RG/CPF: mais leve, mantém a foto da pessoa)
   function tratar(im, escanear){
     var iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height;
     var max = escanear ? 2200 : 1200, k = Math.min(1, max / Math.max(iw, ih));
@@ -265,10 +266,11 @@ header .ava{border-radius:4px;background:var(--soft);color:var(--ink);border:1px
       var gx = g.getContext('2d'); gx.imageSmoothingQuality = 'high'; gx.drawImage(b, 0, 0, w, h);
       var px = x.getImageData(0, 0, w, h), fd = gx.getImageData(0, 0, w, h).data, d = px.data;
       // tira a sombra (divide pelo fundo) e ajusta os níveis: papel vira branco, letra vira preta
-      var PRETO = 135, BRANCO = 225, esc3 = 255 / (BRANCO - PRETO);
+      var PRETO = escanear === 'cartao' ? 25 : 135, BRANCO = escanear === 'cartao' ? 235 : 225, esc3 = 255 / (BRANCO - PRETO);
       for (var i = 0; i < d.length; i += 4){
         for (var j = 0; j < 3; j++){
-          var v = d[i + j] / Math.max(70, fd[i + j]) * 255;
+          // cartão (RG/CPF): não divide pelo fundo, senão a foto da pessoa some; só ajusta contraste e nitidez
+          var v = escanear === 'cartao' ? d[i + j] : d[i + j] / Math.max(70, fd[i + j]) * 255;
           v = (v - PRETO) * esc3;
           d[i + j] = v < 0 ? 0 : v > 255 ? 255 : v;
         }
@@ -527,7 +529,7 @@ header .ava{border-radius:4px;background:var(--soft);color:var(--ink);border:1px
     return Promise.resolve();
   }
   function guardarFoto(d, im){
-    return tratar(im, d.k !== 'cliente').then(function(r){
+    return tratar(im, d.k === 'cliente' ? false : (MOLDURA[d.k] === 'cartao' ? 'cartao' : 'folha')).then(function(r){
       r.url = URL.createObjectURL(r.blob);
       fotos[d.k] = d.multi ? (fotos[d.k] || []).concat([r]) : [r];
       telaInicial();
