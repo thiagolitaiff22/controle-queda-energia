@@ -48,6 +48,7 @@ function doPost(e){
     gatilho();
     var p = JSON.parse(e.postData.contents);
     if (p.acao === 'pasta') return saida(pastaDoCadastro(p));
+    if (p.acao === 'lerPasta') return saida(lerPastaDoCadastro(p));
     var quem = validar(p.token);
     if (!/^[A-Za-z0-9_-]{8,64}$/.test(p.envio || '')) throw new Error('Envio inválido.');
     if (p.acao === 'arquivo') return saida(arquivo(p, quem));
@@ -180,6 +181,7 @@ function gatilho(){
   props.setProperty('gatilho_ok', '1');
 }
 function moverProtocolados(){
+  try { lerPendentes(); } catch (x){ console.log('leitura automática: ' + x); }
   var raiz = DriveApp.getFolderById(PASTA_CLIENTES);
   var destino = { pendente: subpasta(raiz, PENDENTES), protocolado: subpasta(raiz, PROTOCOLADOS), arquivado: subpasta(raiz, ARQUIVADOS) };
   var porId = {}, onde = {};
@@ -214,4 +216,81 @@ function pastaDoCadastro(p){
   [PENDENTES, PROTOCOLADOS, ARQUIVADOS].some(function(n){ var it = subpasta(raiz, n).getFoldersByName(nome); if (it.hasNext()){ achou = it.next(); return true; } return false; });
   var f = achou || subpasta(raiz, etapa).createFolder(nome);
   return { ok: true, id: f.getId(), url: f.getUrl(), existente: !!achou };
+}
+
+/* ---------- IA lê os documentos que estiverem na pasta do cliente ---------- */
+function equipeLogada(jwt){
+  var r = UrlFetchApp.fetch(SUPABASE_URL + '/rest/v1/rpc/minha_funcao', {
+    method: 'post', contentType: 'application/json', muteHttpExceptions: true,
+    headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + String(jwt || '') }, payload: '{}'
+  });
+  var funcao = null; try { funcao = JSON.parse(r.getContentText()); } catch (x){}
+  if (r.getResponseCode() >= 300 || !funcao) throw new Error('Entre no sistema para usar a pasta.');
+}
+// imagens e PDFs da pasta e das subpastas (até 8 arquivos e 18 MB, sem imagem acima de 4,5 MB)
+function arquivosDaPasta(pasta){
+  var lista = [];
+  function junta(f){ var it = f.getFiles(); while (it.hasNext()){ var a = it.next(), t = a.getMimeType(); if (/^image\/(jpeg|png|webp|gif)$/.test(t) || t === 'application/pdf') lista.push(a); } }
+  junta(pasta); var sub = pasta.getFolders(); while (sub.hasNext()) junta(sub.next());
+  var peso = function(n){ n = n.toUpperCase(); return /PROCURA/.test(n) ? 0 : /RG|IDENTIDADE|CNH/.test(n) ? 1 : /CPF/.test(n) ? 2 : /LUZ|ENERGIA|CONTA|FATURA/.test(n) ? 3 : /COMPLETOS/.test(n) ? 9 : 5; };
+  lista.sort(function(a, b){ return peso(a.getName()) - peso(b.getName()); });
+  var escolhidos = [], total = 0;
+  lista.forEach(function(a){
+    var tam = a.getSize(), img = a.getMimeType() !== 'application/pdf';
+    if (escolhidos.length >= 8 || (img && tam > 4.5e6) || total + tam > 18e6) return;
+    escolhidos.push(a); total += tam;
+  });
+  return escolhidos;
+}
+function lerArquivos(arquivos){
+  var chave = chaveClaude(); if (!chave) throw new Error('A chave do Claude não está cadastrada (Configurações › Integrações › Claude).');
+  if (!arquivos.length) throw new Error('Nenhuma foto ou PDF na pasta.');
+  var conteudo = [];
+  arquivos.forEach(function(a){
+    var b = a.getBlob(), pdf = a.getMimeType() === 'application/pdf';
+    conteudo.push({ type: 'text', text: 'Arquivo: ' + a.getName() });
+    conteudo.push(pdf ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: Utilities.base64Encode(b.getBytes()) } }
+                      : { type: 'image', source: { type: 'base64', media_type: a.getMimeType(), data: Utilities.base64Encode(b.getBytes()) } });
+  });
+  conteudo.push({ type: 'text', text:
+    'Estes são documentos de um cliente de um escritório de advocacia (RG, CPF, CNH, conta de luz, procuração). ' +
+    'Extraia os dados do cliente (o titular / outorgante), nunca do advogado. Responda só com um JSON, sem texto fora dele, no formato: ' +
+    '{"nome":"","cpf":"000.000.000-00","rg":"","nascimento":"AAAA-MM-DD","endereco":"","uc":"","observacao":""}. ' +
+    'Nome completo em maiúsculas, como no documento. Endereço com rua, número, comunidade ou bairro e cidade (de preferência o da conta de luz). ' +
+    '"uc" é o número da unidade consumidora (ou conta contrato / instalação) da conta de luz. ' +
+    'Deixe vazio o que não estiver legível; não invente. Em "observacao", avise em uma frase se houver divergência entre os documentos ou algo ilegível.' });
+  var r = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
+    method: 'post', contentType: 'application/json', muteHttpExceptions: true,
+    headers: { 'x-api-key': chave, 'anthropic-version': '2023-06-01' },
+    payload: JSON.stringify({ model: MODELO, max_tokens: 900, messages: [{ role: 'user', content: conteudo }] })
+  });
+  var d = JSON.parse(r.getContentText());
+  if (r.getResponseCode() >= 300) throw new Error((d.error && d.error.message) || ('erro ' + r.getResponseCode()));
+  var txt = (d.content || []).map(function(c){ return c.text || ''; }).join('');
+  var m = txt.match(/\{[\s\S]*\}/); if (!m) throw new Error('A IA não conseguiu ler os documentos.');
+  var o = JSON.parse(m[0]);
+  var out = { nome: limpa(o.nome), cpf: limpa(o.cpf), rg: limpa(o.rg), nascimento: limpa(o.nascimento), endereco: limpa(o.endereco), uc: limpa(o.uc), observacao: limpa(o.observacao) };
+  if (out.cpf && !cpfValido(out.cpf)) out.observacao = ('CPF lido (' + out.cpf + ') não confere: verifique no documento. ' + out.observacao).trim();
+  return out;
+}
+// botão "Ler documentos da pasta" no cadastro do BI
+function lerPastaDoCadastro(p){
+  equipeLogada(p.jwt);
+  var pasta; try { pasta = DriveApp.getFolderById(String(p.pastaId || '')); } catch (x){ throw new Error('Pasta do cliente não encontrada no Drive.'); }
+  var arq = arquivosDaPasta(pasta);
+  return { ok: true, dados: lerArquivos(arq), arquivos: arq.length };
+}
+// automático: pastas em PENDENTES DE PROTOCOLO com arquivo novo desde a última leitura (até 4 por vez)
+function lerPendentes(){
+  var props = PropertiesService.getScriptProperties(), seg = props.getProperty('SEGREDO_SISTEMA');
+  if (!seg || !chaveClaude()) return 0;
+  var pend = subpasta(DriveApp.getFolderById(PASTA_CLIENTES), PENDENTES), it = pend.getFolders(), lidas = 0;
+  while (it.hasNext() && lidas < 4){
+    var f = it.next(), arq = arquivosDaPasta(f); if (!arq.length) continue;
+    var ultimo = Math.max.apply(null, arq.map(function(a){ return a.getLastUpdated().getTime(); }));
+    var k = 'lido_' + f.getId(); if (Number(props.getProperty(k) || 0) >= ultimo) continue;
+    try { rpc('campo_preencher_pasta', { p_segredo: seg, p_pasta: f.getId(), p_dados: lerArquivos(arq) }); } catch (x){ console.log(f.getName() + ': ' + x); }
+    props.setProperty(k, String(ultimo)); lidas++;
+  }
+  return lidas;
 }

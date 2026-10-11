@@ -1240,6 +1240,10 @@ section.vw-dash{gap:10px!important}
 .pasta-auto{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2);padding:9px 12px;border:1px dashed var(--line-2);border-radius:4px}
 .pasta-colar{margin-top:8px;font-size:12.5px;color:var(--ink-3)}
 .pasta-colar summary{cursor:pointer;margin-bottom:6px}
+
+.pasta-acoes{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#f-pasta-msg{display:block;margin-top:6px}
+.ia-preencheu{border-color:var(--blue)!important;box-shadow:0 0 0 1px var(--blue) inset}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -3665,11 +3669,30 @@ section.vw-dash{gap:10px!important}
   }
   function renderFolderField(r){
     var box = $('f-pasta');
-    if (r && r.pastaUrl){ box.innerHTML = '<a class="folder" href="' + esc(r.pastaUrl) + '" target="_blank" rel="noopener"><svg class="i"><use href="#i-folder"/></svg>Abrir pasta no Drive</a>'; return; }
+    if (r && r.pastaUrl){ box.innerHTML = '<div class="pasta-acoes"><a class="folder" href="' + esc(r.pastaUrl) + '" target="_blank" rel="noopener"><svg class="i"><use href="#i-folder"/></svg>Abrir pasta no Drive</a>' +
+      (r.pastaId ? '<button type="button" class="btn" id="f-pasta-ler" title="A IA lê RG, CPF, conta de luz e procuração que estiverem na pasta e preenche os campos vazios">Ler documentos da pasta</button>' : '') + '</div>' +
+      '<span class="small" id="f-pasta-msg">Jogue na pasta as fotos ou PDFs do RG, CPF, conta de luz e procuração. A IA lê sozinha de hora em hora, ou na hora pelo botão.</span>'; return; }
     var colar = '<details class="pasta-colar"><summary>Já tem pasta antiga? Colar o link</summary><input id="f-pasta-url" type="url" placeholder="Cole aqui o link da pasta no Google Drive" style="width:100%"></details>';
     if (!r){ box.innerHTML = '<div class="pasta-auto"><svg class="i"><use href="#i-folder"/></svg><span>A pasta é criada sozinha no Drive ao salvar, em <b>CLIENTES › PENDENTES DE PROTOCOLO</b>.</span></div>' + colar; return; }
     box.innerHTML = '<button type="button" class="btn" id="f-pasta-criar"><svg class="i"><use href="#i-folder"/></svg>Criar pasta no Drive</button>' + colar;
   }
+  // IA lê os documentos da pasta e preenche só os campos vazios do formulário (o usuário confere e salva)
+  document.addEventListener('click', async function(e){
+    var b = e.target.closest('#f-pasta-ler'); if (!b || !state.editing) return;
+    var r = state.rows.filter(function(x){ return x.id === state.editing; })[0]; if (!r || !r.pastaId) return;
+    b.disabled = true; b.textContent = 'Lendo os documentos…';
+    try {
+      var url = await urlDoScript();
+      var ses = await SB.auth.getSession(), jwt = ses && ses.data && ses.data.session ? ses.data.session.access_token : '';
+      var d = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ acao: 'lerPasta', jwt: jwt, pastaId: r.pastaId }) }).then(function(x){ return x.json(); });
+      if (!d || !d.ok) throw new Error(d && d.erro || 'falhou');
+      var CAMPOS = [['nome', 'f-nome', 'nome'], ['cpf', 'f-cpf', 'CPF'], ['rg', 'f-rg', 'RG'], ['endereco', 'f-end', 'endereço'], ['uc', 'f-uc', 'unidade consumidora']], feitos = [];
+      CAMPOS.forEach(function(c){ var el = $(c[1]), v = d.dados && d.dados[c[0]]; if (el && v && !el.value.trim()){ el.value = v; el.classList.add('ia-preencheu'); feitos.push(c[2]); } });
+      $('f-pasta-msg').textContent = (feitos.length ? 'Preenchido pela IA: ' + feitos.join(', ') + '. Confira e clique em Salvar.' : 'Nada novo: os campos já estavam preenchidos ou não foram encontrados.') + (d.dados && d.dados.observacao ? ' Atenção: ' + d.dados.observacao : '') + ' (' + d.arquivos + ' arquivo' + (d.arquivos === 1 ? '' : 's') + ' lido' + (d.arquivos === 1 ? '' : 's') + ')';
+      toast(feitos.length ? 'A IA preencheu: ' + feitos.join(', ') : 'A IA não encontrou dados novos');
+    } catch(err){ toast('Não foi possível ler a pasta: ' + (err.message || err)); }
+    finally { b.disabled = false; b.textContent = 'Ler documentos da pasta'; }
+  });
   document.addEventListener('click', async function(e){
     var b = e.target.closest('#f-pasta-criar'); if (!b || !state.editing) return;
     b.disabled = true; b.lastChild.textContent = 'Criando…';
