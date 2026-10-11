@@ -320,6 +320,12 @@ body{background:linear-gradient(168deg,#2e335a 0%,#1c1b33 55%,#1c1b33 100%) fixe
 .ver .ctl .boa,.rec .ctl .boa{background:linear-gradient(135deg,#7b4dff,#c427fb)!important;color:#fff}
 .versao{color:rgba(235,235,245,.45)}
 .abas .bolha[hidden]{display:none}
+.ver .topo,.rec .topo{display:block;position:static;background:none;backdrop-filter:none;-webkit-backdrop-filter:none;border:0;padding:calc(14px + env(safe-area-inset-top)) 16px 8px;text-align:center}
+.ver .topo small,.rec .topo small{display:block;margin-top:2px}
+.cam .lados{display:inline-flex;margin-top:10px;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:3px;text-shadow:none}
+.cam .lados button{border:0;background:none;color:#fff;font:inherit;font-size:15px;font-weight:700;padding:7px 18px;border-radius:999px}
+.cam .lados button[aria-pressed="true"]{background:#fff;color:#2e335a}
+.ver .falta-lado{border:1px dashed rgba(255,255,255,.3);border-radius:12px;padding:28px 12px;text-align:center;color:rgba(255,255,255,.7);font-weight:600}
 .topo .logo{background:linear-gradient(140deg,#5936b4,#362a84)!important}
 .topo .logo img{height:24px;width:auto;display:block}
 .marca-rl{display:block;width:72%;max-width:250px;height:auto;margin:6px auto 18px}
@@ -360,20 +366,20 @@ body{background:linear-gradient(168deg,#2e335a 0%,#1c1b33 55%,#1c1b33 100%) fixe
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 3;
+  var APP_VERSAO = 4;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
-    { k: 'rg_frente', arq: 'RG - frente', t: 'RG', s: 'frente (com a foto)', ic: 'i-id', req: true, fala: 'Tire a foto da frente do RG, o lado com a foto.' },
-    { k: 'rg_verso', arq: 'RG - verso', t: 'RG', s: 'verso', ic: 'i-idv', fala: 'Agora o verso do RG.' },
+    { k: 'rg_frente', arq: 'RG - frente', t: 'RG', s: 'frente e verso', lado: 'Frente', ic: 'i-id', req: true, fala: 'Tire a foto da frente do RG, o lado com a foto.' },
+    { k: 'rg_verso', arq: 'RG - verso', t: 'RG', s: 'verso', lado: 'Verso', oculto: true, ic: 'i-idv', fala: 'Agora o verso do RG.' },
     { k: 'luz', arq: 'Conta de luz', t: 'Talão de luz', s: 'conta de energia', ic: 'i-luz', req: true, fala: 'Tire a foto do talão de luz.' },
     { k: 'cpf', arq: 'CPF', t: 'CPF', s: 'se for separado do RG', ic: 'i-id', fala: 'Foto do CPF, se for separado do RG.' },
-    { k: 'arogo', arq: 'Documento a rogo', t: 'A rogo', s: 'se o cliente não assina', ic: 'i-dedo', fala: 'Se o cliente não sabe assinar, tire a foto do documento a rogo, com a digital e as testemunhas.', multi: true },
+    { k: 'arogo', arq: 'Documentos de quem assina a rogo', t: 'A rogo', s: 'RG e CPF de quem assina pelo cliente', ic: 'i-dedo', fala: 'Tire a foto do RG e do CPF da pessoa que assina pelo cliente.', multi: true },
     { k: 'outro', arq: 'Outro documento', t: 'Outros', s: 'outros documentos', ic: 'i-mais', fala: 'Foto de outro documento.', multi: true },
     { k: 'cliente', arq: 'Foto do cliente', t: 'Foto do cliente', s: 'rosto, na casa dele', ic: 'i-pessoa', req: true, fala: 'Tire uma foto do rosto do cliente, de frente.' }
   ];
   // formato do enquadramento: cartão (RG/CPF, deitado), folha (A4, em pé) ou rosto (oval)
-  var MOLDURA = { procuracao: 'folha', rg_frente: 'cartao', rg_verso: 'cartao', luz: 'folha', cpf: 'cartao', arogo: 'folha', outro: 'folha', cliente: 'livre' };
+  var MOLDURA = { procuracao: 'folha', rg_frente: 'cartao', rg_verso: 'cartao', luz: 'folha', cpf: 'cartao', arogo: 'cartao', outro: 'folha', cliente: 'livre' };
   var DICA = { cartao: 'Deite o documento e encaixe nos cantos verdes', folha: 'Encaixe a folha inteira dentro do quadro', livre: 'Rosto do cliente dentro do círculo' };
   var $ = function(id){ return document.getElementById(id); };
   var esc = function(t){ return String(t == null ? '' : t).replace(/[&<>"']/g, function(c){ return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
@@ -534,8 +540,10 @@ body{background:linear-gradient(168deg,#2e335a 0%,#1c1b33 55%,#1c1b33 100%) fixe
         '<label class="fone' + (lsGet('campo_nome').trim() ? '' : ' falta') + '" id="l-nome"><svg viewBox="0 0 24 24"><use href="#i-pessoa"/></svg><input id="nome" autocomplete="off" autocapitalize="characters" placeholder="Nome completo do cliente" value="' + esc(lsGet('campo_nome')) + '"></label>' +
         '<label class="fone"><svg viewBox="0 0 24 24"><use href="#i-fone"/></svg><input id="fone" inputmode="tel" placeholder="Número de telefone" value="' + esc(lsGet('campo_fone')) + '"></label>' +
       '</div>' +
-      '<div class="rot">Documentos</div><div class="grid">' + DOCS.map(function(d){
-        var f = fotos[d.k];
+      '<div class="rot">Documentos</div><div class="grid">' + DOCS.filter(function(d){ return !d.oculto; }).map(function(d){
+        var f = d.k === 'rg_frente' ? rgFotos() : fotos[d.k];
+        if (d.k === 'rg_frente' && f.length) return '<button class="doc feito" data-k="' + d.k + '"><div class="thumbs">' + f.map(function(x){ return '<img alt="" src="' + x.url + '">'; }).join('') + '</div>' +
+          '<span class="apagar" data-apagar="' + d.k + '" aria-label="Apagar">×</span><div class="marca"><svg viewBox="0 0 24 24"><use href="#i-ok"/></svg>' + (fotos.rg_frente && fotos.rg_verso ? 'RG · frente e verso' : fotos.rg_frente ? 'RG · falta o verso' : 'RG · falta a frente') + '</div></button>';
         if (f && f.length) return '<button class="doc feito" data-k="' + d.k + '"><div class="thumbs">' + f.slice(0, 3).map(function(x){ return '<img alt="" src="' + x.url + '">'; }).join('') + '</div>' +
           '<span class="apagar" data-apagar="' + d.k + '" aria-label="Apagar">×</span><div class="marca"><svg viewBox="0 0 24 24"><use href="#i-ok"/></svg>' + esc(d.t) + (f.length > 1 ? ' · ' + f.length : '') + ' · ver' + '</div></button>';
         return '<button class="doc' + (d.req ? ' req' : '') + '" data-k="' + d.k + '">' + (d.req ? '<span class="estrela"></span>' : '') + '<svg><use href="#' + d.ic + '"/></svg><span class="t">' + esc(d.t) + '</span><span class="s">' + esc(d.s) + '</span></button>';
@@ -549,8 +557,9 @@ body{background:linear-gradient(168deg,#2e335a 0%,#1c1b33 55%,#1c1b33 100%) fixe
     Array.prototype.forEach.call(document.querySelectorAll('.doc'), function(b){
       b.addEventListener('click', function(e){
         var ap = e.target.closest('[data-apagar]');
-        if (ap){ e.stopPropagation(); if (confirm('Apagar as fotos de ' + DOCS.filter(function(d){ return d.k === ap.dataset.apagar; })[0].t + '?')){ delete fotos[ap.dataset.apagar]; telaInicial(); } return; }
+        if (ap){ e.stopPropagation(); if (confirm('Apagar as fotos de ' + DOCS.filter(function(d){ return d.k === ap.dataset.apagar; })[0].t + '?')){ delete fotos[ap.dataset.apagar]; if (ap.dataset.apagar === 'rg_frente') delete fotos.rg_verso; telaInicial(); } return; }
         var d = DOCS.filter(function(x){ return x.k === b.dataset.k; })[0];
+        if (d.k === 'rg_frente') return rgFotos().length ? conferirRG() : fotografar(d);
         if (fotos[d.k] && fotos[d.k].length) return conferir(d);
         fotografar(d);
       });
@@ -725,11 +734,16 @@ body{background:linear-gradient(168deg,#2e335a 0%,#1c1b33 55%,#1c1b33 100%) fixe
       var c = document.createElement('div'); c.className = 'cam';
       c.innerHTML = '<video playsinline autoplay muted' + (frente ? ' class="espelho"' : '') + '></video>' +
         '<div class="moldura' + (tipo === 'livre' ? ' oval' : '') + '"><i></i><i></i><i></i><i></i></div>' +
-        '<div class="dica">' + esc(d.t + (d.s && d.k !== 'cliente' ? ' · ' + d.s : '')) + '<small>' + DICA[tipo] + '</small></div>' +
+        '<div class="dica">' + esc(d.lado ? 'RG' : d.t + (d.s && d.k !== 'cliente' ? ' · ' + d.s : '')) + '<small>' + DICA[tipo] + '</small>' +
+          (d.lado ? '<div class="lados"><button type="button" data-lado="rg_frente">Frente</button><button type="button" data-lado="rg_verso">Verso</button></div>' : '') + '</div>' +
         '<div class="ctl"><button type="button" class="fechar">Voltar</button><button type="button" class="disparo" aria-label="Tirar foto"></button><button type="button" class="galeria">Galeria</button></div>';
       document.body.appendChild(c);
       var v = c.querySelector('video'), m = c.querySelector('.moldura');
       v.srcObject = st;
+      // RG: troca entre frente e verso sem sair da câmera
+      var marcarLado = function(){ Array.prototype.forEach.call(c.querySelectorAll('[data-lado]'), function(b){ b.setAttribute('aria-pressed', b.dataset.lado === d.k ? 'true' : 'false'); }); };
+      marcarLado();
+      c.addEventListener('click', function(e){ var b = e.target.closest('[data-lado]'); if (!b) return; d = DOCS.filter(function(x){ return x.k === b.dataset.lado; })[0]; atual = d; marcarLado(); });
       function posicionar(){
         var W = c.clientWidth, H = c.clientHeight, w, h;
         if (tipo === 'cartao'){ w = Math.min(W * 0.9, (H - 260) * 1.585); h = w / 1.585; }
@@ -900,7 +914,22 @@ body{background:linear-gradient(168deg,#2e335a 0%,#1c1b33 55%,#1c1b33 100%) fixe
       conferir(d, true);
     }).catch(function(){ alert('Não deu para usar esta foto. Tire de novo.'); });
   }
+  function rgFotos(){ return (fotos.rg_frente || []).concat(fotos.rg_verso || []); }
+  function conferirRG(nova, tirada){
+    var lados = [['rg_frente', 'Frente'], ['rg_verso', 'Verso']];
+    var t = document.createElement('div'); t.className = 'ver';
+    var faltaVerso = !fotos.rg_verso, faltaFrente = !fotos.rg_frente;
+    t.innerHTML = '<div class="topo">RG · frente e verso<small>Confira se dá para ler tudo, sem sombra e sem borrão</small></div>' +
+      '<div class="fotos">' + lados.map(function(l){ var x = (fotos[l[0]] || [])[0]; return x ? '<figure><img alt="" src="' + x.url + '"><figcaption>' + l[1] + '</figcaption></figure>' : '<div class="falta-lado">' + l[1] + ' ainda não foi tirada</div>'; }).join('') + '</div>' +
+      '<div class="ctl"><button type="button" class="boa">' + (faltaFrente ? 'Tirar a frente' : faltaVerso ? 'Ficou boa · tirar o verso' : 'Ficou boa') + '</button>' +
+        '<div class="linha"><button type="button" class="denovo" data-l="rg_frente">' + (faltaFrente ? 'Tirar frente' : 'Tirar frente de novo') + '</button><button type="button" class="denovo" data-l="rg_verso">' + (faltaVerso ? 'Tirar verso' : 'Tirar verso de novo') + '</button></div></div>';
+    document.body.appendChild(t);
+    var foto = function(k){ t.remove(); telaInicial(); fotografar(DOCS.filter(function(x){ return x.k === k; })[0]); };
+    t.querySelector('.boa').onclick = function(){ if (faltaFrente) return foto('rg_frente'); if (faltaVerso) return foto('rg_verso'); t.remove(); telaInicial(); };
+    t.addEventListener('click', function(e){ var b = e.target.closest('[data-l]'); if (b) foto(b.dataset.l); });
+  }
   function conferir(d, nova){
+    if (d.k === 'rg_frente' || d.k === 'rg_verso') return conferirRG(nova, d.k);
     var f = fotos[d.k] || []; if (!f.length) return telaInicial();
     if (nova) falar('Confira se dá para ler tudo. Se estiver boa, aperte ficou boa.');
     var t = document.createElement('div'); t.className = 'ver';

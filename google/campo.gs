@@ -22,7 +22,7 @@ var MODELO = 'claude-sonnet-5-5';
 
 var NOMES = {
   procuracao: 'Procuração', rg_frente: 'RG - frente', rg_verso: 'RG - verso', cpf: 'CPF',
-  luz: 'Conta de luz', arogo: 'Documento a rogo', outro: 'Outro documento', cliente: 'Foto do cliente'
+  luz: 'Conta de luz', arogo: 'Documentos de quem assina a rogo', outro: 'Outro documento', cliente: 'Foto do cliente'
 };
 
 // o sistema usa esta resposta para mostrar Drive e Claude como ativados em Configurações
@@ -143,7 +143,7 @@ function fechar(p, quem){
 function lerDocumentos(pasta){
   var chave = chaveClaude();
   if (!chave) return null;
-  var ordem = ['procuracao', 'rg_frente', 'rg_verso', 'cpf', 'arogo', 'luz'], imgs = [];
+  var ordem = ['procuracao', 'rg_frente', 'rg_verso', 'cpf', 'luz'], imgs = [];   // os documentos a rogo são de outra pessoa: não entram na leitura
   var it = subpasta(pasta, 'Imagens escaneadas').getFiles(), todos = [];
   while (it.hasNext()) todos.push(it.next());
   ordem.forEach(function(k){
@@ -159,7 +159,7 @@ function lerDocumentos(pasta){
   });
   conteudo.push({ type: 'text', text:
     'Estas são fotos de documentos de um cliente de um escritório de advocacia (procuração, RG, CPF, conta de luz). ' +
-    'Extraia os dados do OUTORGANTE (o cliente), nunca do advogado. Responda só com um JSON, sem texto fora dele, no formato: ' +
+    'Extraia os dados do OUTORGANTE (o cliente), nunca do advogado nem de quem assina a rogo pelo cliente. Responda só com um JSON, sem texto fora dele, no formato: ' +
     '{"nome":"","cpf":"000.000.000-00","rg":"","nascimento":"AAAA-MM-DD","endereco":"","observacao":""}. ' +
     'Nome completo em maiúsculas, como no documento. Endereço com rua, número, comunidade ou bairro e cidade. ' +
     'Deixe vazio o que não estiver legível; não invente. Em "observacao", avise em uma frase se houver divergência entre os documentos ou algo ilegível.' });
@@ -268,9 +268,10 @@ function lerArquivos(arquivos){
   });
   conteudo.push({ type: 'text', text:
     'Estes são documentos de um cliente de um escritório de advocacia (RG, CPF, CNH, conta de luz, procuração). ' +
-    'Extraia os dados do cliente (o titular / outorgante), nunca do advogado. Responda só com um JSON, sem texto fora dele, no formato: ' +
+    'Extraia os dados do cliente (o titular / outorgante), nunca do advogado nem de quem assina a rogo pelo cliente. Responda só com um JSON, sem texto fora dele, no formato: ' +
     '{"nome":"","cpf":"000.000.000-00","rg":"","nascimento":"AAAA-MM-DD","endereco":"","uc":"","observacao":"","tipos":[]}. ' +
-    '"tipos" é a lista com o tipo de cada arquivo, na mesma ordem (Arquivo 1, 2, ...): use "pessoais" para RG, CPF, CNH ou certidão; "procuracao" para procuração ou documento a rogo; "residencia" para conta de luz ou outro comprovante de residência; "outro" para o resto. ' +
+    '"tipos" é a lista com o tipo de cada arquivo, na mesma ordem (Arquivo 1, 2, ...): use "pessoais" para RG, CPF, CNH ou certidão do cliente; "arogo" para documentos (RG, CPF) de quem assina a rogo pelo cliente; "procuracao" para procuração; "residencia" para conta de luz ou outro comprovante de residência; "outro" para o resto. ' +
+    'ATENÇÃO: quando o cliente não sabe assinar, outra pessoa assina a rogo por ele. Os documentos dessa pessoa (arquivos com "a rogo" no nome ou cujo nome não é o do outorgante da procuração) NUNCA são do cliente: não use o nome, CPF, RG ou data de nascimento deles. ' +
     'Nome completo em maiúsculas, como no documento. Endereço com rua, número, comunidade ou bairro e cidade (de preferência o da conta de luz). ' +
     '"uc" é o número da unidade consumidora (ou conta contrato / instalação) da conta de luz. ' +
     '"rg" no formato número com hífen antes do último dígito (ex.: 2960881-3); se não houver RG nos documentos, deixe vazio (o escritório usa o CPF). ' +
@@ -313,7 +314,7 @@ function lerPendentes(){
 }
 
 /* arquivos jogados na pasta ganham nome padrão pelo tipo: DOCUMENTOS PESSOAIS, PROCURAÇÃO, COMPROVANTE DE RESIDÊNCIA */
-var NOME_TIPO = { pessoais: 'DOCUMENTOS PESSOAIS', procuracao: 'PROCURAÇÃO', residencia: 'COMPROVANTE DE RESIDÊNCIA' };
+var NOME_TIPO = { pessoais: 'DOCUMENTOS PESSOAIS', procuracao: 'PROCURAÇÃO', residencia: 'COMPROVANTE DE RESIDÊNCIA', arogo: 'DOCUMENTOS A ROGO' };
 function renomearArquivos(arquivos, tipos){
   var usados = {};
   arquivos.forEach(function(a){ usados[a.getName().toUpperCase()] = 1; });
