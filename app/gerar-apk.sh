@@ -8,6 +8,7 @@ T=/c/Users/Admin/android-tools
 export JAVA_HOME="$(cygpath -w "$(ls -d $T/jdk/*/ | head -1)")" ANDROID_HOME="$(cygpath -w $T/sdk)"
 node montar.js
 npx cap sync android > /dev/null
+rm -f android/app/build/outputs/apk/release/app-release.apk
 (cd android && ./gradlew.bat assembleRelease --no-daemon -q 2>&1 | grep -iv "warning\|deprecat\|unchecked\|Xlint" || true)
 V=$(grep -o 'var APP_VERSAO = [0-9]*' ../campo.html | grep -o '[0-9]*$')
 mkdir -p download

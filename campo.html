@@ -327,6 +327,13 @@ body{background:linear-gradient(168deg,#0f2348 0%,#08142b 55%,#08142b 100%) fixe
 .ver .ctl .boa,.rec .ctl .boa{background:linear-gradient(135deg,#2563eb,#38bdf8)!important;color:#fff}
 .versao{color:rgba(235,235,245,.45)}
 .abas .bolha[hidden]{display:none}
+#processando{position:fixed;inset:0;z-index:30;background:rgba(2,8,23,.82);display:grid;place-items:center}
+#processando[hidden]{display:none}
+#processando > div{text-align:center;color:#fff}
+#processando i{display:block;width:46px;height:46px;margin:0 auto 14px;border-radius:50%;border:4px solid rgba(255,255,255,.2);border-top-color:#60a5fa;animation:gira .8s linear infinite}
+#processando b{display:block;font-size:17px}
+#processando span{font-size:13.5px;opacity:.75}
+@keyframes gira{to{transform:rotate(360deg)}}
 .cam .deteccao{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
 .cam .deteccao polygon{fill:rgba(56,189,248,.14);stroke:#fbbf24;stroke-width:3;stroke-linejoin:round;opacity:0;transition:opacity .2s}
 .cam.achou .deteccao polygon{opacity:1}
@@ -440,7 +447,7 @@ body{background:transparent!important}
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 20;
+  var APP_VERSAO = 21;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
@@ -735,7 +742,7 @@ body{background:transparent!important}
       var apagar = r[1].filter(function(x){
         if (naFila[x.id]) return false;
         if (x.clienteId) return !ids[x.clienteId];
-        return x.confirmado && !ids['campo-' + x.id];
+        return !ids['campo-' + x.id];   // não está no sistema nem na fila: foi apagado (ou nunca chegou e as fotos já não existem)
       });
       if (!apagar.length) return;
       return hist('readwrite', function(st){ apagar.forEach(function(x){ st.delete(x.id); }); }).catch(function(){});
@@ -970,6 +977,7 @@ body{background:transparent!important}
       c.querySelector('.disparo').onclick = function(){
         if (!v.videoWidth || this.disabled) return;
         this.disabled = true; this.style.opacity = '.5';
+        processando(true);
         var W = c.clientWidth, H = c.clientHeight, vw = v.videoWidth, vh = v.videoHeight;
         var bordas = tipo !== 'livre' && c.classList.contains('certo') && ultimoQ && Date.now() - quandoQ < 800 ? ultimoQ.map(function(p){ return p.slice(); }) : null;
         if (bordas){
@@ -1012,6 +1020,14 @@ body{background:transparent!important}
   }
   // guarda a foto tratada e abre para conferir
   // documento: abre o recorte; foto do cliente vai direto
+  // tela de espera enquanto a foto é recortada e tratada (não volta para o cadastro "do nada")
+  function processando(on){
+    var p = $('processando');
+    if (on){
+      if (!p){ p = document.createElement('div'); p.id = 'processando'; p.innerHTML = '<div><i></i><b>Processando a foto…</b><span>Recortando e deixando legível</span></div>'; document.body.appendChild(p); }
+      p.hidden = false;
+    } else if (p) p.hidden = true;
+  }
   function usarFoto(d, im, op){ return d.k === 'cliente' ? guardarFoto(d, im) : recortar(d, im, op); }
 
   /* ---------- recorte estilo scanner ---------- */
@@ -1166,6 +1182,7 @@ body{background:transparent!important}
       return guardarFoto(d, src, { src: src, q: [[0, 0], [W, 0], [W, H], [0, H]], troca: op.troca, silencioso: op.silencioso });
     }
     var cantos = det.q || [[m, m], [W - m, m], [W - m, H - m], [m, H - m]];
+    processando(false);
     falar('Ajuste os cantos verdes nas pontas do documento e aperte recortar.');
     var t = document.createElement('div'); t.className = 'rec';
     t.innerHTML = '<button type="button" class="xis" aria-label="Fechar">×</button><div class="topo">' + esc(d.t) + ' · recortar<small>Arraste os cantos verdes até as pontas do documento</small></div>' +
@@ -1222,8 +1239,9 @@ body{background:transparent!important}
       else fotos[d.k] = d.multi ? (fotos[d.k] || []).concat([r]) : [r];
       if (orig && orig.silencioso) return;
       telaInicial();
+      processando(false);
       conferir(d, true);
-    }).catch(function(){ alert('Não deu para usar esta foto. Tire de novo.'); });
+    }).catch(function(){ processando(false); alert('Não deu para usar esta foto. Tire de novo.'); });
   }
   function miniatura(x){ return x.pdf ? '<span class="pdf-mini">PDF</span>' : '<img alt="" src="' + x.url + '">'; }
   function figuraDe(x, rotulo){ return '<figure>' + (x.pdf ? '<div class="pdf-fig"><b>PDF anexado</b><span>' + esc(x.nome || '') + '</span></div>' : '<img alt="" src="' + x.url + '">') + (rotulo ? '<figcaption>' + rotulo + '</figcaption>' : ''); }
@@ -1289,7 +1307,8 @@ body{background:transparent!important}
   $('foto').addEventListener('change', function(){
     var arq = this.files && this.files[0]; this.value = ''; if (!arq || !atual) return;
     var d = atual;
-    carregar(arq).then(function(im){ return usarFoto(d, im); }).catch(function(){ alert('Não deu para usar esta foto. Tire de novo.'); });
+    processando(true);
+    carregar(arq).then(function(im){ return usarFoto(d, im); }).catch(function(){ processando(false); alert('Não deu para usar esta foto. Tire de novo.'); });
   });
 
   function tela(html){ var t = document.createElement('div'); t.className = 'tela'; t.innerHTML = '<div>' + html + '</div>'; document.body.appendChild(t); return t; }
