@@ -266,6 +266,7 @@ function lerArquivos(arquivos){
     '{"nome":"","cpf":"000.000.000-00","rg":"","nascimento":"AAAA-MM-DD","endereco":"","uc":"","observacao":""}. ' +
     'Nome completo em maiúsculas, como no documento. Endereço com rua, número, comunidade ou bairro e cidade (de preferência o da conta de luz). ' +
     '"uc" é o número da unidade consumidora (ou conta contrato / instalação) da conta de luz. ' +
+    '"rg" no formato número com hífen antes do último dígito (ex.: 2960881-3); se não houver RG nos documentos, deixe vazio (o escritório usa o CPF). ' +
     'Deixe vazio o que não estiver legível; não invente. Em "observacao", avise em uma frase se houver divergência entre os documentos ou algo ilegível.' });
   var r = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
     method: 'post', contentType: 'application/json', muteHttpExceptions: true,

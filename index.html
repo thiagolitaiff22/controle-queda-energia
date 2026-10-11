@@ -1637,7 +1637,7 @@ section.vw-dash{gap:10px!important}
       <div class="field full"><label for="f-nome">Nome completo</label><input id="f-nome" required autocomplete="off"></div>
       <div class="field full"><label>Pasta do cliente</label><div class="folder-box" id="f-pasta"></div></div>
       <div class="field"><label for="f-cpf">CPF</label><input id="f-cpf" inputmode="numeric" placeholder="000.000.000-00" class="tnum"><span class="hint" id="h-cpf"></span></div>
-      <div class="field"><label for="f-rg">RG</label><input id="f-rg" class="tnum"></div>
+      <div class="field"><label for="f-rg">RG</label><input id="f-rg" class="tnum" inputmode="numeric" placeholder="2960881-3"><span class="hint">Sem RG? Deixe em branco: nos documentos vale o número do CPF.</span></div>
       <div class="field full"><label for="f-end">Endereço</label><input id="f-end" placeholder="Rua, número, bairro, cidade/UF"></div>
       <div class="field full"><label for="f-contato">Contato (telefone / WhatsApp)</label><input id="f-contato" inputmode="tel" placeholder="(97) 00000-0000" class="tnum"></div>
       <div class="field full" id="f-via-box" hidden><label>Avisado via outro cliente</label><div class="integ-row"><span id="f-via-nome" class="val"></span><button type="button" class="btn" id="f-via-tirar" style="padding:5px 10px;font-size:12.5px">Desfazer vínculo</button></div></div>
@@ -2092,6 +2092,10 @@ section.vw-dash{gap:10px!important}
   }
   /* "Dados do cliente": abre embaixo da linha ao clicar no nome */
   var clAberto = {};
+  // RG no formato 2960881-3; sem RG, nos documentos (como a petição inicial) vale o número do CPF
+  function formatarRG(v){ var d = String(v || '').replace(/D/g, ''); return /^d{5,13}$/.test(d) && !/[-.]/.test(String(v)) ? d.slice(0, -1) + '-' + d.slice(-1) : String(v || '').trim(); }
+  function rgDoc(r){ return String(r.rg || '').trim() || String(r.cpf || '').trim(); }
+  document.addEventListener('blur', function(e){ if (e.target && e.target.id === 'f-rg' && e.target.value.trim()) e.target.value = formatarRG(e.target.value); }, true);
   function fichaCliente(r){
     var proc = String(r.processo || '').trim();
     var aud = r.audData ? fmtDate(r.audData) + (r.audHora ? ' às ' + r.audHora : '') + ' · ' + (r.online ? 'online' : 'presencial') : '';
@@ -2101,7 +2105,7 @@ section.vw-dash{gap:10px!important}
     var res = { procedente: 'Procedente', faltou: 'Faltou', conclusos: 'Conclusos', improcedente: 'Improcedente' }[resAud(r)] || '';
     var teses = tesesDe(r).map(nomeTese).join(' · ');
     var campos = [
-      ['Nome completo', r.nome], ['CPF', r.cpf], ['RG', r.rg], ['Telefone', contato],
+      ['Nome completo', r.nome], ['CPF', r.cpf], ['RG', r.rg || (r.cpf ? r.cpf + ' (mesmo número do CPF)' : '')], ['Telefone', contato],
       ['Endereço', r.endereco], ['Prospectador', prospName(r.responsavelId)],
       ['Processo', proc], ['Protocolado em', r.protocolo ? fmtDate(r.protocolo) : ''],
       ['Unidade consumidora', r.uc], ['Período', r.periodo],
@@ -3834,7 +3838,7 @@ section.vw-dash{gap:10px!important}
     var situacao = $('f-situacao').value, avisado = situacao === 'avisado';
     var avisoEm = $('f-avisoem').value || (avisado ? iso(new Date()) : '');
     var data = Object.assign({}, prev, {
-      nome: nome, cpf: $('f-cpf').value.trim(), rg: $('f-rg').value.trim(), endereco: $('f-end').value.trim(),
+      nome: nome, cpf: $('f-cpf').value.trim(), rg: formatarRG($('f-rg').value), endereco: $('f-end').value.trim(),
       contato: $('f-contato').value.trim(), foraDaRegua: !$('f-regua').checked,
       contatoVia: $('f-via-box').dataset.tirar ? null : (prev.contatoVia || null),
       telefoneAdicionadoEm: !prev.contato && $('f-contato').value.trim() ? new Date().toISOString() : (prev.telefoneAdicionadoEm || ''),
