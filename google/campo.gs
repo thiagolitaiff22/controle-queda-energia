@@ -254,16 +254,17 @@ function lerArquivos(arquivos){
   var chave = chaveClaude(); if (!chave) throw new Error('A chave do Claude não está cadastrada (Configurações › Integrações › Claude).');
   if (!arquivos.length) throw new Error('Nenhuma foto ou PDF na pasta.');
   var conteudo = [];
-  arquivos.forEach(function(a){
+  arquivos.forEach(function(a, i){
     var b = a.getBlob(), pdf = a.getMimeType() === 'application/pdf';
-    conteudo.push({ type: 'text', text: 'Arquivo: ' + a.getName() });
+    conteudo.push({ type: 'text', text: 'Arquivo ' + (i + 1) + ': ' + a.getName() });
     conteudo.push(pdf ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: Utilities.base64Encode(b.getBytes()) } }
                       : { type: 'image', source: { type: 'base64', media_type: a.getMimeType(), data: Utilities.base64Encode(b.getBytes()) } });
   });
   conteudo.push({ type: 'text', text:
     'Estes são documentos de um cliente de um escritório de advocacia (RG, CPF, CNH, conta de luz, procuração). ' +
     'Extraia os dados do cliente (o titular / outorgante), nunca do advogado. Responda só com um JSON, sem texto fora dele, no formato: ' +
-    '{"nome":"","cpf":"000.000.000-00","rg":"","nascimento":"AAAA-MM-DD","endereco":"","uc":"","observacao":""}. ' +
+    '{"nome":"","cpf":"000.000.000-00","rg":"","nascimento":"AAAA-MM-DD","endereco":"","uc":"","observacao":"","tipos":[]}. ' +
+    '"tipos" é a lista com o tipo de cada arquivo, na mesma ordem (Arquivo 1, 2, ...): use "pessoais" para RG, CPF, CNH ou certidão; "procuracao" para procuração ou documento a rogo; "residencia" para conta de luz ou outro comprovante de residência; "outro" para o resto. ' +
     'Nome completo em maiúsculas, como no documento. Endereço com rua, número, comunidade ou bairro e cidade (de preferência o da conta de luz). ' +
     '"uc" é o número da unidade consumidora (ou conta contrato / instalação) da conta de luz. ' +
     '"rg" no formato número com hífen antes do último dígito (ex.: 2960881-3); se não houver RG nos documentos, deixe vazio (o escritório usa o CPF). ' +
@@ -279,6 +280,7 @@ function lerArquivos(arquivos){
   var m = txt.match(/\{[\s\S]*\}/); if (!m) throw new Error('A IA não conseguiu ler os documentos.');
   var o = JSON.parse(m[0]);
   var out = { nome: limpa(o.nome), cpf: limpa(o.cpf), rg: limpa(o.rg), nascimento: limpa(o.nascimento), endereco: limpa(o.endereco), uc: limpa(o.uc), observacao: limpa(o.observacao) };
+  try { renomearArquivos(arquivos, o.tipos || []); } catch (x){ console.log('renomear: ' + x); }
   if (out.cpf && !cpfValido(out.cpf)) out.observacao = ('CPF lido (' + out.cpf + ') não confere: verifique no documento. ' + out.observacao).trim();
   return out;
 }
@@ -302,4 +304,20 @@ function lerPendentes(){
     props.setProperty(k, String(ultimo)); lidas++;
   }
   return lidas;
+}
+
+/* arquivos jogados na pasta ganham nome padrão pelo tipo: DOCUMENTOS PESSOAIS, PROCURAÇÃO, COMPROVANTE DE RESIDÊNCIA */
+var NOME_TIPO = { pessoais: 'DOCUMENTOS PESSOAIS', procuracao: 'PROCURAÇÃO', residencia: 'COMPROVANTE DE RESIDÊNCIA' };
+function renomearArquivos(arquivos, tipos){
+  var usados = {};
+  arquivos.forEach(function(a){ usados[a.getName().toUpperCase()] = 1; });
+  arquivos.forEach(function(a, i){
+    var base = NOME_TIPO[String(tipos[i] || '').toLowerCase()]; if (!base) return;
+    var nome = a.getName(), ext = (nome.match(/.[A-Za-z0-9]{2,4}$/) || [''])[0].toLowerCase();
+    if (nome.toUpperCase().indexOf(base) === 0) return; // já está com o nome padrão
+    var novo = base + ext, n = 2;
+    while (usados[novo.toUpperCase()]) novo = base + ' ' + (n++) + ext;
+    delete usados[nome.toUpperCase()]; usados[novo.toUpperCase()] = 1;
+    a.setName(novo);
+  });
 }
