@@ -1722,8 +1722,8 @@ section.vw-dash{gap:10px!important}
     <div class="f-body">
       <div class="field full"><div class="sec-rot" style="margin:0">Aplicativo (Android)</div><span class="hint">O prospectador instala o aplicativo <b>Cadastro Âmbar</b>, entra com o usuário e a senha abaixo e cadastra os clientes mesmo sem internet. Os cadastros sobem sozinhos quando tiver sinal e aparecem em <b>Cadastro</b>, na conta deste prospectador.</span></div>
       <div class="field"><label for="cp-usuario">Usuário</label><input id="cp-usuario" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="ex.: lene"></div>
-      <div class="field"><label for="cp-senha">Senha</label><div style="display:flex;gap:6px"><input id="cp-senha" autocomplete="new-password" placeholder="nova senha" style="flex:1;min-width:0"><button class="btn" type="button" id="cp-gerar" title="Gera uma senha fácil de digitar">Gerar</button></div></div>
-      <div class="field full"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class="btn primary" type="button" id="cp-salvar-login">Salvar usuário e senha</button><button class="btn" type="button" id="cp-whats-app">Mandar acesso no WhatsApp</button><a class="btn" id="cp-apk" target="_blank" rel="noopener">Baixar o aplicativo</a></div><span class="small" id="cp-login-status"></span></div>
+      <div class="field"><label for="cp-senha">Senha</label><div style="display:flex;gap:6px"><input id="cp-senha" autocomplete="new-password" placeholder="digite ou gere" style="flex:1;min-width:0"><button class="btn" type="button" id="cp-gerar" title="Gera uma senha fácil de digitar">Gerar</button><button class="btn primary" type="button" id="cp-salvar-senha" title="Salva e já vale no aplicativo">Salvar</button></div></div>
+      <div class="field full"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class="btn" type="button" id="cp-whats-app">Mandar acesso no WhatsApp</button><a class="btn" id="cp-apk" target="_blank" rel="noopener">Baixar o aplicativo</a></div><span class="small" id="cp-login-status"></span></div>
       <div class="field full" style="margin-top:6px"><div class="sec-rot" style="margin:0">Ou pelo navegador (link)</div><span class="hint">Quem tem o link cadastra em nome deste prospectador, sem senha.</span></div>
       <div class="field full"><label for="cp-link">Link</label><input id="cp-link" readonly></div>
       <div class="field full" id="cp-aviso" hidden><span class="rep-aviso">O envio para o Drive ainda não está ligado: veja em Configurações › Cadastro pelo celular. Até lá, as fotos ficam guardadas no celular do prospectador.</span></div>
@@ -3231,7 +3231,8 @@ section.vw-dash{gap:10px!important}
       $('cp-apk').href = APK_URL;
       var lg = await SB.rpc('campo_login_status', { p_prosp: p.id });
       if (lg.error){ $('cp-login-status').textContent = 'Rode o arquivo supabase/13_login_app.sql no Supabase para liberar usuário e senha.'; $('cp-usuario').value = ''; }
-      else if (lg.data){ $('cp-usuario').value = lg.data.usuario; $('cp-login-status').textContent = 'Usuário ' + lg.data.usuario + ' ativo. A senha não aparece aqui; para trocar, digite uma nova e salve.'; }
+      else if (lg.data){ $('cp-usuario').value = lg.data.usuario; $('cp-senha').value = lg.data.senha || ''; cpSenhaNova = lg.data.senha || '';
+        $('cp-login-status').textContent = 'Acesso ativo: usuário ' + lg.data.usuario + (lg.data.senha ? '' : '. Senha salva antes desta versão: gere ou digite uma nova e clique em Salvar para ela aparecer aqui') + '.'; }
       else { $('cp-usuario').value = sugerirUsuario(p.nome); $('cp-login-status').textContent = 'Ainda sem usuário e senha. Confira o usuário, gere uma senha e salve.'; }
       if (!$('dlg-campo').open) $('dlg-campo').showModal();
       if (novo) toast('Link novo gerado. O antigo não funciona mais.');
@@ -3242,12 +3243,13 @@ section.vw-dash{gap:10px!important}
     var p = String(nome || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/^(dona|seu|sr|sra)\.?\s+/, '').split(/\s+/).filter(Boolean);
     return (p[0] || 'prospectador').replace(/[^a-z0-9]/g, '').slice(0, 20);
   }
+  $('cp-senha').addEventListener('keydown', function(e){ if (e.key === 'Enter'){ e.preventDefault(); $('cp-salvar-senha').click(); } });
   $('cp-gerar').addEventListener('click', function(){
     // senha fácil de digitar no celular: só números (6) , sem sequência óbvia
     var a = new Uint32Array(6); crypto.getRandomValues(a);
     $('cp-senha').value = Array.prototype.map.call(a, function(x){ return x % 10; }).join('');
   });
-  $('cp-salvar-login').addEventListener('click', async function(){
+  $('cp-salvar-senha').addEventListener('click', async function(){
     if (!cpProsp) return;
     var u = $('cp-usuario').value.trim().toLowerCase(), pw = $('cp-senha').value.trim();
     if (!/^[a-z0-9._-]{3,30}$/.test(u)) return toast('Usuário: de 3 a 30 letras ou números, sem espaço nem acento');
@@ -3255,13 +3257,14 @@ section.vw-dash{gap:10px!important}
     var r = await SB.rpc('campo_definir_login', { p_prosp: cpProsp.id, p_usuario: u, p_senha: pw });
     if (r.error) return toast(errMsg(r.error));
     cpSenhaNova = pw; $('cp-usuario').value = r.data;
-    $('cp-login-status').textContent = 'Salvo: usuário ' + r.data + ' e a senha digitada. Mande o acesso para o prospectador agora (a senha não fica visível depois).';
+    $('cp-login-status').textContent = 'Senha salva. Já vale no aplicativo: usuário ' + r.data + ' e senha ' + pw + '.';
     toast('Usuário e senha salvos');
   });
   $('cp-whats-app').addEventListener('click', function(){
     if (!cpProsp) return;
     var u = $('cp-usuario').value.trim().toLowerCase();
-    if (!cpSenhaNova) return toast('Salve uma senha nova primeiro (a senha antiga não fica guardada para mandar de novo)');
+    if (!cpSenhaNova) return toast('Digite ou gere a senha e clique em Salvar primeiro');
+    if ($('cp-senha').value.trim() !== cpSenhaNova) return toast('A senha do campo ainda não foi salva: clique em Salvar');
     var dig = String(cpProsp.telefone || cpProsp.contato || '').replace(/\D/g, '');
     var txt = 'Olá, ' + String(cpProsp.nome || '').split(' ')[0] + '! Este é o aplicativo para cadastrar os clientes, funciona mesmo sem internet.\n\n1. Baixe e instale: ' + APK_URL + '\n2. Abra o Cadastro Âmbar e entre com:\nUsuário: ' + u + '\nSenha: ' + cpSenhaNova;
     window.open('https://wa.me/' + (dig.length >= 10 ? '55' + dig.replace(/^55/, '') : '') + '?text=' + encodeURIComponent(txt), '_blank', 'noopener');
