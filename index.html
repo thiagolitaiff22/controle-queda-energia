@@ -1244,6 +1244,17 @@ section.vw-dash{gap:10px!important}
 .pasta-acoes{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 #f-pasta-msg{display:block;margin-top:6px}
 .ia-preencheu{border-color:var(--blue)!important;box-shadow:0 0 0 1px var(--blue) inset}
+
+/* ---------- cadastro inicial: nome, RG, CPF, endereço, UC, período e data do protocolo ---------- */
+#form.novo .f-body > *{display:none!important}
+#form.novo .f-body > .section-lbl:first-child{display:block!important;order:0}
+#form.novo .f-body > .field:has(#f-nome){display:flex!important;order:1}
+#form.novo .f-body > .field:has(#f-rg){display:flex!important;order:2}
+#form.novo .f-body > .field:has(#f-cpf){display:flex!important;order:3}
+#form.novo .f-body > .field:has(#f-end){display:flex!important;order:4}
+#form.novo .f-body > .field:has(#f-uc){display:flex!important;order:5}
+#form.novo .f-body > .field:has(#f-periodo){display:flex!important;order:6}
+#form.novo .f-body > .field:has(#f-protocolo){display:flex!important;order:7}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -3749,6 +3760,7 @@ section.vw-dash{gap:10px!important}
     var lugar = embutido ? $('cad-box') : dlg;
     if ($('form').parentElement !== lugar) lugar.appendChild($('form'));
     state.editing = r ? r.id : null;
+    $('form').classList.toggle('novo', !r); // cadastro inicial: só os dados do cliente
     $('f-title').textContent = r ? 'Editar cliente' : 'Novo cliente';
     $('f-nome').value = r ? r.nome || '' : '';
     $('f-cpf').value = r ? r.cpf || '' : '';
