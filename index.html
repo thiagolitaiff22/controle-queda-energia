@@ -1220,11 +1220,15 @@ section.vw-dash{gap:10px!important}
 #view-cad > .fbar{margin-top:30px!important}
 .cad-stats{grid-template-columns:repeat(4,minmax(0,1fr))!important}
 @media (max-width:900px){ .cad-stats{grid-template-columns:repeat(2,minmax(0,1fr))!important} }
-#cad-list .row{grid-template-columns:minmax(0,2.4fr) minmax(0,1.4fr) minmax(0,1.2fr) minmax(0,1fr) minmax(0,1.3fr) 36px!important;gap:16px!important;min-height:46px;padding-top:6px!important;padding-bottom:6px!important}
+#cad-list .row{grid-template-columns:minmax(0,3.2fr) minmax(0,1.2fr) minmax(0,1fr) minmax(0,1.3fr) 36px!important;gap:16px!important;min-height:46px;padding-top:6px!important;padding-bottom:6px!important}
 #cad-list .row[data-linha]{cursor:pointer}
 #cad-list .row[data-linha]:hover{background:var(--hover)}
 #cad-list .row.aberto{background:var(--soft)}
 #cad-list .c-name .name{font-size:13.5px;font-weight:700;display:flex;align-items:center;gap:6px;min-width:0}
+/* nome inteiro, sem três pontinhos: quebra a linha se precisar */
+#cad-list .c-name .name{flex-wrap:wrap;row-gap:3px}
+#cad-list .nome-abrir{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
+#cad-list .falta-tag{max-width:none}
 #cad-list .c-name .addr{font-size:12px;color:var(--ink-3)}
 #cad-list .val{font-size:12.5px}
 #cad-list .c-act{justify-content:flex-end}
@@ -2604,13 +2608,12 @@ section.vw-dash{gap:10px!important}
     var lista = todos.filter(function(r){ return (!cadSit || (cadSit === 'faltam' ? faltaDocs(r).length > 0 : situacaoCad(r)[0] === cadSit)) && buscaCliente(r, cadQ); })
       .sort(function(a, b){ return String(b.dataCadastro || b.criadoEm || '').localeCompare(String(a.dataCadastro || a.criadoEm || '')) || String(a.nome || '').localeCompare(String(b.nome || ''), 'pt'); });
     $('cad-count').textContent = lista.length + (lista.length === 1 ? ' cliente' : ' clientes');
-    var html = '<div class="row head"><div>Cliente</div><div>Prospectador</div><div>Contato</div><div>Cadastrado em</div><div>Situação</div><div></div></div>';
+    var html = '<div class="row head"><div>Cliente</div><div>Contato</div><div>Cadastrado em</div><div>Situação</div><div></div></div>';
     if (!lista.length) html += '<div class="empty">' + (todos.length ? 'Nenhum cliente neste filtro.' : 'Nenhum cliente em cadastro. Clique em <b>Novo cliente</b> para começar.') + '</div>';
     lista.slice(0, 300).forEach(function(r){
       var st = situacaoCad(r);
       html += '<div class="row' + (cadAberto[r.id] ? ' aberto' : '') + '" data-linha="' + esc(r.id) + '">' +
         '<div class="c-name"><div class="name">' + (/^data:image\/(jpeg|png);base64,/.test(r.fotoCliente || '') ? '<img class="av-foto" src="' + r.fotoCliente + '" alt="">' : '') + '<button type="button" class="nome-abrir" data-act="abrir" data-id="' + esc(r.id) + '">' + esc(r.nome) + '</button>' + pastaIco(r) + (faltaDocs(r).length ? '<span class="falta-tag" title="Documentos que o prospectador ainda precisa mandar">Falta: ' + esc(faltaTexto(r)) + '</span>' : '') + '</div><div class="addr">' + (r.cpf ? 'CPF ' + esc(r.cpf) : 'CPF não informado') + '</div></div>' +
-        '<div><span class="lbl">Prospectador</span><div class="val">' + esc(prospName(r.responsavelId) || '—') + '</div></div>' +
         '<div><span class="lbl">Contato</span>' + telCell(r) + '</div>' +
         '<div><span class="lbl">Cadastrado em</span><div class="val">' + (r.dataCadastro || r.criadoEm ? fmtShort(String(r.dataCadastro || r.criadoEm).slice(0, 10)) : '—') + '</div></div>' +
         '<div><span class="lbl">Situação</span><span class="cad-sit ' + st[2] + '">' + st[1] + '</span></div>' +
