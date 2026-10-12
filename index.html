@@ -2231,7 +2231,7 @@ section.vw-dash{gap:10px!important}
         fl.map(function(k){ return '<button type="button" class="btn" data-act="recebido" data-id="' + esc(r.id) + '" data-doc="' + k + '"><svg class="i"><use href="#i-check"/></svg>Recebi ' + DOC_FALTA[k] + '</button>'; }).join('') + '</div></div>' :
         compacto && !docsConferidos(r) ? '<div class="falta-docs"><b>Documentação não conferida</b><span>Abra a pasta no Drive e veja se estão lá a procuração, o RG, o CPF e o talão de luz. Se estiver tudo, marque:</span><div><button type="button" class="btn" data-act="docs-ok" data-id="' + esc(r.id) + '"><svg class="i"><use href="#i-check"/></svg>Documentação completa</button></div></div>' : '') +
       '<div class="ficha-acoes"><button type="button" class="btn" data-act="edit" data-id="' + esc(r.id) + '"><svg class="i"><use href="#i-pencil"/></svg>Editar cadastro</button>' +
-      (r.pastaUrl ? '<a class="btn" href="' + esc(r.pastaUrl) + '" target="_blank" rel="noopener"><svg class="i"><use href="#i-folder"/></svg>Pasta no Drive</a>' : '') + (r.pastaId ? '<button type="button" class="btn primary" data-act="ia" data-id="' + esc(r.id) + '">Analisar com IA</button>' : '') + '</div></div>';
+      (r.pastaUrl ? '<a class="btn" href="' + esc(r.pastaUrl) + '" target="_blank" rel="noopener"><svg class="i"><use href="#i-folder"/></svg>Pasta no Drive</a>' : '') + '</div></div>';
   }
   function avisoCell(r){
     var n = daysUntil(r.audData), s = sit(r);
@@ -3289,7 +3289,6 @@ section.vw-dash{gap:10px!important}
     { k: 'regua', t: 'Régua de avisos', d: 'Avisa sozinho o cliente 3 dias antes e na véspera da audiência, das 8h às 18h.', ajuda: 'Precisa do LiderHub. Liga e desliga dentro do cartão.' },
     { k: 'lembrete', t: 'Lembrete agora', d: 'Manda um lembrete único para todos com audiência num dia escolhido.', ajuda: 'Envio manual, com intervalo seguro entre as mensagens.' },
     { k: 'datajud', t: 'Tribunal (DataJud)', d: 'Consulta os processos no TJAM todo dia às 7h: audiência, sentença, alvará.', ajuda: 'Chave pública do CNJ.' },
-    { k: 'claude', t: 'IA (ChatGPT)', d: 'Lê os documentos da pasta no botão Analisar com IA: CPF, RG, endereço, UC e quais documentos estão lá.', ajuda: 'Clique para colar a chave da API do ChatGPT.' },
     { k: 'drive', t: 'Google Drive', d: 'Cria a pasta de cada cliente em 1. CLIENTES e move para Protocolados quando há processo.', ajuda: 'Funciona pelo script do Google do Cadastro pelo celular.', painel: 'celular' },
     { k: 'celular', t: 'Cadastro pelo celular', d: 'O prospectador tira as fotos dos documentos e o cliente cai em Sem protocolo.', ajuda: 'O link de cada prospectador fica no cartão dele, em Prospectadores.' }
   ];
@@ -3864,9 +3863,8 @@ section.vw-dash{gap:10px!important}
   }
   function renderFolderField(r){
     var box = $('f-pasta');
-    if (r && r.pastaUrl){ box.innerHTML = '<div class="pasta-acoes"><a class="folder" href="' + esc(r.pastaUrl) + '" target="_blank" rel="noopener"><svg class="i"><use href="#i-folder"/></svg>Abrir pasta no Drive</a>' +
-      (r.pastaId ? '<button type="button" class="btn" id="f-pasta-ler" title="A IA lê RG, CPF, conta de luz e procuração que estiverem na pasta e preenche os campos vazios">Analisar com IA</button>' : '') + '</div>' +
-      '<span class="small" id="f-pasta-msg">Jogue na pasta as fotos ou PDFs do RG, CPF, conta de luz e procuração e clique em Analisar com IA para preencher RG, CPF, endereço e UC (ou preencha à mão). O período da ação é preenchido por vocês.</span>'; return; }
+    if (r && r.pastaUrl){ box.innerHTML = '<div class="pasta-acoes"><a class="folder" href="' + esc(r.pastaUrl) + '" target="_blank" rel="noopener"><svg class="i"><use href="#i-folder"/></svg>Abrir pasta no Drive</a>' + '</div>' +
+      '<span class="small" id="f-pasta-msg">Jogue na pasta as fotos ou PDFs do RG, CPF, conta de luz e procuração. RG, CPF, endereço, UC e período são preenchidos por vocês.</span>'; return; }
     var colar = '<details class="pasta-colar"><summary>Já tem pasta antiga? Colar o link</summary><input id="f-pasta-url" type="url" placeholder="Cole aqui o link da pasta no Google Drive" style="width:100%"></details>';
     if (!r){ box.innerHTML = '<div class="pasta-auto"><svg class="i"><use href="#i-folder"/></svg><span>A pasta é criada sozinha no Drive ao salvar, em <b>CLIENTES › PENDENTES DE PROTOCOLO</b>.</span></div>' + colar; return; }
     box.innerHTML = '<button type="button" class="btn" id="f-pasta-criar"><svg class="i"><use href="#i-folder"/></svg>Criar pasta no Drive</button>' + colar;
