@@ -1262,6 +1262,7 @@ section.vw-dash{gap:10px!important}
 #form.novo .f-body > .field:has(#f-uc){display:flex!important;order:5}
 #form.novo .f-body > .field:has(#f-periodo){display:flex!important;order:6}
 #form.novo .f-body > .field:has(#f-dtcad){display:flex!important;order:7}
+#form.novo.com-pasta .f-body > .field:has(#f-pasta){display:flex!important;order:1}
 #form.novo .f-body > .field:has(#f-resp){display:flex!important;order:8;grid-column:auto!important}
 #form.novo .field:has(#f-resp) .hint{display:none}
 .ficha-foto{display:flex;align-items:center;gap:12px;margin:8px 0 12px}
@@ -2143,7 +2144,7 @@ section.vw-dash{gap:10px!important}
   document.addEventListener('click', function(e){
     var b = e.target.closest('[data-act="ia"]'); if (!b) return;
     var r = state.rows.filter(function(x){ return x.id === b.dataset.id; })[0]; if (!r) return;
-    openForm(r); setTimeout(function(){ var bt = $('f-pasta-ler'); if (bt) bt.click(); }, 400);
+    openForm(r, false, true, true); setTimeout(function(){ var bt = $('f-pasta-ler'); if (bt) bt.click(); }, 400);
   });
   function fichaCliente(r){
     var proc = String(r.processo || '').trim();
@@ -2657,7 +2658,7 @@ section.vw-dash{gap:10px!important}
   $('cad-sit').addEventListener('change', function(){ cadSit = this.value; renderCad(); });
   $('cad-list').addEventListener('click', function(e){
     var b = e.target.closest('[data-act]');
-    if (b && b.dataset.act === 'edit'){ var r = state.rows.filter(function(x){ return x.id === b.dataset.id; })[0]; if (r) openForm(r); return; }
+    if (b && b.dataset.act === 'edit'){ var r = state.rows.filter(function(x){ return x.id === b.dataset.id; })[0]; if (r) openForm(r, false, true); return; }
     if (b && b.dataset.act !== 'abrir') return;
     var ln = b ? { dataset: { linha: b.dataset.id } } : e.target.closest('[data-linha]');
     if (!ln || (!b && e.target.closest('a,button,select,input,label,.ficha'))) return;
@@ -3886,11 +3887,13 @@ section.vw-dash{gap:10px!important}
       return '<div class="hist-item"><time>' + quando + ' · ' + esc(quem) + '</time>' + o + '</div>';
     }).join('');
   }
-  function openForm(r, embutido){
+  // compacto: editar pelo Cadastro mostra só os campos do cadastro (como o Novo cliente); comPasta: mostra também a pasta (Analisar com IA)
+  function openForm(r, embutido, compacto, comPasta){
     var lugar = embutido ? $('cad-box') : dlg;
     if ($('form').parentElement !== lugar) lugar.appendChild($('form'));
     state.editing = r ? r.id : null;
-    $('form').classList.toggle('novo', !r); // cadastro inicial: só os dados do cliente
+    $('form').classList.toggle('novo', !r || !!compacto); // cadastro inicial: só os dados do cliente
+    $('form').classList.toggle('com-pasta', !!(r && comPasta));
     $('f-title').textContent = r ? 'Editar cliente' : 'Novo cliente';
     $('f-nome').value = r ? r.nome || '' : '';
     $('f-cpf').value = r ? r.cpf || '' : '';
