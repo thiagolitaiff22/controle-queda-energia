@@ -1673,6 +1673,7 @@ section.vw-dash{gap:10px!important}
       <div class="field full"><label class="chk"><input id="f-online" type="checkbox"> Audiência online (por videochamada)</label></div>
       <div class="field"><label for="f-situacao">Situação do aviso</label>
         <select id="f-situacao"><option value="pendente">Não avisado</option><option value="avisado">Avisado</option><option value="sem_contato">Sem contato</option></select></div>
+      <div class="field"><label for="f-aviso-resp">Responsável pelo aviso</label><select id="f-aviso-resp"><option value="">O próprio prospectador</option></select></div>
       <div class="field"><label for="f-avisoem">Data do aviso</label><input id="f-avisoem" type="date"></div>
       <div class="field"><label for="f-meio">Meio do aviso</label><select id="f-meio"><option value="">Não informado</option><option value="whatsapp">WhatsApp</option><option value="convite">Convite</option><option value="prospectador">Prospectador</option><option value="ligacao">Ligação</option><option value="pessoalmente">Pessoalmente</option></select></div>
       <div class="field"><label for="f-avisadoa">Avisado a quem / observação</label><input id="f-avisadoa" placeholder="Ex.: avisado ao irmão, a filha recebeu"></div>
@@ -1959,7 +1960,9 @@ section.vw-dash{gap:10px!important}
   }
   function precisaConvite(r){ return isFuture(r) && !r.avisado && sit(r) === 'sem_contato'; } // only clients nobody can reach; missing phones are a registration task, not a convite
   function passTel(r, f){ if (!f || f === 'todos') return true; if (f === 'novo') return !!(r.contato && r.telefoneAdicionadoEm); if (f === 'prosp') return pelaProsp(r); if (f === 'via') return !!clienteVia(r); if (f === 'sem') return !temContato(r) && !pelaProsp(r); return temTelefone(r); }
-  function passResp(r, f){ if (!f) return true; if (f === '-') return !prospName(r.responsavelId); return r.responsavelId === f; }
+  // quem cuida do aviso da audiência: o escolhido no cadastro ou, se ninguém, o próprio prospectador
+  function respAviso(r){ return r.avisoRespId && prospById(r.avisoRespId) ? r.avisoRespId : r.responsavelId; }
+  function passResp(r, f){ if (!f) return true; if (f === '-') return !prospName(respAviso(r)); return respAviso(r) === f; }
   function fmtAny(s){ if (!s) return ''; return /^\d{4}-\d{2}-\d{2}$/.test(s) ? fmtDate(s) : new Date(s).toLocaleDateString('pt-BR'); }
   // audiência de hoje com resultado lançado já conta como realizada (sai de marcadas e dos avisos)
   function jaRealizada(r){ var n = daysUntil(r.audData); return n != null && (n < 0 || (n === 0 && !!(r.resultado || r.concluso || r.comparecimento))); }
@@ -2072,14 +2075,14 @@ section.vw-dash{gap:10px!important}
   function temTelefone(r){ return digits(r.contato).length >= 10; }
   function clienteVia(r){ if (temTelefone(r) || !r.contatoVia) return null; var v = state.rows.filter(function(x){ return x.id === r.contatoVia; })[0]; return v && temTelefone(v) ? v : null; }
   function temContato(r){ return temTelefone(r) || !!clienteVia(r); }
-  function pelaProsp(r){ return !temContato(r) && !!prospName(r.responsavelId); }
-  function rotuloProsp(r){ var n = prospName(r.responsavelId); return (n.toLowerCase().indexOf('dona ') === 0 ? 'Prospectadora: ' : 'Prospector: ') + n; }
+  function pelaProsp(r){ return !temContato(r) && !!prospName(respAviso(r)); }
+  function rotuloProsp(r){ var n = prospName(respAviso(r)); return (n.toLowerCase().indexOf('dona ') === 0 ? 'Prospectadora: ' : 'Prospector: ') + n; }
   function primeiroNome(n){ var p = String(n || '').trim().split(/\s+/); return p.length > 1 ? p[0] + ' ' + p[p.length - 1] : p[0] || ''; }
   function telCell(r){
     var add = '<button type="button" class="tel-add" data-act="tel" data-id="' + esc(r.id) + '" title="Digite o telefone ou o nome de um cliente que avisa esta pessoa">+ contato</button>';
     var via = clienteVia(r);
     if (via) return '<button type="button" class="tel-edit val" style="font-size:12.5px" data-act="tel" data-id="' + esc(r.id) + '" title="Telefone: ' + esc(via.contato) + ' · clique para trocar">' + esc(via.nome) + '</button>';
-    if (pelaProsp(r)){ var pp = prospById(r.responsavelId) || {}; return '<div class="val" style="font-size:12.5px">' + esc(pp.nome || '') + (pp.regiao ? ' · ' + esc(pp.regiao) : '') + '</div><div class="mini">' + add + '</div>'; }
+    if (pelaProsp(r)){ var pp = prospById(respAviso(r)) || {}; return '<div class="val" style="font-size:12.5px">' + esc(pp.nome || '') + (pp.regiao ? ' · ' + esc(pp.regiao) : '') + '</div><div class="mini">' + add + '</div>'; }
     if (!r.contato) return add;
     return '<button type="button" class="tel-edit val tnum" data-act="tel" data-id="' + esc(r.id) + '" title="Clique para corrigir">' + esc(r.contato) + '</button>';
   }
@@ -2174,10 +2177,10 @@ section.vw-dash{gap:10px!important}
       linha2 = partes.join(' · ');
     } else if (s === 'sem_contato'){
       linha1 = btn('crit', 'Sem contato', 'Clique para registrar o aviso');
-      linha2 = prospName(r.responsavelId) || '';
+      linha2 = prospName(respAviso(r)) || '';
     } else if (pend){
       linha1 = btn('acao', 'Avisar', 'Registrar como foi avisado');
-      linha2 = prospName(r.responsavelId) || '';
+      linha2 = prospName(respAviso(r)) || '';
     } else {
       linha1 = btn('', 'Não avisado', 'Registrar aviso');
     }
@@ -2194,7 +2197,7 @@ section.vw-dash{gap:10px!important}
     var avis = fut.filter(function(r){ return r.avisado; });
     var sc = fut.filter(function(r){ return sit(r) === 'sem_contato'; }).length;
     var pend = fut.length - avis.length;
-    var comResp = fut.filter(function(r){ return !r.avisado && sit(r) !== 'sem_contato' && prospName(r.responsavelId); }).length;
+    var comResp = fut.filter(function(r){ return !r.avisado && sit(r) !== 'sem_contato' && prospName(respAviso(r)); }).length;
     var semResp = pend - sc - comResp;
 
     $('s-total').textContent = rows.length;
@@ -2212,7 +2215,7 @@ section.vw-dash{gap:10px!important}
       var first = dates[0], last = dates[dates.length - 1];
       $('s-aud-c').textContent = (first === last ? fmtShort(first) : fmtShort(first) + ' a ' + fmtShort(last)) + ' · próxima ' + relLabel(daysUntil(first));
       // who is in charge of notifying (the per-day split already shows in Pauta por dia)
-      var comP = fut.filter(function(r){ return prospName(r.responsavelId); }).length;
+      var comP = fut.filter(function(r){ return prospName(respAviso(r)); }).length;
       $('v-aud').innerHTML = stackBar([{ l: 'Com prospectador', n: comP, c: cssVar('--amber') }, { l: 'Sem prospectador', n: fut.length - comP, c: cssVar('--line-2') }]);
     } else { $('s-aud-c').textContent = 'Nenhuma audiência futura'; $('v-aud').innerHTML = ''; }
 
@@ -2785,7 +2788,7 @@ section.vw-dash{gap:10px!important}
   function bcContato(r){
     if (r.contato) return r.contato;
     if (r.contatoVia){ var v = state.rows.filter(function(x){ return x.id === r.contatoVia; })[0]; if (v) return 'pelo número de ' + v.nome; }
-    if (r.responsavelId && prospName(r.responsavelId)) return 'prospectador: ' + prospName(r.responsavelId);
+    if (respAviso(r) && prospName(respAviso(r))) return 'prospectador: ' + prospName(respAviso(r));
     return 'sem telefone';
   }
   function renderBusca(){
@@ -3826,11 +3829,11 @@ section.vw-dash{gap:10px!important}
 
   /* ---------- form ---------- */
   var dlg = $('dlg'), delArmed = false;
-  var CAMPOS_HIST = { nome: 'Nome', cpf: 'CPF', rg: 'RG', endereco: 'Endereço', contato: 'Telefone', contatoVia: 'Avisado via cliente', audData: 'Data da audiência', audHora: 'Hora da audiência', online: 'Online', avisado: 'Aviso', situacao: 'Situação', meioAviso: 'Meio do aviso', avisadoA: 'Quem recebeu', avisadoEm: 'Data do aviso', responsavelId: 'Prospector', processo: 'Processo', protocolo: 'Protocolo', comparecimento: 'Comparecimento', resultado: 'Resultado', concluso: 'Concluso', motivoConcluso: 'Motivo do concluso', embargos: 'Embargos', pagamento: 'Pagamento', obs: 'Observações', pastaUrl: 'Pasta', foraDaRegua: 'Fora da régua', docs: 'Documentos' };
+  var CAMPOS_HIST = { avisoRespId: 'Responsável pelo aviso', nome: 'Nome', cpf: 'CPF', rg: 'RG', endereco: 'Endereço', contato: 'Telefone', contatoVia: 'Avisado via cliente', audData: 'Data da audiência', audHora: 'Hora da audiência', online: 'Online', avisado: 'Aviso', situacao: 'Situação', meioAviso: 'Meio do aviso', avisadoA: 'Quem recebeu', avisadoEm: 'Data do aviso', responsavelId: 'Prospector', processo: 'Processo', protocolo: 'Protocolo', comparecimento: 'Comparecimento', resultado: 'Resultado', concluso: 'Concluso', motivoConcluso: 'Motivo do concluso', embargos: 'Embargos', pagamento: 'Pagamento', obs: 'Observações', pastaUrl: 'Pasta', foraDaRegua: 'Fora da régua', docs: 'Documentos' };
   function valorHist(k, v){
     if (v === null || v === undefined || v === '') return '(vazio)';
     if (typeof v === 'boolean') return v ? 'sim' : 'não';
-    if (k === 'responsavelId') return prospName(v) || v;
+    if (k === 'responsavelId' || k === 'avisoRespId') return prospName(v) || v || 'o próprio prospectador';
     if (k === 'contatoVia'){ var c = state.rows.filter(function(x){ return x.id === v; })[0]; return c ? c.nome : v; }
     if (k === 'resultado' && RES[v]) return RES[v][0];
     if (k === 'pagamento' && PAG[v]) return PAG[v][0];
@@ -3876,6 +3879,8 @@ section.vw-dash{gap:10px!important}
     $('f-situacao').value = r ? sit(r) : 'pendente';
     $('f-resp').innerHTML = '<option value="">Sem prospectador</option>' + state.prosp.map(function(p){ return '<option value="' + esc(p.id) + '">' + esc(p.nome) + '</option>'; }).join('');
     $('f-resp').value = r && prospById(r.responsavelId) ? r.responsavelId : '';
+    $('f-aviso-resp').innerHTML = '<option value="">O próprio prospectador</option>' + state.prosp.map(function(p){ return '<option value="' + esc(p.id) + '">' + esc(p.nome) + '</option>'; }).join('');
+    $('f-aviso-resp').value = r && prospById(r.avisoRespId) ? r.avisoRespId : '';
     $('f-avisoem').value = r && r.avisadoEm ? String(r.avisadoEm).slice(0, 10) : '';
     $('f-avisadoa').value = r ? r.avisadoA || '' : '';
     $('f-meio').value = r && r.meioAviso ? r.meioAviso : '';
@@ -3939,7 +3944,7 @@ section.vw-dash{gap:10px!important}
       telefoneAdicionadoPor: !prev.contato && $('f-contato').value.trim() ? (state.me ? state.me.email : '') : (prev.telefoneAdicionadoPor || ''), audData: $('f-data').value || '', audHora: $('f-hora').value || '', online: $('f-online').checked,
       // day the hearing was set (starts the régua); kept while the date stays the same
       audMarcadaEm: $('f-data').value && $('f-data').value !== prev.audData ? iso(new Date()) : (prev.audMarcadaEm || ''),
-      avisado: avisado, situacao: situacao, responsavelId: $('f-resp').value || (!state.editing && prospForAddress($('f-end').value) ? prospForAddress($('f-end').value).id : ''), avisadoEm: avisoEm || null, avisadoA: $('f-avisadoa').value.trim(), meioAviso: avisado ? $('f-meio').value : (prev.meioAviso || ''),
+      avisado: avisado, situacao: situacao, responsavelId: $('f-resp').value || (!state.editing && prospForAddress($('f-end').value) ? prospForAddress($('f-end').value).id : ''), avisadoEm: avisoEm || null, avisoRespId: $('f-aviso-resp').value, avisadoA: $('f-avisadoa').value.trim(), meioAviso: avisado ? $('f-meio').value : (prev.meioAviso || ''),
       processo: $('f-proc').value.trim(), uc: $('f-uc').value.trim(), periodo: $('f-periodo').value.trim(), tese: $('f-tese').value.trim(),
       protocolo: $('f-protocolo').value || '', contatadoRetorno: $('f-contatado').value === 'sim' ? (prev.contatadoRetorno || iso(new Date())) : null,
       comparecimento: $('f-comp').value, motivoFalta: $('f-comp').value === 'faltou' ? $('f-falta').value.trim() : '',
