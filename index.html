@@ -2081,11 +2081,12 @@ section.vw-dash{gap:10px!important}
   function pelaProsp(r){ return !temContato(r) && !!prospName(respAviso(r)); }
   function rotuloProsp(r){ var n = prospName(respAviso(r)); return (n.toLowerCase().indexOf('dona ') === 0 ? 'Prospectadora: ' : 'Prospector: ') + n; }
   function primeiroNome(n){ var p = String(n || '').trim().split(/\s+/); return p.length > 1 ? p[0] + ' ' + p[p.length - 1] : p[0] || ''; }
-  function telCell(r){
+  // semProsp: na lista do Cadastro o prospectador já tem coluna própria, então o contato mostra só telefone ou "+ contato"
+  function telCell(r, semProsp){
     var add = '<button type="button" class="tel-add" data-act="tel" data-id="' + esc(r.id) + '" title="Digite o telefone ou o nome de um cliente que avisa esta pessoa">+ contato</button>';
     var via = clienteVia(r);
     if (via) return '<button type="button" class="tel-edit val" style="font-size:12.5px" data-act="tel" data-id="' + esc(r.id) + '" title="Telefone: ' + esc(via.contato) + ' · clique para trocar">' + esc(via.nome) + '</button>';
-    if (pelaProsp(r)){ var pp = prospById(respAviso(r)) || {}; return '<div class="val" style="font-size:12.5px">' + esc(pp.nome || '') + (pp.regiao ? ' · ' + esc(pp.regiao) : '') + '</div><div class="mini">' + add + '</div>'; }
+    if (!semProsp && pelaProsp(r)){ var pp = prospById(respAviso(r)) || {}; return '<div class="val" style="font-size:12.5px">' + esc(pp.nome || '') + (pp.regiao ? ' · ' + esc(pp.regiao) : '') + '</div><div class="mini">' + add + '</div>'; }
     if (!r.contato) return add;
     return '<button type="button" class="tel-edit val tnum" data-act="tel" data-id="' + esc(r.id) + '" title="Clique para corrigir">' + esc(r.contato) + '</button>';
   }
@@ -2627,7 +2628,7 @@ section.vw-dash{gap:10px!important}
       html += '<div class="row' + (cadAberto[r.id] ? ' aberto' : '') + '" data-linha="' + esc(r.id) + '">' +
         '<div class="c-name"><div class="name">' + (/^data:image\/(jpeg|png);base64,/.test(r.fotoCliente || '') ? '<img class="av-foto" src="' + r.fotoCliente + '" alt="">' : '') + '<button type="button" class="nome-abrir" data-act="abrir" data-id="' + esc(r.id) + '">' + esc(r.nome) + '</button>' + pastaIco(r) + '</div><div class="addr">' + (r.cpf ? 'CPF ' + esc(r.cpf) : 'CPF não informado') + '</div></div>' +
         '<div><span class="lbl">Prospectador</span><div class="val">' + esc(prospName(r.responsavelId) || '—') + '</div></div>' +
-        '<div><span class="lbl">Contato</span>' + telCell(r) + '</div>' +
+        '<div><span class="lbl">Contato</span>' + telCell(r, true) + '</div>' +
         '<div><span class="lbl">Cadastrado em</span><div class="val">' + (r.dataCadastro || r.criadoEm ? fmtShort(String(r.dataCadastro || r.criadoEm).slice(0, 10)) : '—') + '</div></div>' +
         '<div><span class="lbl">Documentos</span>' + docsCell(r) + '</div>' +
         '<div><span class="lbl">Situação</span><span class="cad-sit ' + st[2] + '">' + st[1] + '</span></div>' +
