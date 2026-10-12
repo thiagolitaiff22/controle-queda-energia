@@ -307,7 +307,7 @@ function lerArquivos(arquivos){
     'Nome completo em maiúsculas, como no documento. ' +
     'ENDEREÇO — regra fixa: o talão de luz é sempre o mesmo modelo (Amazonas Energia). O endereço do cliente é SEMPRE o das linhas logo abaixo do nome do cliente no talão (rua/travessa e número; depois bairro ou comunidade; depois CEP e cidade). Use só essas linhas. ' +
     'Não use nenhum outro endereço do talão (o da distribuidora, em Manaus, ou qualquer outro) nem endereço de RG, CNH ou procuração. ' +
-    'Copie como está impresso, sem inventar nem corrigir nomes; só expanda abreviações (TV = Travessa, R = Rua, AV = Avenida). Formato: "Travessa Santa Ana, S/N, Centro, Alvarães/AM, CEP 69475-000". ' +
+    'Copie como está impresso, sem inventar nem corrigir nomes; só expanda abreviações (TV = Travessa, R = Rua, AV = Avenida). Na linha da rua o talão repete o número depois de "AME" (ex.: "R WENCESLAU FATIM 246 AME 246"): ignore o "AME" e a repetição. Exemplos: "R WENCESLAU FATIM 246 AME 246 / SAO LAZARO / CEP 69.475-000 - ALVARAES" vira "Rua Wenceslau Fatim, 246, São Lázaro, Alvarães/AM, CEP 69475-000"; "TV SANTA ANA S/N AME S/N / CENTRO / CEP 69.475-000 - ALVARAES" vira "Travessa Santa Ana, S/N, Centro, Alvarães/AM, CEP 69475-000". ' +
     'Se não houver talão de luz ou essas linhas estiverem ilegíveis, deixe o endereço vazio. ' +
     '"uc" é o número da unidade consumidora (ou conta contrato / instalação) da conta de luz. ' +
     '"rg" no formato número com hífen antes do último dígito (ex.: 2960881-3); se não houver RG nos documentos, deixe vazio (o escritório usa o CPF). ' +
