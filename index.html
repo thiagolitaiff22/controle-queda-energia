@@ -1230,9 +1230,6 @@ section.vw-dash{gap:10px!important}
 #cad-list .nome-abrir{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
 #cad-list .docs-pend{position:relative;cursor:help}
 #cad-list .docs-tip{display:none}
-#cad-list .cad-prosp{width:100%;max-width:220px;height:30px;padding:0 8px;font:inherit;font-size:13px;color:var(--ink);background:transparent;border:1px solid transparent;border-radius:6px;cursor:pointer}
-#cad-list .cad-prosp:hover,#cad-list .cad-prosp:focus{border-color:var(--line-2);background:var(--panel)}
-#cad-list .cad-prosp.vazio{color:var(--blue);border:1px dashed var(--line-2)}
 #dica-docs{position:fixed;z-index:1000;pointer-events:none;background:var(--panel);color:var(--ink);border:1px solid var(--line-2);border-radius:6px;padding:6px 10px;font-size:12px;white-space:nowrap;box-shadow:0 6px 18px rgba(0,0,0,.35)}
 #cad-list .muted-dash{color:var(--ink-3)}
 #cad-list .c-name .addr{font-size:12px;color:var(--ink-3)}
@@ -2127,12 +2124,6 @@ section.vw-dash{gap:10px!important}
   var DOC_FALTA = { procuracao: 'Procuração', rg_frente: 'RG', cpf: 'CPF', luz: 'Talão de luz', cliente: 'Foto do cliente' };
   function faltaDocs(r){ return (Array.isArray(r.faltaDocs) ? r.faltaDocs : []).filter(function(k){ return DOC_FALTA[k]; }); }
   // coluna Documentos do Cadastro: o que o prospectador ainda precisa mandar, um por etiqueta
-  // prospectador escolhido direto na lista (o cliente passa a aparecer no aplicativo dele)
-  function prospSelect(r){
-    var atual = prospById(r.responsavelId) ? r.responsavelId : '';
-    return '<select class="cad-prosp' + (atual ? '' : ' vazio') + '" data-prosp-id="' + esc(r.id) + '" aria-label="Prospectador de ' + esc(r.nome) + '"><option value="">Escolher…</option>' +
-      state.prosp.map(function(p){ return '<option value="' + esc(p.id) + '"' + (p.id === atual ? ' selected' : '') + '>' + esc(p.nome) + '</option>'; }).join('') + '</select>';
-  }
   function docsCell(r){
     var f = faltaDocs(r);
     if (f.length) return '<span class="cad-sit crit docs-pend" tabindex="0">Documentos pendentes<span class="docs-tip">Faltam: ' + esc(faltaTexto(r)) + '</span></span>';
@@ -2635,7 +2626,7 @@ section.vw-dash{gap:10px!important}
       var st = situacaoCad(r);
       html += '<div class="row' + (cadAberto[r.id] ? ' aberto' : '') + '" data-linha="' + esc(r.id) + '">' +
         '<div class="c-name"><div class="name">' + (/^data:image\/(jpeg|png);base64,/.test(r.fotoCliente || '') ? '<img class="av-foto" src="' + r.fotoCliente + '" alt="">' : '') + '<button type="button" class="nome-abrir" data-act="abrir" data-id="' + esc(r.id) + '">' + esc(r.nome) + '</button>' + pastaIco(r) + '</div><div class="addr">' + (r.cpf ? 'CPF ' + esc(r.cpf) : 'CPF não informado') + '</div></div>' +
-        '<div><span class="lbl">Prospectador</span>' + prospSelect(r) + '</div>' +
+        '<div><span class="lbl">Prospectador</span><div class="val">' + esc(prospName(r.responsavelId) || '—') + '</div></div>' +
         '<div><span class="lbl">Contato</span>' + telCell(r) + '</div>' +
         '<div><span class="lbl">Cadastrado em</span><div class="val">' + (r.dataCadastro || r.criadoEm ? fmtShort(String(r.dataCadastro || r.criadoEm).slice(0, 10)) : '—') + '</div></div>' +
         '<div><span class="lbl">Documentos</span>' + docsCell(r) + '</div>' +
@@ -2655,11 +2646,6 @@ section.vw-dash{gap:10px!important}
     d.style.left = Math.max(8, Math.min(r.left, innerWidth - w - 8)) + 'px';
     d.style.top = (r.bottom + 6 + d.offsetHeight > innerHeight ? r.top - d.offsetHeight - 6 : r.bottom + 6) + 'px';
   }
-  $('cad-list').addEventListener('change', async function(e){
-    var sel = e.target.closest('select.cad-prosp'); if (!sel) return;
-    try { await patchRow(sel.dataset.prospId, { responsavelId: sel.value, atualizadoEm: new Date().toISOString() }); toast(sel.value ? 'Prospectador: ' + prospName(sel.value) : 'Prospectador removido'); }
-    catch(err){ toast(errMsg(err)); renderCad(); }
-  });
   $('cad-list').addEventListener('mouseover', function(e){ dicaDocs(e.target.closest('.docs-pend')); });
   $('cad-list').addEventListener('mouseleave', function(){ dicaDocs(null); });
   $('cad-list').addEventListener('focusin', function(e){ dicaDocs(e.target.closest('.docs-pend')); });
