@@ -2700,7 +2700,8 @@ section.vw-dash{gap:10px!important}
     $('cad-sit').innerHTML = SITS.map(function(o){ return '<option value="' + o[0] + '"' + (o[0] === cadSit ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('');
     $('cad-sit').classList.toggle('ativo', !!cadSit);
     var lista = todos.filter(function(r){ return (!cadSit || (cadSit === 'faltam' ? docsPendentes(r) : cadSit === 'pendencias' ? (docsPendentes(r) || situacaoCad(r)[0] === 'incompleto') : situacaoCad(r)[0] === cadSit)) && buscaCliente(r, cadQ); })
-      .sort(function(a, b){ return String(b.dataCadastro || b.criadoEm || '').localeCompare(String(a.dataCadastro || a.criadoEm || '')) || String(a.nome || '').localeCompare(String(b.nome || ''), 'pt'); });
+      // mais recente primeiro (pelo dia do cadastro); no mesmo dia, em ordem alfabética
+      .sort(function(a, b){ var da = String(a.dataCadastro || a.criadoEm || '').slice(0, 10), db = String(b.dataCadastro || b.criadoEm || '').slice(0, 10); return db.localeCompare(da) || String(a.nome || '').localeCompare(String(b.nome || ''), 'pt'); });
     $('cad-count').textContent = lista.length + (lista.length === 1 ? ' cliente' : ' clientes');
     var html = '<div class="row head"><div>Cliente</div><div>Prospectador</div><div>Contato</div><div>Cadastrado</div><div>Documentos</div><div>Situação</div><div></div></div>';
     if (!lista.length) html += '<div class="empty">' + (todos.length ? 'Nenhum cliente neste filtro.' : 'Nenhum cliente em cadastro. Clique em <b>Novo cliente</b> para começar.') + '</div>';
