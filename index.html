@@ -1230,6 +1230,11 @@ section.vw-dash{gap:10px!important}
 #cad-list .nome-abrir{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
 #cad-list .docs-pend{position:relative;cursor:help}
 #cad-list .docs-tip{display:none}
+.nome-copia,.pasta-falta{flex:none;display:inline-flex;align-items:center;gap:1px;background:none;border:0;padding:2px;color:var(--ink-3);cursor:pointer;border-radius:4px;font:inherit;font-size:11px;font-weight:700}
+.nome-copia:hover,.pasta-falta:hover{color:var(--ink);background:var(--hover)}
+.nome-copia.ok{color:var(--green)}
+.nome-copia svg.i,.pasta-falta svg.i{width:14px;height:14px}
+.pasta-falta{color:var(--amber)}
 #cad-stats .cad-filtro{cursor:pointer;transition:border-color .15s,background .15s}
 #cad-stats .cad-filtro:hover{border-color:var(--line-2);background:var(--hover)}
 #cad-stats .cad-filtro.ativo{border-color:var(--cor-linha);box-shadow:0 0 0 1px var(--cor-linha) inset}
@@ -2176,6 +2181,20 @@ section.vw-dash{gap:10px!important}
     } catch(err){ toast('Não foi possível olhar a pasta: ' + (err.message || err)); }
     finally { b.disabled = false; b.textContent = rot; }
   });
+  // copiar o nome do cliente (para pesquisar no PROJUDI)
+  document.addEventListener('click', async function(e){
+    var b = e.target.closest('[data-copiar-nome]'); if (!b) return;
+    try { await copiarTexto(b.dataset.copiarNome); b.classList.add('ok'); setTimeout(function(){ b.classList.remove('ok'); }, 1500); toast('Nome copiado: ' + b.dataset.copiarNome); }
+    catch(err){ toast('Não foi possível copiar. Selecione o nome e use Ctrl+C.'); }
+  });
+  // cliente sem pasta: acha a pasta com o nome dele no Drive (ou cria) e liga ao cadastro
+  document.addEventListener('click', async function(e){
+    var b = e.target.closest('[data-pasta-cad]'); if (!b) return;
+    var r = state.rows.filter(function(x){ return x.id === b.dataset.pastaCad; })[0]; if (!r) return;
+    b.disabled = true;
+    try { var u = await ensureFolder(r.id, r.nome); if (u) toast('Pasta ligada ao cadastro de ' + r.nome); }
+    catch(err){ toast('Pasta não ligada: ' + driveErr(err)); b.disabled = false; }
+  });
   function faltaTexto(r){ return faltaDocs(r).map(function(k){ return DOC_FALTA[k]; }).join(', '); }
   document.addEventListener('click', async function(e){
     var b = e.target.closest('[data-act="recebido"]'); if (!b) return;
@@ -2708,7 +2727,9 @@ section.vw-dash{gap:10px!important}
     lista.slice(0, 300).forEach(function(r){
       var st = situacaoCad(r);
       html += '<div class="row' + (cadAberto[r.id] ? ' aberto' : '') + '" data-linha="' + esc(r.id) + '">' +
-        '<div class="c-name"><div class="name">' + (/^data:image\/(jpeg|png);base64,/.test(r.fotoCliente || '') ? '<img class="av-foto" src="' + r.fotoCliente + '" alt="">' : '') + '<button type="button" class="nome-abrir" data-act="abrir" data-id="' + esc(r.id) + '">' + esc(r.nome) + '</button>' + pastaIco(r) + '</div><div class="addr">' + (r.cpf ? 'CPF ' + esc(r.cpf) : 'CPF não informado') + '</div></div>' +
+        '<div class="c-name"><div class="name">' + (/^data:image\/(jpeg|png);base64,/.test(r.fotoCliente || '') ? '<img class="av-foto" src="' + r.fotoCliente + '" alt="">' : '') + '<button type="button" class="nome-abrir" data-act="abrir" data-id="' + esc(r.id) + '">' + esc(r.nome) + '</button>' +
+          '<button type="button" class="nome-copia" data-copiar-nome="' + esc(r.nome) + '" title="Copiar o nome" aria-label="Copiar o nome de ' + esc(r.nome) + '"><svg class="i"><use href="#i-copy"/></svg></button>' +
+          (r.pastaUrl ? pastaIco(r) : '<button type="button" class="pasta-falta" data-pasta-cad="' + esc(r.id) + '" title="Sem pasta ligada: clique para achar a pasta no Drive (ou criar)" aria-label="Ligar pasta de ' + esc(r.nome) + '"><svg class="i"><use href="#i-folder"/></svg>+</button>') + '</div><div class="addr">' + (r.cpf ? 'CPF ' + esc(r.cpf) : 'CPF não informado') + '</div></div>' +
         '<div><span class="lbl">Prospectador</span><div class="val">' + esc(prospName(r.responsavelId) || '—') + '</div></div>' +
         '<div><span class="lbl">Contato</span>' + telCell(r, true) + '</div>' +
         '<div><span class="lbl">Cadastrado</span><div class="val">' + (r.dataCadastro || r.criadoEm ? String(r.dataCadastro || r.criadoEm).slice(0, 10).replace(/^\d\d(\d\d)-(\d\d)-(\d\d)$/, '$3/$2/$1') : '—') + '</div></div>' +
