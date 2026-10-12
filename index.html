@@ -4528,7 +4528,7 @@ section.vw-dash{gap:10px!important}
   function buildConvitesPdf(JsPDF, clientes, cfg){
     var doc = new JsPDF({ unit: 'mm', format: 'a4' });
     var COLS = 2, ROWS = 4, W = 210 / COLS, H = 297 / ROWS;   // cut grid
-    var INSET = 2.6, R = 2.4, PT = 0.3528;
+    var INSET = 1.8, R = 2.4, PT = 0.3528;
     var C = { ink: [12, 17, 24], sub: [52, 60, 70], teal: [11, 74, 94], tealSoft: [230, 240, 244], line: [200, 208, 216], warnBg: [255, 242, 219], warn: [156, 86, 0] };
     var fill = function(c){ doc.setFillColor(c[0], c[1], c[2]); }, draw = function(c){ doc.setDrawColor(c[0], c[1], c[2]); }, ink = function(c){ doc.setTextColor(c[0], c[1], c[2]); };
     var lista = clientes.slice().sort(function(a, b){ return (a.audData + (a.audHora || '')).localeCompare(b.audData + (b.audHora || '')) || (a.nome || '').localeCompare(b.nome || '', 'pt-BR'); });
@@ -4542,15 +4542,15 @@ section.vw-dash{gap:10px!important}
     function label(txt, x, y){ doc.setFont('helvetica', 'bold'); doc.setFontSize(6.6); ink(C.teal); doc.setCharSpace(0.4); doc.text(txt, x, y); doc.setCharSpace(0); }
 
     // one title per hearing session (date + time) at the top of its first page; the invitations follow
-    var TIT = 20, porSessao = {}, sessao = null, slot = 0, topo = 0;
+    var TIT = 15, porSessao = {}, sessao = null, slot = 0, topo = 0;
     lista.forEach(function(r){ var c = r.audData + '|' + (r.audHora || ''); porSessao[c] = (porSessao[c] || 0) + 1; });
     function tituloSessao(r){
       var total = porSessao[r.audData + '|' + (r.audHora || '')];
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.setTextColor(0, 0, 0); doc.setCharSpace(0.2);
-      doc.text('AUDIÊNCIA · ' + fmtDate(r.audData) + ' · ' + pdfDiaSemana(r.audData) + (r.audHora ? ' · ' + r.audHora.slice(0, 5) : ''), 8, 12.5);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.setTextColor(0, 0, 0); doc.setCharSpace(0.2);
+      doc.text('AUDIÊNCIA · ' + fmtDate(r.audData) + ' · ' + pdfDiaSemana(r.audData) + (r.audHora ? ' · ' + r.audHora.slice(0, 5) : ''), 8, 9.8);
       doc.setCharSpace(0); doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(0, 0, 0);
-      doc.text(total + (total === 1 ? ' convite' : ' convites'), 202, 12.5, { align: 'right' });
-      doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.6); doc.line(8, 16, 202, 16);
+      doc.text(total + (total === 1 ? ' convite' : ' convites'), 202, 9.8, { align: 'right' });
+      doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.5); doc.line(8, 12.3, 202, 12.3);
     }
     lista.forEach(function(r, i){
       var chave = r.audData + '|' + (r.audHora || '');
@@ -4566,10 +4566,10 @@ section.vw-dash{gap:10px!important}
       doc.setLineWidth(0.3); draw(C.line); fill([255, 255, 255]); doc.roundedRect(ix, iy, iw, ih, R, R, 'FD');
 
       // title band
-      var bandH = 8;
+      var bandH = 7.2;
       fill(C.teal); doc.roundedRect(ix, iy, iw, bandH, R, R, 'F'); doc.rect(ix, iy + bandH - R, iw, R, 'F');
       doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(8.9); doc.setCharSpace(0.15);
-      doc.text('CONVITE PARA AUDIÊNCIA DA AMBAR ENERGIA', ix + iw / 2, iy + 5.3, { align: 'center' }); doc.setCharSpace(0);
+      doc.text('CONVITE PARA AUDIÊNCIA DA AMBAR ENERGIA', ix + iw / 2, iy + 4.85, { align: 'center' }); doc.setCharSpace(0);
 
       // measure
       var nomeSize = shrink(r.nome, 'bold', 12.5, tw, 9.5);
@@ -4581,12 +4581,12 @@ section.vw-dash{gap:10px!important}
       var ori = cfg.orientacao ? fit(cfg.orientacao, 'bold', 7.6, tw - 9.5, 2) : [];
       var rod = [cfg.escritorio, cfg.telefone].filter(Boolean).join('  ·  ');
       var blocks = [
-        { k: 'nome', h: 2.4 + 1.2 + nomeSize * PT + 1.6 + end.length * 8.3 * PT * 1.3 },
-        { k: 'data', h: 14 },
-        { k: 'local', h: 2.3 + 1.6 + locSize * PT },
-        { k: 'ori', h: ori.length ? 3.2 + ori.length * 7.6 * PT * 1.3 + 0.8 : 0 }
+        { k: 'nome', h: nomeSize * PT + 1.8 + end.length * 8.3 * PT * 1.3 },
+        { k: 'data', h: 12.8 },
+        { k: 'local', h: 2.3 + 1.4 + locSize * PT },
+        { k: 'ori', h: ori.length ? 2.4 + ori.length * 7.6 * PT * 1.3 + 0.6 : 0 }
       ].filter(function(b){ return b.h > 0; });
-      var top = iy + bandH, bottom = iy + ih - (rod ? 6.8 : 2.5);
+      var top = iy + bandH, bottom = iy + ih - (rod ? 6.2 : 2.5);
       var used = blocks.reduce(function(s, b){ return s + b.h; }, 0);
       var gap = (bottom - top - used) / (blocks.length + 1);
       var cy = top + gap;
@@ -4594,35 +4594,34 @@ section.vw-dash{gap:10px!important}
       blocks.forEach(function(b){
         var t = cy;
         if (b.k === 'nome'){
-          doc.setFont('helvetica', 'normal'); doc.setFontSize(7); ink(C.sub); doc.text('Sr(a).', tx, t + 2.4);
-          doc.setFont('helvetica', 'bold'); doc.setFontSize(nomeSize); ink(C.ink); doc.text(r.nome, tx, t + 2.4 + 1.2 + nomeSize * PT * 0.82);
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(nomeSize); ink(C.ink); doc.text(r.nome, tx, t + nomeSize * PT * 0.82);
           doc.setFont('helvetica', 'normal'); doc.setFontSize(8.3); ink(C.sub);
-          doc.text(end, tx, t + 2.4 + 1.2 + nomeSize * PT + 1.6 + 8.3 * PT * 0.82, { lineHeightFactor: 1.3 });
+          doc.text(end, tx, t + nomeSize * PT + 1.8 + 8.3 * PT * 0.82, { lineHeightFactor: 1.3 });
         } else if (b.k === 'data'){
           fill(C.tealSoft); doc.roundedRect(ix + pad - 2, t, tw + 4, b.h, 2, 2, 'F');
-          draw([190, 208, 216]); doc.setLineWidth(0.3); doc.line(hx - 3.5, t + 2.6, hx - 3.5, t + b.h - 2.6);
-          label('DATA DA AUDIÊNCIA', tx + 1, t + 4);
-          doc.setFont('helvetica', 'bold'); doc.setFontSize(dataSize); ink(C.ink); doc.text(data, tx + 1, t + 8.7);
-          doc.setFontSize(8); ink(C.teal); doc.setCharSpace(0.3); doc.text('(' + pdfDiaSemana(r.audData) + ')', tx + 1, t + 12.1); doc.setCharSpace(0);
-          label('HORÁRIO', hx, t + 4);
-          doc.setFont('helvetica', 'bold'); doc.setFontSize(15); ink(C.ink); doc.text(pdfHora(r.audHora), hx, t + 10);
+          draw([190, 208, 216]); doc.setLineWidth(0.3); doc.line(hx - 3.5, t + 2.2, hx - 3.5, t + b.h - 2.2);
+          label('DATA DA AUDIÊNCIA', tx + 1, t + 3.6);
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(dataSize); ink(C.ink); doc.text(data, tx + 1, t + 8.1);
+          doc.setFontSize(8); ink(C.teal); doc.setCharSpace(0.3); doc.text('(' + pdfDiaSemana(r.audData) + ')', tx + 1, t + 11.3); doc.setCharSpace(0);
+          label('HORÁRIO', hx, t + 3.6);
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(15); ink(C.ink); doc.text(pdfHora(r.audHora), hx, t + 9.4);
         } else if (b.k === 'local'){
           label('LOCAL DA AUDIÊNCIA', tx, t + 2.3);
-          if (localR){ doc.setFont('helvetica', 'bold'); doc.setFontSize(locSize); ink(C.ink); doc.text(localR, tx, t + 2.3 + 1.6 + locSize * PT * 0.82); }
+          if (localR){ doc.setFont('helvetica', 'bold'); doc.setFontSize(locSize); ink(C.ink); doc.text(localR, tx, t + 2.3 + 1.4 + locSize * PT * 0.82); }
           else { draw(C.sub); doc.setLineWidth(0.25); doc.line(tx, t + 7, ix + iw - pad, t + 7); }
         } else if (b.k === 'ori'){
           fill(C.warnBg); doc.roundedRect(ix + pad - 2, t, tw + 4, b.h, 1.6, 1.6, 'F');
           fill(C.warn); doc.circle(tx + 2.6, t + b.h / 2, 2.1, 'F');
           doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.text('!', tx + 2.6, t + b.h / 2 + 1.05, { align: 'center' });
-          doc.setFontSize(7.6); ink(C.ink); doc.text(ori, tx + 7.2, t + 1.9 + 7.6 * PT * 0.9, { lineHeightFactor: 1.3 });
+          doc.setFontSize(7.6); ink(C.ink); doc.text(ori, tx + 7.2, t + 1.35 + 7.6 * PT * 0.9, { lineHeightFactor: 1.3 });
         }
         cy += b.h + gap;
       });
 
       if (rod){
-        draw(C.line); doc.setLineWidth(0.25); doc.line(tx, iy + ih - 6.2, ix + iw - pad, iy + ih - 6.2);
+        draw(C.line); doc.setLineWidth(0.25); doc.line(tx, iy + ih - 5.7, ix + iw - pad, iy + ih - 5.7);
         doc.setFont('helvetica', 'bold'); doc.setFontSize(7.6); ink(C.teal);
-        doc.text(fit(rod, 'bold', 7.6, tw, 1)[0], ix + iw / 2, iy + ih - 2.5, { align: 'center' });
+        doc.text(fit(rod, 'bold', 7.6, tw, 1)[0], ix + iw / 2, iy + ih - 2.2, { align: 'center' });
       }
     });
     return doc;
