@@ -2145,11 +2145,20 @@ section.vw-dash{gap:10px!important}
   var DOC_FALTA = { procuracao: 'Procuração', rg_frente: 'RG', cpf: 'CPF', luz: 'Talão de luz', cliente: 'Foto do cliente' };
   function faltaDocs(r){ return (Array.isArray(r.faltaDocs) ? r.faltaDocs : []).filter(function(k){ return DOC_FALTA[k]; }); }
   // coluna Documentos do Cadastro: o que o prospectador ainda precisa mandar, um por etiqueta
+  // "completa" só com prova: o aplicativo mandou tudo, ou o escritório conferiu a pasta e marcou na ficha
+  function docsConferidos(r){ return !faltaDocs(r).length && (r.docsCompletos === true || (r.origem === 'campo' && Array.isArray(r.faltaDocs))); }
+  function docsPendentes(r){ return !docsConferidos(r); }
   function docsCell(r){
     var f = faltaDocs(r);
     if (f.length) return '<span class="cad-sit crit docs-pend" tabindex="0">Documentos pendentes<span class="docs-tip">Faltam: ' + esc(faltaTexto(r)) + '</span></span>';
-    return '<span class="cad-sit ok">Documentação completa</span>';
+    if (docsConferidos(r)) return '<span class="cad-sit ok">Documentação completa</span>';
+    return '<span class="cad-sit crit docs-pend" tabindex="0">Documentos pendentes<span class="docs-tip">Ninguém conferiu a pasta ainda. Quando estiver tudo lá, marque na ficha.</span></span>';
   }
+  document.addEventListener('click', async function(e){
+    var b = e.target.closest('[data-act="docs-ok"]'); if (!b) return;
+    try { await patchRow(b.dataset.id, { docsCompletos: true, faltaDocs: [], atualizadoEm: new Date().toISOString() }); toast('Documentação marcada como completa'); }
+    catch(err){ toast(errMsg(err)); }
+  });
   function faltaTexto(r){ return faltaDocs(r).map(function(k){ return DOC_FALTA[k]; }).join(', '); }
   document.addEventListener('click', async function(e){
     var b = e.target.closest('[data-act="recebido"]'); if (!b) return;
@@ -2206,7 +2215,8 @@ section.vw-dash{gap:10px!important}
       return '<div class="ficha-i">' + (v ? ok : nada) + '<div><span>' + c[0] + '</span><b>' + (v ? esc(v) : '—') + '</b></div></div>';
     }).join('') + '</div>' +
       (fl.length ? '<div class="falta-docs"><b>Faltam documentos</b><span>O prospectador ainda precisa mandar: ' + esc(faltaTexto(r)) + '. Ele vê esta lista no aplicativo e completa por lá. Se chegou por outro meio, marque como recebido:</span><div>' +
-        fl.map(function(k){ return '<button type="button" class="btn" data-act="recebido" data-id="' + esc(r.id) + '" data-doc="' + k + '"><svg class="i"><use href="#i-check"/></svg>Recebi ' + DOC_FALTA[k] + '</button>'; }).join('') + '</div></div>' : '') +
+        fl.map(function(k){ return '<button type="button" class="btn" data-act="recebido" data-id="' + esc(r.id) + '" data-doc="' + k + '"><svg class="i"><use href="#i-check"/></svg>Recebi ' + DOC_FALTA[k] + '</button>'; }).join('') + '</div></div>' :
+        compacto && !docsConferidos(r) ? '<div class="falta-docs"><b>Documentação não conferida</b><span>Abra a pasta no Drive e veja se estão lá a procuração, o RG, o CPF e o talão de luz. Se estiver tudo, marque:</span><div><button type="button" class="btn" data-act="docs-ok" data-id="' + esc(r.id) + '"><svg class="i"><use href="#i-check"/></svg>Documentação completa</button></div></div>' : '') +
       '<div class="ficha-acoes"><button type="button" class="btn" data-act="edit" data-id="' + esc(r.id) + '"><svg class="i"><use href="#i-pencil"/></svg>Editar cadastro</button>' +
       (r.pastaUrl ? '<a class="btn" href="' + esc(r.pastaUrl) + '" target="_blank" rel="noopener"><svg class="i"><use href="#i-folder"/></svg>Pasta no Drive</a>' : '') + (r.pastaId ? '<button type="button" class="btn primary" data-act="ia" data-id="' + esc(r.id) + '">Analisar com IA</button>' : '') + '</div></div>';
   }
@@ -2645,19 +2655,19 @@ section.vw-dash{gap:10px!important}
     var conta = { conferir: 0, incompleto: 0, pronto: 0 };
     todos.forEach(function(r){ conta[situacaoCad(r)[0]]++; });
     var semTel = todos.filter(function(r){ return !temContato(r); }).length;
-    var nFaltaC = todos.filter(function(r){ return faltaDocs(r).length; }).length;
+    var nFaltaC = todos.filter(docsPendentes).length;
     var cardC = function(ico, rot, n, cap, cor, filtro){ return '<div class="card stat cad-filtro' + (cadSit === filtro ? ' ativo' : '') + '" role="button" tabindex="0" aria-pressed="' + (cadSit === filtro) + '" data-cad-filtro="' + filtro + '" title="Mostrar na lista" data-cor-fixa="1" style="--cor-linha:var(' + cor + ')"><div class="stat-h"><svg class="i"><use href="#' + ico + '"/></svg>' + rot + '</div><div class="stat-v tnum">' + n + '</div><div class="stat-c">' + cap + '</div><div class="stat-viz"></div></div>'; };
     $('cad-stats').innerHTML =
       cardC('i-users', 'Em cadastro', todos.length, 'ainda sem número de processo', '--line-2', '') +
       cardC('i-check', 'Prontos para protocolar', conta.pronto, 'nome, CPF e endereço preenchidos', '--green', 'pronto') +
       cardC('i-clock', 'Conferir dados', conta.conferir, 'cadastrados pelo celular', '--amber', 'conferir') +
       // pendências: documento que o prospectador ainda não mandou ou dados incompletos (cada cliente conta uma vez)
-      cardC('i-bellx', 'Pendências', todos.filter(function(r){ return faltaDocs(r).length || situacaoCad(r)[0] === 'incompleto'; }).length, nFaltaC + ' com documento pendente · ' + conta.incompleto + ' falta CPF ou endereço · ' + semTel + ' sem telefone', '--red', 'pendencias');
-    var nFalta = todos.filter(function(r){ return faltaDocs(r).length; }).length;
+      cardC('i-bellx', 'Pendências', todos.filter(function(r){ return docsPendentes(r) || situacaoCad(r)[0] === 'incompleto'; }).length, nFaltaC + ' com documento pendente · ' + conta.incompleto + ' falta CPF ou endereço · ' + semTel + ' sem telefone', '--red', 'pendencias');
+    var nFalta = todos.filter(docsPendentes).length;
     var SITS = [['', 'Todas as situações · ' + todos.length], ['faltam', 'Faltam documentos · ' + nFalta], ['pronto', 'Prontos para protocolar · ' + conta.pronto], ['conferir', 'Conferir dados · ' + conta.conferir], ['incompleto', 'Dados incompletos · ' + conta.incompleto], ['pendencias', 'Pendências (documento ou dados)']];
     $('cad-sit').innerHTML = SITS.map(function(o){ return '<option value="' + o[0] + '"' + (o[0] === cadSit ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('');
     $('cad-sit').classList.toggle('ativo', !!cadSit);
-    var lista = todos.filter(function(r){ return (!cadSit || (cadSit === 'faltam' ? faltaDocs(r).length > 0 : cadSit === 'pendencias' ? (faltaDocs(r).length > 0 || situacaoCad(r)[0] === 'incompleto') : situacaoCad(r)[0] === cadSit)) && buscaCliente(r, cadQ); })
+    var lista = todos.filter(function(r){ return (!cadSit || (cadSit === 'faltam' ? docsPendentes(r) : cadSit === 'pendencias' ? (docsPendentes(r) || situacaoCad(r)[0] === 'incompleto') : situacaoCad(r)[0] === cadSit)) && buscaCliente(r, cadQ); })
       .sort(function(a, b){ return String(b.dataCadastro || b.criadoEm || '').localeCompare(String(a.dataCadastro || a.criadoEm || '')) || String(a.nome || '').localeCompare(String(b.nome || ''), 'pt'); });
     $('cad-count').textContent = lista.length + (lista.length === 1 ? ' cliente' : ' clientes');
     var html = '<div class="row head"><div>Cliente</div><div>Prospectador</div><div>Contato</div><div>Cadastrado</div><div>Documentos</div><div>Situação</div><div></div></div>';
