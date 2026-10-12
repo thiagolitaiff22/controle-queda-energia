@@ -1220,7 +1220,7 @@ section.vw-dash{gap:10px!important}
 #view-cad > .fbar{margin-top:30px!important}
 .cad-stats{grid-template-columns:repeat(4,minmax(0,1fr))!important}
 @media (max-width:900px){ .cad-stats{grid-template-columns:repeat(2,minmax(0,1fr))!important} }
-#cad-list .row{grid-template-columns:minmax(0,3.2fr) minmax(0,1.2fr) minmax(0,1fr) minmax(0,1.3fr) 36px!important;gap:16px!important;min-height:46px;padding-top:6px!important;padding-bottom:6px!important}
+#cad-list .row{grid-template-columns:minmax(0,2.2fr) minmax(0,1.3fr) minmax(0,1fr) minmax(0,.7fr) minmax(0,1.7fr) minmax(150px,1.1fr) 36px!important;align-items:center;gap:16px!important;min-height:46px;padding-top:6px!important;padding-bottom:6px!important}
 #cad-list .row[data-linha]{cursor:pointer}
 #cad-list .row[data-linha]:hover{background:var(--hover)}
 #cad-list .row.aberto{background:var(--soft)}
@@ -1228,7 +1228,10 @@ section.vw-dash{gap:10px!important}
 /* nome inteiro, sem três pontinhos: quebra a linha se precisar */
 #cad-list .c-name .name{flex-wrap:wrap;row-gap:3px}
 #cad-list .nome-abrir{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
-#cad-list .falta-tag{max-width:none}
+#cad-list .docs-falta{display:flex;flex-wrap:wrap;gap:4px}
+#cad-list .docs-falta span{font-size:11px;font-weight:600;color:var(--red);background:color-mix(in srgb,var(--red) 10%,transparent);border:1px solid color-mix(in srgb,var(--red) 45%,transparent);border-radius:4px;padding:1px 6px;white-space:nowrap}
+#cad-list .docs-falta b{font-size:11px;font-weight:700;color:var(--red);align-self:center;margin-right:2px}
+#cad-list .muted-dash{color:var(--ink-3)}
 #cad-list .c-name .addr{font-size:12px;color:var(--ink-3)}
 #cad-list .val{font-size:12.5px}
 #cad-list .c-act{justify-content:flex-end}
@@ -2120,6 +2123,12 @@ section.vw-dash{gap:10px!important}
   // documentos que o prospectador não fotografou (o aplicativo grava em faltaDocs)
   var DOC_FALTA = { procuracao: 'Procuração', rg_frente: 'RG', cpf: 'CPF', luz: 'Talão de luz', cliente: 'Foto do cliente' };
   function faltaDocs(r){ return (Array.isArray(r.faltaDocs) ? r.faltaDocs : []).filter(function(k){ return DOC_FALTA[k]; }); }
+  // coluna Documentos do Cadastro: o que o prospectador ainda precisa mandar, um por etiqueta
+  function docsCell(r){
+    var f = faltaDocs(r);
+    if (f.length) return '<div class="docs-falta" title="Documentos que o prospectador ainda precisa mandar"><b>Faltam</b>' + f.map(function(k){ return '<span>' + esc(DOC_FALTA[k]) + '</span>'; }).join('') + '</div>';
+    return r.origem === 'campo' ? '<span class="cad-sit ok">Completos</span>' : '<span class="muted-dash">—</span>';
+  }
   function faltaTexto(r){ return faltaDocs(r).map(function(k){ return DOC_FALTA[k]; }).join(', '); }
   document.addEventListener('click', async function(e){
     var b = e.target.closest('[data-act="recebido"]'); if (!b) return;
@@ -2381,6 +2390,7 @@ section.vw-dash{gap:10px!important}
         '<div class="c-name"><div class="name' + (r.online ? ' online' : '') + '"' + (r.online ? ' title="Audiência online"' : '') + '><button type="button" class="nome-abrir" data-act="abrir" data-id="' + esc(r.id) + '" aria-expanded="' + !!clAberto[r.id] + '" title="Ver os dados do cliente">' + esc(r.nome) + '</button>' + pastaIco(r) + (r.cpf && !cpfValido(r.cpf) ? '<span class="cpf-ruim" title="CPF inválido: confira os dígitos">CPF inválido</span>' : '') + '</div>' +
           '<div class="addr">' + (r.cpf ? 'CPF ' + esc(r.cpf) : 'CPF não informado') + '</div></div>' +
         '<div><span class="lbl">Processo</span><div class="val proc-l">' + (r.processo ? '<button type="button" class="copia" data-copiar="' + esc(r.processo) + '" title="Copiar o número do processo">' + esc(r.processo) + '<svg class="i"><use href="#i-copy"/></svg></button>' : '—') + '</div></div>' +
+        '<div><span class="lbl">Prospectador</span><div class="val">' + esc(prospName(r.responsavelId) || '—') + '</div></div>' +
         '<div><span class="lbl">Contato</span>' + telCell(r) + '</div>' +
         '<div><span class="lbl">Audiência</span>' + audLinha(r) + '</div>' +
         '<div><span class="lbl">Aviso</span>' + avisoCell(r) + '</div>' +
@@ -2611,14 +2621,15 @@ section.vw-dash{gap:10px!important}
     var lista = todos.filter(function(r){ return (!cadSit || (cadSit === 'faltam' ? faltaDocs(r).length > 0 : situacaoCad(r)[0] === cadSit)) && buscaCliente(r, cadQ); })
       .sort(function(a, b){ return String(b.dataCadastro || b.criadoEm || '').localeCompare(String(a.dataCadastro || a.criadoEm || '')) || String(a.nome || '').localeCompare(String(b.nome || ''), 'pt'); });
     $('cad-count').textContent = lista.length + (lista.length === 1 ? ' cliente' : ' clientes');
-    var html = '<div class="row head"><div>Cliente</div><div>Contato</div><div>Cadastrado em</div><div>Situação</div><div></div></div>';
+    var html = '<div class="row head"><div>Cliente</div><div>Prospectador</div><div>Contato</div><div>Cadastrado em</div><div>Documentos</div><div>Situação</div><div></div></div>';
     if (!lista.length) html += '<div class="empty">' + (todos.length ? 'Nenhum cliente neste filtro.' : 'Nenhum cliente em cadastro. Clique em <b>Novo cliente</b> para começar.') + '</div>';
     lista.slice(0, 300).forEach(function(r){
       var st = situacaoCad(r);
       html += '<div class="row' + (cadAberto[r.id] ? ' aberto' : '') + '" data-linha="' + esc(r.id) + '">' +
-        '<div class="c-name"><div class="name">' + (/^data:image\/(jpeg|png);base64,/.test(r.fotoCliente || '') ? '<img class="av-foto" src="' + r.fotoCliente + '" alt="">' : '') + '<button type="button" class="nome-abrir" data-act="abrir" data-id="' + esc(r.id) + '">' + esc(r.nome) + '</button>' + pastaIco(r) + (faltaDocs(r).length ? '<span class="falta-tag" title="Documentos que o prospectador ainda precisa mandar">Falta: ' + esc(faltaTexto(r)) + '</span>' : '') + '</div><div class="addr">' + (r.cpf ? 'CPF ' + esc(r.cpf) : 'CPF não informado') + '</div></div>' +
+        '<div class="c-name"><div class="name">' + (/^data:image\/(jpeg|png);base64,/.test(r.fotoCliente || '') ? '<img class="av-foto" src="' + r.fotoCliente + '" alt="">' : '') + '<button type="button" class="nome-abrir" data-act="abrir" data-id="' + esc(r.id) + '">' + esc(r.nome) + '</button>' + pastaIco(r) + '</div><div class="addr">' + (r.cpf ? 'CPF ' + esc(r.cpf) : 'CPF não informado') + '</div></div>' +
         '<div><span class="lbl">Contato</span>' + telCell(r) + '</div>' +
         '<div><span class="lbl">Cadastrado em</span><div class="val">' + (r.dataCadastro || r.criadoEm ? fmtShort(String(r.dataCadastro || r.criadoEm).slice(0, 10)) : '—') + '</div></div>' +
+        '<div><span class="lbl">Documentos</span>' + docsCell(r) + '</div>' +
         '<div><span class="lbl">Situação</span><span class="cad-sit ' + st[2] + '">' + st[1] + '</span></div>' +
         '<div class="c-act"><button type="button" class="ico-btn" data-act="edit" data-id="' + esc(r.id) + '" title="Editar cadastro" aria-label="Editar ' + esc(r.nome) + '"><svg class="i"><use href="#i-pencil"/></svg></button></div>' +
       '</div>' + (cadAberto[r.id] ? fichaCliente(r) : '');
