@@ -1957,7 +1957,7 @@ section.vw-dash{gap:10px!important}
       b.addEventListener('click', function(){ t.hidden = true; act(); });
       t.appendChild(b);
     }
-    toast._t = setTimeout(function(){ t.hidden = true; }, actLabel ? 7000 : 2200);
+    toast._t = setTimeout(function(){ t.hidden = true; }, Math.min(15000, Math.max(actLabel ? 9000 : 2200, String(msg).length * 60)));
   }
   function banner(msg){ var b = $('banner'); b.textContent = msg; b.hidden = !msg; }
   function sit(r){ var s = r.situacao || (r.avisado ? 'avisado' : 'pendente'); return s === 'dr_thiago' ? 'pendente' : s; }
@@ -2190,7 +2190,13 @@ section.vw-dash{gap:10px!important}
         docsMsg = falta.length ? ' Na pasta falta: ' + falta.map(function(k){ return DOC_FALTA[k]; }).join(', ') + '.' : ' Documentação completa.';
       }
       if (feitos.length || dd.tem){ novo.atualizadoEm = new Date().toISOString(); await patchRow(r.id, novo); }
-      toast((feitos.length ? 'A IA preencheu: ' + feitos.join(', ') + '.' : 'Nenhum dado novo para preencher.') + docsMsg);
+      // mostra sempre o endereço que a IA leu (mesmo quando não troca, porque o campo já estava preenchido)
+      var endLido = String(dd.endereco || '').trim(), endAtual = String(r.endereco || '').trim();
+      var trocaEnd = endLido && endAtual && endAtual !== endLido;
+      var endMsg = !endLido ? ' A IA não achou o endereço no talão.' : trocaEnd ? ' Endereço no talão: ' + endLido + '.' : '';
+      var msgIA = (feitos.length ? 'A IA preencheu: ' + feitos.join(', ') + '.' : 'Nenhum dado novo para preencher.') + docsMsg + endMsg;
+      if (trocaEnd) toast(msgIA, 'Usar este endereço', function(){ patchRow(r.id, { endereco: endLido, atualizadoEm: new Date().toISOString() }).then(function(){ toast('Endereço trocado'); }, function(err){ toast(errMsg(err)); }); });
+      else toast(msgIA);
       if (dd.observacao) toast('Atenção: ' + dd.observacao);
     } catch(err){ toast('Não foi possível ler a pasta: ' + (err.message || err)); }
     finally { b.disabled = false; b.innerHTML = rot; }
