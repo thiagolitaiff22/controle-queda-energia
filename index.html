@@ -2616,7 +2616,8 @@ section.vw-dash{gap:10px!important}
       cardC('i-users', 'Em cadastro', todos.length, 'ainda sem número de processo', '--line-2') +
       cardC('i-check', 'Prontos para protocolar', conta.pronto, 'nome, CPF e endereço preenchidos', '--green') +
       cardC('i-clock', 'Conferir dados', conta.conferir, 'cadastrados pelo celular', '--amber') +
-      cardC('i-bellx', 'Dados incompletos', conta.incompleto, 'falta CPF ou endereço · ' + semTel + ' sem telefone' + (nFaltaC ? ' · ' + nFaltaC + ' com documento faltando' : ''), '--red');
+      // pendências: documento que o prospectador ainda não mandou ou dados incompletos (cada cliente conta uma vez)
+      cardC('i-bellx', 'Pendências', todos.filter(function(r){ return faltaDocs(r).length || situacaoCad(r)[0] === 'incompleto'; }).length, nFaltaC + ' com documento pendente · ' + conta.incompleto + ' falta CPF ou endereço · ' + semTel + ' sem telefone', '--red');
     var nFalta = todos.filter(function(r){ return faltaDocs(r).length; }).length;
     var SITS = [['', 'Todas as situações · ' + todos.length], ['faltam', 'Faltam documentos · ' + nFalta], ['pronto', 'Prontos para protocolar · ' + conta.pronto], ['conferir', 'Conferir dados · ' + conta.conferir], ['incompleto', 'Dados incompletos · ' + conta.incompleto]];
     $('cad-sit').innerHTML = SITS.map(function(o){ return '<option value="' + o[0] + '"' + (o[0] === cadSit ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('');
