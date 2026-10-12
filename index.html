@@ -2621,7 +2621,7 @@ section.vw-dash{gap:10px!important}
     var lista = todos.filter(function(r){ return (!cadSit || (cadSit === 'faltam' ? faltaDocs(r).length > 0 : situacaoCad(r)[0] === cadSit)) && buscaCliente(r, cadQ); })
       .sort(function(a, b){ return String(b.dataCadastro || b.criadoEm || '').localeCompare(String(a.dataCadastro || a.criadoEm || '')) || String(a.nome || '').localeCompare(String(b.nome || ''), 'pt'); });
     $('cad-count').textContent = lista.length + (lista.length === 1 ? ' cliente' : ' clientes');
-    var html = '<div class="row head"><div>Cliente</div><div>Prospectador</div><div>Contato</div><div>Cadastrado em</div><div>Documentos</div><div>Situação</div><div></div></div>';
+    var html = '<div class="row head"><div>Cliente</div><div>Prospectador</div><div>Contato</div><div>Cadastrado</div><div>Documentos</div><div>Situação</div><div></div></div>';
     if (!lista.length) html += '<div class="empty">' + (todos.length ? 'Nenhum cliente neste filtro.' : 'Nenhum cliente em cadastro. Clique em <b>Novo cliente</b> para começar.') + '</div>';
     lista.slice(0, 300).forEach(function(r){
       var st = situacaoCad(r);
@@ -2629,7 +2629,7 @@ section.vw-dash{gap:10px!important}
         '<div class="c-name"><div class="name">' + (/^data:image\/(jpeg|png);base64,/.test(r.fotoCliente || '') ? '<img class="av-foto" src="' + r.fotoCliente + '" alt="">' : '') + '<button type="button" class="nome-abrir" data-act="abrir" data-id="' + esc(r.id) + '">' + esc(r.nome) + '</button>' + pastaIco(r) + '</div><div class="addr">' + (r.cpf ? 'CPF ' + esc(r.cpf) : 'CPF não informado') + '</div></div>' +
         '<div><span class="lbl">Prospectador</span><div class="val">' + esc(prospName(r.responsavelId) || '—') + '</div></div>' +
         '<div><span class="lbl">Contato</span>' + telCell(r, true) + '</div>' +
-        '<div><span class="lbl">Cadastrado em</span><div class="val">' + (r.dataCadastro || r.criadoEm ? fmtShort(String(r.dataCadastro || r.criadoEm).slice(0, 10)) : '—') + '</div></div>' +
+        '<div><span class="lbl">Cadastrado</span><div class="val">' + (r.dataCadastro || r.criadoEm ? fmtShort(String(r.dataCadastro || r.criadoEm).slice(0, 10)) : '—') + '</div></div>' +
         '<div><span class="lbl">Documentos</span>' + docsCell(r) + '</div>' +
         '<div><span class="lbl">Situação</span><span class="cad-sit ' + st[2] + '">' + st[1] + '</span></div>' +
         '<div class="c-act"><button type="button" class="ico-btn" data-act="edit" data-id="' + esc(r.id) + '" title="Editar cadastro" aria-label="Editar ' + esc(r.nome) + '"><svg class="i"><use href="#i-pencil"/></svg></button></div>' +
