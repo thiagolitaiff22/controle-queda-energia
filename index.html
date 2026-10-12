@@ -1586,10 +1586,10 @@ section.vw-dash{gap:10px!important}
           </form>
         </div>
         <div class="card integ" data-painel="claude">
-          <div><p class="integ-d">Chave da API do Claude, criada em <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com › Chaves de API</a> (escolha "Expira: nunca"). Fica guardada no banco e só o script do Google consegue ler, para ler a procuração e o RG enviados pelo celular.</p></div>
+          <div><p class="integ-d">Chave da API do ChatGPT, criada em <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com › API keys</a> (também aceita a chave do Claude). Fica guardada no banco e só o script do Google consegue ler, para ler a procuração e o RG enviados pelo celular.</p></div>
           <form id="form-cl" class="integ-form" novalidate autocomplete="off">
             <label for="cl-chave">Chave da API</label>
-            <div class="pw"><input id="cl-chave" type="text" class="mask" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore placeholder="Cole aqui a chave (começa com sk-ant-)"></div>
+            <div class="pw"><input id="cl-chave" type="text" class="mask" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore placeholder="Cole aqui a chave (começa com sk-)"></div>
             <div class="integ-btns"><button class="btn lh-save" type="submit" id="cl-salvar"><svg class="i"><use href="#i-save"/></svg>Salvar</button><button type="button" class="btn" id="cl-testar"><svg class="i"><use href="#i-sync"/></svg>Testar</button></div>
             <small class="integ-s" id="cl-status">Verificando…</small>
           </form>
@@ -3283,7 +3283,7 @@ section.vw-dash{gap:10px!important}
     { k: 'regua', t: 'Régua de avisos', d: 'Avisa sozinho o cliente 3 dias antes e na véspera da audiência, das 8h às 18h.', ajuda: 'Precisa do LiderHub. Liga e desliga dentro do cartão.' },
     { k: 'lembrete', t: 'Lembrete agora', d: 'Manda um lembrete único para todos com audiência num dia escolhido.', ajuda: 'Envio manual, com intervalo seguro entre as mensagens.' },
     { k: 'datajud', t: 'Tribunal (DataJud)', d: 'Consulta os processos no TJAM todo dia às 7h: audiência, sentença, alvará.', ajuda: 'Chave pública do CNJ.' },
-    { k: 'claude', t: 'Claude', d: 'IA da Anthropic. Lê a procuração e o RG enviados pelo celular e preenche o cadastro.', ajuda: 'Clique para colar a chave da API do Claude.' },
+    { k: 'claude', t: 'IA (ChatGPT)', d: 'Lê os documentos da pasta no botão Analisar com IA: CPF, RG, endereço, UC e quais documentos estão lá.', ajuda: 'Clique para colar a chave da API do ChatGPT.' },
     { k: 'drive', t: 'Google Drive', d: 'Cria a pasta de cada cliente em 1. CLIENTES e move para Protocolados quando há processo.', ajuda: 'Funciona pelo script do Google do Cadastro pelo celular.', painel: 'celular' },
     { k: 'celular', t: 'Cadastro pelo celular', d: 'O prospectador tira as fotos dos documentos e o cliente cai em Sem protocolo.', ajuda: 'O link de cada prospectador fica no cartão dele, em Prospectadores.' }
   ];
@@ -3412,10 +3412,10 @@ section.vw-dash{gap:10px!important}
   $('cl-chave').addEventListener('input', function(){ this.dataset.editando = '1'; var v = this.value.replace(/•/g, '').replace(/\s+/g, ''); if (v !== this.value) this.value = v; this.classList.add('mask'); });
   $('form-cl').addEventListener('submit', async function(e){
     e.preventDefault(); var v = $('cl-chave').value.replace(/•/g, '').trim();
-    if (!/^sk-ant-/.test(v) || v.length < 40){ toast('Cole a chave completa do Claude (começa com sk-ant-)'); return; }
+    if (!/^sk-/.test(v) || v.length < 40){ toast('Cole a chave completa (a do ChatGPT começa com sk-)'); return; }
     var r = await SB.rpc('salvar_segredo', { p_nome: 'claude', p_valor: v });
     if (r.error){ toast('Não foi possível salvar: ' + r.error.message); return; }
-    delete $('cl-chave').dataset.editando; toast('Chave do Claude salva'); await clStatus(); setTimeout(igTestarScript, 1500);
+    delete $('cl-chave').dataset.editando; toast(/^sk-ant-/.test(v) ? 'Chave do Claude salva' : 'Chave do ChatGPT salva'); await clStatus(); setTimeout(igTestarScript, 1500);
   });
   $('cl-testar').addEventListener('click', async function(){
     var u = cpUrl || $('cp-url').value.trim(); if (!u){ $('cl-status').textContent = 'Ligue primeiro o Cadastro pelo celular (endereço do script).'; return; }

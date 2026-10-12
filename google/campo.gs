@@ -19,6 +19,7 @@ var SUPABASE_KEY = 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r'; // chave p�
 var PASTA_CLIENTES = '1IqUpcNe7FCEdmVnfsLj0KP9k7K3Ck2dG'; // AMBAR ENERGIA › CLIENTES
 var PENDENTES = 'PENDENTES DE PROTOCOLO', PROTOCOLADOS = 'PROTOCOLADOS', ARQUIVADOS = 'ARQUIVADOS';
 var MODELO = 'claude-sonnet-5-5';
+var MODELO_GPT = 'gpt-4o';   // ChatGPT: lê fotos e PDFs
 
 var NOMES = {
   procuracao: 'Procuração', rg_frente: 'RG - frente', rg_verso: 'RG - verso', cpf: 'CPF',
@@ -175,17 +176,37 @@ function lerDocumentos(pasta){
     '{"nome":"","cpf":"000.000.000-00","rg":"","nascimento":"AAAA-MM-DD","endereco":"","observacao":""}. ' +
     'Nome completo em maiúsculas, como no documento. Endereço com rua, número, comunidade ou bairro e cidade. ' +
     'Deixe vazio o que não estiver legível; não invente. Em "observacao", avise em uma frase se houver divergência entre os documentos ou algo ilegível.' });
-  var r = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
-    method: 'post', contentType: 'application/json', muteHttpExceptions: true,
-    headers: { 'x-api-key': chave, 'anthropic-version': '2023-06-01' },
-    payload: JSON.stringify({ model: MODELO, max_tokens: 800, messages: [{ role: 'user', content: conteudo }] })
-  });
-  var d = JSON.parse(r.getContentText());
-  if (r.getResponseCode() >= 300) throw new Error((d.error && d.error.message) || ('erro ' + r.getResponseCode()));
-  var txt = (d.content || []).map(function(c){ return c.text || ''; }).join('');
+  var txt = perguntarIA(chave, conteudo, 800);
   var m = txt.match(/\{[\s\S]*\}/); if (!m) throw new Error('resposta sem dados');
   var o = JSON.parse(m[0]);
   return { nome: limpa(o.nome), cpf: limpa(o.cpf), rg: limpa(o.rg), nascimento: limpa(o.nascimento), endereco: limpa(o.endereco), observacao: limpa(o.observacao) };
+}
+/* pergunta à IA (ChatGPT ou Claude, pela chave cadastrada) e devolve o texto da resposta */
+function perguntarIA(chave, conteudo, maxTokens){
+  if (!/^sk-ant-/.test(chave)){
+    var partes = conteudo.map(function(c){
+      if (c.type === 'text') return { type: 'text', text: c.text };
+      if (c.type === 'image') return { type: 'image_url', image_url: { url: 'data:' + c.source.media_type + ';base64,' + c.source.data } };
+      return { type: 'file', file: { filename: 'documento.pdf', file_data: 'data:application/pdf;base64,' + c.source.data } };
+    });
+    var ro = UrlFetchApp.fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'post', contentType: 'application/json', muteHttpExceptions: true,
+      headers: { Authorization: 'Bearer ' + chave },
+      payload: JSON.stringify({ model: PropertiesService.getScriptProperties().getProperty('OPENAI_MODELO') || MODELO_GPT, max_tokens: maxTokens,
+        response_format: { type: 'json_object' }, messages: [{ role: 'user', content: partes }] })
+    });
+    var dO = JSON.parse(ro.getContentText());
+    if (ro.getResponseCode() >= 300) throw new Error('ChatGPT: ' + ((dO.error && dO.error.message) || ('erro ' + ro.getResponseCode())));
+    return (dO.choices && dO.choices[0] && dO.choices[0].message && dO.choices[0].message.content) || '';
+  }
+  var r = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
+    method: 'post', contentType: 'application/json', muteHttpExceptions: true,
+    headers: { 'x-api-key': chave, 'anthropic-version': '2023-06-01' },
+    payload: JSON.stringify({ model: MODELO, max_tokens: maxTokens, messages: [{ role: 'user', content: conteudo }] })
+  });
+  var d = JSON.parse(r.getContentText());
+  if (r.getResponseCode() >= 300) throw new Error((d.error && d.error.message) || ('erro ' + r.getResponseCode()));
+  return (d.content || []).map(function(c){ return c.text || ''; }).join('');
 }
 function limpa(t){ return String(t == null ? '' : t).trim().slice(0, 300); }
 
@@ -267,7 +288,7 @@ function arquivosDaPasta(pasta){
   return escolhidos;
 }
 function lerArquivos(arquivos){
-  var chave = chaveClaude(); if (!chave) throw new Error('A chave do Claude não está cadastrada (Configurações › Integrações › Claude).');
+  var chave = chaveClaude(); if (!chave) throw new Error('A chave da IA não está cadastrada (Configurações › Integrações › IA).');
   if (!arquivos.length) throw new Error('Nenhuma foto ou PDF na pasta.');
   var conteudo = [];
   arquivos.forEach(function(a, i){
@@ -287,14 +308,7 @@ function lerArquivos(arquivos){
     '"uc" é o número da unidade consumidora (ou conta contrato / instalação) da conta de luz. ' +
     '"rg" no formato número com hífen antes do último dígito (ex.: 2960881-3); se não houver RG nos documentos, deixe vazio (o escritório usa o CPF). ' +
     'Deixe vazio o que não estiver legível; não invente. Em "observacao", avise em uma frase se houver divergência entre os documentos ou algo ilegível.' });
-  var r = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
-    method: 'post', contentType: 'application/json', muteHttpExceptions: true,
-    headers: { 'x-api-key': chave, 'anthropic-version': '2023-06-01' },
-    payload: JSON.stringify({ model: MODELO, max_tokens: 900, messages: [{ role: 'user', content: conteudo }] })
-  });
-  var d = JSON.parse(r.getContentText());
-  if (r.getResponseCode() >= 300) throw new Error((d.error && d.error.message) || ('erro ' + r.getResponseCode()));
-  var txt = (d.content || []).map(function(c){ return c.text || ''; }).join('');
+  var txt = perguntarIA(chave, conteudo, 900);
   var m = txt.match(/\{[\s\S]*\}/); if (!m) throw new Error('A IA não conseguiu ler os documentos.');
   var o = JSON.parse(m[0]);
   var out = { nome: limpa(o.nome), cpf: limpa(o.cpf), rg: limpa(o.rg), nascimento: limpa(o.nascimento), endereco: limpa(o.endereco), uc: limpa(o.uc), observacao: limpa(o.observacao) };
