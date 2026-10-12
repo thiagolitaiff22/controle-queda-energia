@@ -1654,6 +1654,7 @@ section.vw-dash{gap:10px!important}
       <div class="field"><label for="f-rg">RG</label><input id="f-rg" class="tnum" inputmode="numeric" placeholder="2960881-3"><span class="hint">Sem RG? Deixe em branco: nos documentos vale o número do CPF.</span></div>
       <div class="field full"><label for="f-end">Endereço</label><input id="f-end" placeholder="Rua, número, bairro, cidade/UF"></div>
       <div class="field full"><label for="f-contato">Contato (telefone / WhatsApp)</label><input id="f-contato" inputmode="tel" placeholder="(97) 00000-0000" class="tnum"></div>
+      <div class="field full"><label for="f-resp">Prospectador</label><select id="f-resp"><option value="">Sem prospectador</option></select><span class="hint">Quem trouxe o cliente. É ele quem vê o cliente no aplicativo e cuida do aviso da audiência.</span></div>
       <div class="field full" id="f-via-box" hidden><label>Avisado via outro cliente</label><div class="integ-row"><span id="f-via-nome" class="val"></span><button type="button" class="btn" id="f-via-tirar" style="padding:5px 10px;font-size:12.5px">Desfazer vínculo</button></div></div>
       <div class="field full"><label class="chk"><input id="f-regua" type="checkbox"> Enviar avisos automáticos por WhatsApp para este cliente</label><span class="hint">Telefones preenchidos agora ficam fora da régua até você marcar aqui.</span></div>
 
@@ -1672,7 +1673,6 @@ section.vw-dash{gap:10px!important}
       <div class="field full"><label class="chk"><input id="f-online" type="checkbox"> Audiência online (por videochamada)</label></div>
       <div class="field"><label for="f-situacao">Situação do aviso</label>
         <select id="f-situacao"><option value="pendente">Não avisado</option><option value="avisado">Avisado</option><option value="sem_contato">Sem contato</option></select></div>
-      <div class="field"><label for="f-resp">Responsável pelo aviso</label><select id="f-resp"><option value="">Sem responsável</option></select></div>
       <div class="field"><label for="f-avisoem">Data do aviso</label><input id="f-avisoem" type="date"></div>
       <div class="field"><label for="f-meio">Meio do aviso</label><select id="f-meio"><option value="">Não informado</option><option value="whatsapp">WhatsApp</option><option value="convite">Convite</option><option value="prospectador">Prospectador</option><option value="ligacao">Ligação</option><option value="pessoalmente">Pessoalmente</option></select></div>
       <div class="field"><label for="f-avisadoa">Avisado a quem / observação</label><input id="f-avisadoa" placeholder="Ex.: avisado ao irmão, a filha recebeu"></div>
@@ -3874,7 +3874,7 @@ section.vw-dash{gap:10px!important}
     $('f-hora').value = r ? r.audHora || '' : '';
     $('f-online').checked = !!(r && r.online);
     $('f-situacao').value = r ? sit(r) : 'pendente';
-    $('f-resp').innerHTML = '<option value="">Sem responsável</option>' + state.prosp.map(function(p){ return '<option value="' + esc(p.id) + '">' + esc(p.nome) + '</option>'; }).join('');
+    $('f-resp').innerHTML = '<option value="">Sem prospectador</option>' + state.prosp.map(function(p){ return '<option value="' + esc(p.id) + '">' + esc(p.nome) + '</option>'; }).join('');
     $('f-resp').value = r && prospById(r.responsavelId) ? r.responsavelId : '';
     $('f-avisoem').value = r && r.avisadoEm ? String(r.avisadoEm).slice(0, 10) : '';
     $('f-avisadoa').value = r ? r.avisadoA || '' : '';
