@@ -305,10 +305,10 @@ function lerArquivos(arquivos){
     '"tipos" é a lista com o tipo de cada arquivo, na mesma ordem (Arquivo 1, 2, ...): use "pessoais" para RG, CPF, CNH ou certidão do cliente; "arogo" para documentos (RG, CPF) de quem assina a rogo pelo cliente; "procuracao" para procuração; "residencia" para conta de luz ou outro comprovante de residência; "outro" para o resto. ' +
     'ATENÇÃO: quando o cliente não sabe assinar, outra pessoa assina a rogo por ele. Os documentos dessa pessoa (arquivos com "a rogo" no nome ou cujo nome não é o do outorgante da procuração) NUNCA são do cliente: não use o nome, CPF, RG ou data de nascimento deles. ' +
     'Nome completo em maiúsculas, como no documento. ' +
-    'ENDEREÇO: use o endereço do cliente impresso na conta de luz (o bloco com o nome do cliente, logo abaixo dele: rua/travessa, número, bairro ou comunidade, CEP e cidade). ' +
-    'NUNCA use o endereço da distribuidora (Amazonas Energia / Âmbar, sede em Manaus) nem o do escritório de advocacia; o cliente quase sempre mora no interior (ex.: Alvarães). ' +
-    'Copie o que está impresso, sem inventar nem corrigir nomes de rua; só expanda abreviações (TV = Travessa, R = Rua, AV = Avenida). Formato: "Travessa Santa Ana, S/N, Centro, Alvarães/AM, CEP 69475-000". ' +
-    'Sem conta de luz legível, use o endereço da procuração; se nenhum estiver legível, deixe vazio. ' +
+    'ENDEREÇO — regra fixa: o talão de luz é sempre o mesmo modelo (Amazonas Energia). O endereço do cliente é SEMPRE o das linhas logo abaixo do nome do cliente no talão (rua/travessa e número; depois bairro ou comunidade; depois CEP e cidade). Use só essas linhas. ' +
+    'Não use nenhum outro endereço do talão (o da distribuidora, em Manaus, ou qualquer outro) nem endereço de RG, CNH ou procuração. ' +
+    'Copie como está impresso, sem inventar nem corrigir nomes; só expanda abreviações (TV = Travessa, R = Rua, AV = Avenida). Formato: "Travessa Santa Ana, S/N, Centro, Alvarães/AM, CEP 69475-000". ' +
+    'Se não houver talão de luz ou essas linhas estiverem ilegíveis, deixe o endereço vazio. ' +
     '"uc" é o número da unidade consumidora (ou conta contrato / instalação) da conta de luz. ' +
     '"rg" no formato número com hífen antes do último dígito (ex.: 2960881-3); se não houver RG nos documentos, deixe vazio (o escritório usa o CPF). ' +
     'Deixe vazio o que não estiver legível; não invente. Em "observacao", avise em uma frase se houver divergência entre os documentos ou algo ilegível.' });
