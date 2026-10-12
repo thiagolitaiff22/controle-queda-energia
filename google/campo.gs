@@ -312,6 +312,7 @@ function lerArquivos(arquivos){
     '"uc" é o número da unidade consumidora (ou conta contrato / instalação) da conta de luz. ' +
     '"rg" no formato número com hífen antes do último dígito (ex.: 2960881-3); se não houver RG nos documentos, deixe vazio (o escritório usa o CPF). ' +
     'Deixe vazio o que não estiver legível; não invente. Em "observacao", avise em uma frase se houver divergência entre os documentos ou algo ilegível.' });
+  var soArquivos = conteudo.slice(0, conteudo.length - 1);
   var txt = perguntarIA(chave, conteudo, 900);
   var m = txt.match(/\{[\s\S]*\}/); if (!m) throw new Error('A IA não conseguiu ler os documentos.');
   var o = JSON.parse(m[0]);
@@ -319,7 +320,60 @@ function lerArquivos(arquivos){
   var tem = o.tem || {}; out.tem = { procuracao: tem.procuracao === true, rg: tem.rg === true, cpf: tem.cpf === true, luz: tem.luz === true };
   try { renomearArquivos(arquivos, o.tipos || []); } catch (x){ console.log('renomear: ' + x); }
   if (out.cpf && !cpfValido(out.cpf)) out.observacao = ('CPF lido (' + out.cpf + ') não confere: verifique no documento. ' + out.observacao).trim();
+  // endereço: só o que está impresso no talão, logo abaixo do nome do cliente (leitura própria, cópia literal das linhas)
+  try { out.endereco = enderecoDoTalao(chave, soArquivos); } catch (x){ console.log('talão: ' + x); out.endereco = ''; }
   return out;
+}
+
+/* Lê no talão da Amazonas Energia as linhas logo abaixo do nome do cliente e monta o endereço.
+ * Nunca usa outro documento: se não achar o talão, devolve vazio (o escritório preenche). */
+function enderecoDoTalao(chave, soArquivos){
+  var pedido = soArquivos.concat([{ type: 'text', text:
+    'Entre estes arquivos há uma conta de luz (talão) da Amazonas Energia. Procure SOMENTE nela. ' +
+    'Logo abaixo de "CONTA MÊS" e "VENCIMENTO" fica o bloco do cliente: primeira linha é o NOME do cliente, e as linhas seguintes (2 a 4) são o endereço dele, terminando na linha que começa com "CEP". ' +
+    'Copie essas linhas EXATAMENTE como estão impressas, letra por letra, sem corrigir, sem completar e sem usar nenhum outro documento (procuração, RG, CNH) nem outro endereço do talão (o da empresa, no topo). ' +
+    'Responda só com um JSON: {"achou":true,"linhas":["NOME DO CLIENTE","linha 2","linha 3","CEP ..."],"endereco":""}. ' +
+    'Em "endereco", escreva o endereço dessas linhas (sem o nome) de forma legível: abra as abreviações (R = Rua, TV = Travessa, AV = Avenida, EST = Estrada, RAM = Ramal), ignore o "AME" e o número repetido depois dele, ponha acentos nos nomes conhecidos, e termine com Cidade/AM e o CEP. ' +
+    'Ex.: linhas ["MARCELO RODRIGUES BEZERRA","R WENCESLAU FATIM 246 AME 246","SAO LAZARO","CEP 69.475-000 - ALVARAES"] → "Rua Wenceslau Fatim, 246, São Lázaro, Alvarães/AM, CEP 69475-000". ' +
+    'Se não houver talão ou o bloco estiver ilegível, responda {"achou":false,"linhas":[],"endereco":""}.' }]);
+  var txt = perguntarIA(chave, pedido, 400);
+  var m = txt.match(/\{[\s\S]*\}/); if (!m) return '';
+  var o = JSON.parse(m[0]);
+  var linhas = (o.linhas || []).map(function(l){ return String(l || '').trim(); }).filter(String);
+  if (!o.achou || linhas.length < 2) return '';
+  var montado = montarEndereco(linhas.slice(1));
+  var bonito = limpa(o.endereco);
+  // só aceita o texto "bonito" se a rua das linhas copiadas estiver nele (senão usa o montado aqui)
+  var semAcento = function(s){ return String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); };
+  var rua = semAcento(linhas[1]).replace(/\s+ame\b.*$/, '').replace(/^(r|rua|tv|trav|travessa|av|avenida|est|estrada|ram|ramal|al|beco|bc|pc|praca|com)\.?\s+/, '').replace(/\s+(\d+|s\/?n)$/, '').trim();
+  var palavras = rua.split(/\s+/).filter(function(p){ return p.length > 2; });
+  var confere = bonito && palavras.length && palavras.every(function(p){ return semAcento(bonito).indexOf(p) >= 0; });
+  return confere ? bonito : montado;
+}
+// monta "Rua X, 246, Bairro, Cidade/AM, CEP 69475-000" a partir das linhas do talão (sem o nome)
+function montarEndereco(linhas){
+  var titulo = function(s){ return String(s).toLowerCase().replace(/(^|\s)(\S)/g, function(m, a, b){ return a + b.toUpperCase(); }).replace(/\s(De|Da|Do|Dos|Das|E)(?=\s)/g, function(m){ return m.toLowerCase(); }); };
+  var ABR = { R: 'Rua', RUA: 'Rua', TV: 'Travessa', TRAV: 'Travessa', AV: 'Avenida', EST: 'Estrada', RAM: 'Ramal', AL: 'Alameda', BC: 'Beco', PC: 'Praça', COM: 'Comunidade' };
+  var cepL = '', partes = [];
+  linhas.forEach(function(l){ if (/^CEP\b/i.test(l)) cepL = l; else partes.push(l); });
+  var out = [];
+  if (partes.length){
+    var rua = partes[0].replace(/\s+AME\b.*$/i, '').trim();
+    var num = (rua.match(/\s(\d+[A-Z]?|S\/?N)$/i) || [])[1] || '';
+    if (num) rua = rua.slice(0, rua.length - num.length).trim();
+    var t = rua.split(/\s+/), pre = ABR[String(t[0]).toUpperCase().replace(/\.$/, '')];
+    if (pre) t.shift();
+    out.push((pre ? pre + ' ' : '') + titulo(t.join(' ')));
+    if (num) out.push(num.toUpperCase().replace('SN', 'S/N'));
+    partes.slice(1).forEach(function(p){ out.push(titulo(p)); });
+  }
+  if (cepL){
+    var cep = (cepL.match(/(\d{2})\.?(\d{3})-?(\d{3})/) || []), cid = (cepL.split('-').slice(-1)[0] || '').trim();
+    var CIDADES = { ALVARAES: 'Alvarães', TEFE: 'Tefé', UARINI: 'Uarini', MARAA: 'Maraã', COARI: 'Coari', MANAUS: 'Manaus' };
+    if (cid && !/^\d/.test(cid)) out.push((CIDADES[cid.toUpperCase().replace(/\s+/g, '')] || titulo(cid)) + '/AM');
+    if (cep[0]) out.push('CEP ' + cep[1] + cep[2] + '-' + cep[3]);
+  }
+  return out.join(', ');
 }
 // botão "Ler documentos da pasta" no cadastro do BI
 function lerPastaDoCadastro(p){
