@@ -2159,12 +2159,13 @@ section.vw-dash{gap:10px!important}
     var r = state.rows.filter(function(x){ return x.id === b.dataset.id; })[0]; if (!r) return;
     openForm(r, false, true, true); setTimeout(function(){ var bt = $('f-pasta-ler'); if (bt) bt.click(); }, 400);
   });
-  function fichaCliente(r){
+  // compacto (aba Cadastro): só os dados do cadastro, sem processo, audiência, aviso e pagamento
+  function fichaCliente(r, compacto){
     var proc = String(r.processo || '').trim();
     var aud = r.audData ? fmtDate(r.audData) + (r.audHora ? ' às ' + r.audHora : '') + ' · ' + (r.online ? 'online' : 'presencial') : '';
     var aviso = r.avisado ? 'Avisado' + (r.meioAviso ? ' por ' + (MEIOS[r.meioAviso] || r.meioAviso).toLowerCase() : '') + (r.avisadoEm ? ' em ' + fmtShort(String(r.avisadoEm).slice(0, 10)) : '') + (r.avisadoA ? ' · ' + soNome(r.avisadoA) : '') : (sit(r) === 'sem_contato' ? 'Sem contato' : '');
     var via = clienteVia(r);
-    var contato = r.contato || (via ? 'pelo número de ' + via.nome + ' (' + via.contato + ')' : '');
+    var contato = (r.contato && fmtTel(r.contato)) || (via ? 'pelo número de ' + via.nome + ' (' + via.contato + ')' : '');
     var res = { procedente: 'Procedente', faltou: 'Faltou', conclusos: 'Conclusos', improcedente: 'Improcedente' }[resAud(r)] || '';
     var teses = tesesDe(r).map(nomeTese).join(' · ');
     var campos = [
@@ -2176,6 +2177,7 @@ section.vw-dash{gap:10px!important}
       ['Aviso', aviso], ['Resultado', res],
       ['Pagamento', r.pagamento && PAG[r.pagamento] ? PAG[r.pagamento][0] : ''], ['Observações', r.obs]
     ];
+    if (compacto) campos = campos.filter(function(c){ return ['Nome completo', 'CPF', 'RG', 'Telefone', 'Endereço', 'Prospectador', 'Unidade consumidora', 'Período', 'Observações'].indexOf(c[0]) >= 0; });
     var fl = faltaDocs(r);
     var ok = '<i class="fc-ok"><svg class="i"><use href="#i-check"/></svg></i>', nada = '<i class="fc-nao">–</i>';
     var fotoOk = /^data:image\/(jpeg|png);base64,/.test(r.fotoCliente || '');
@@ -2650,7 +2652,7 @@ section.vw-dash{gap:10px!important}
         '<div><span class="lbl">Documentos</span>' + docsCell(r) + '</div>' +
         '<div><span class="lbl">Situação</span><span class="cad-sit ' + st[2] + '">' + st[1] + '</span></div>' +
         '<div class="c-act"><button type="button" class="ico-btn" data-act="edit" data-id="' + esc(r.id) + '" title="Editar cadastro" aria-label="Editar ' + esc(r.nome) + '"><svg class="i"><use href="#i-pencil"/></svg></button></div>' +
-      '</div>' + (cadAberto[r.id] ? fichaCliente(r) : '');
+      '</div>' + (cadAberto[r.id] ? fichaCliente(r, true) : '');
     });
     box.innerHTML = html;
   }
