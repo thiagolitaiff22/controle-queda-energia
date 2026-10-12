@@ -3295,13 +3295,13 @@ section.vw-dash{gap:10px!important}
     if (k === 'datajud') return $('dj-chave').value.indexOf('•') === 0;
     if (k === 'celular') return !!(cpUrl || $('cp-url').value.trim());
     if (k === 'drive') return !!(igScript && igScript.ok);
-    if (k === 'claude') return !!(igScript && igScript.claude) || clTem;
+    if (k === 'claude') return igScript && igScript.ia ? igScript.ia === 'ChatGPT' : (!!(igScript && igScript.claude) || clTem);
     return false;
   }
   function igRotulo(k, on){
     if (k === 'lembrete') return on ? 'Enviando' : 'Pronto';
     if (k === 'regua') return on ? 'Ligada' : 'Desligada';
-    if (k === 'claude' && on && igScript && igScript.ia) return igScript.ia === 'ChatGPT' ? 'Ativado' : 'Chave do Claude: troque';
+    if (k === 'claude' && !on && igScript && igScript.ia === 'Claude') return 'Falta a chave do ChatGPT';
     return on ? 'Ativado' : 'Desativado';
   }
   function pintarInteg(){
