@@ -2192,7 +2192,11 @@ section.vw-dash{gap:10px!important}
     var b = e.target.closest('[data-pasta-cad]'); if (!b) return;
     var r = state.rows.filter(function(x){ return x.id === b.dataset.pastaCad; })[0]; if (!r) return;
     b.disabled = true;
-    try { var u = await ensureFolder(r.id, r.nome); if (u) toast('Pasta ligada ao cadastro de ' + r.nome); }
+    try {
+      var u = await ensureFolder(r.id, r.nome, true);
+      if (u) toast('Pasta ligada ao cadastro de ' + r.nome);
+      else { toast('Não achei no Drive uma pasta com o nome ' + r.nome + '. Abra o lápis e cole o link da pasta em "Já tem pasta antiga? Colar o link".'); b.disabled = false; }
+    }
     catch(err){ toast('Pasta não ligada: ' + driveErr(err)); b.disabled = false; }
   });
   function faltaTexto(r){ return faltaDocs(r).map(function(k){ return DOC_FALTA[k]; }).join(', '); }
@@ -2729,7 +2733,7 @@ section.vw-dash{gap:10px!important}
       html += '<div class="row' + (cadAberto[r.id] ? ' aberto' : '') + '" data-linha="' + esc(r.id) + '">' +
         '<div class="c-name"><div class="name">' + (/^data:image\/(jpeg|png);base64,/.test(r.fotoCliente || '') ? '<img class="av-foto" src="' + r.fotoCliente + '" alt="">' : '') + '<button type="button" class="nome-abrir" data-act="abrir" data-id="' + esc(r.id) + '">' + esc(r.nome) + '</button>' +
           '<button type="button" class="nome-copia" data-copiar-nome="' + esc(r.nome) + '" title="Copiar o nome" aria-label="Copiar o nome de ' + esc(r.nome) + '"><svg class="i"><use href="#i-copy"/></svg></button>' +
-          (r.pastaUrl ? pastaIco(r) : '<button type="button" class="pasta-falta" data-pasta-cad="' + esc(r.id) + '" title="Sem pasta ligada: clique para achar a pasta no Drive (ou criar)" aria-label="Ligar pasta de ' + esc(r.nome) + '"><svg class="i"><use href="#i-folder"/></svg>+</button>') + '</div><div class="addr">' + (r.cpf ? 'CPF ' + esc(r.cpf) : 'CPF não informado') + '</div></div>' +
+          (r.pastaUrl ? pastaIco(r) : '<button type="button" class="pasta-falta" data-pasta-cad="' + esc(r.id) + '" title="Pasta não ligada ao cadastro: clique para procurar a pasta dela no Drive" aria-label="Ligar pasta de ' + esc(r.nome) + '"><svg class="i"><use href="#i-folder"/></svg>+</button>') + '</div><div class="addr">' + (r.cpf ? 'CPF ' + esc(r.cpf) : 'CPF não informado') + '</div></div>' +
         '<div><span class="lbl">Prospectador</span><div class="val">' + esc(prospName(r.responsavelId) || '—') + '</div></div>' +
         '<div><span class="lbl">Contato</span>' + telCell(r, true) + '</div>' +
         '<div><span class="lbl">Cadastrado</span><div class="val">' + (r.dataCadastro || r.criadoEm ? String(r.dataCadastro || r.criadoEm).slice(0, 10).replace(/^\d\d(\d\d)-(\d\d)-(\d\d)$/, '$3/$2/$1') : '—') + '</div></div>' +
@@ -3882,7 +3886,7 @@ section.vw-dash{gap:10px!important}
     if (!r.data) throw { code: 'sem_url' };
     return (pastaScriptUrl = r.data);
   }
-  async function ensureFolder(id, nome){
+  async function ensureFolder(id, nome, soAchar){
     if (folderBusy[id]) return null;
     folderBusy[id] = true;
     try {
@@ -3890,8 +3894,9 @@ section.vw-dash{gap:10px!important}
       var ses = await SB.auth.getSession(), jwt = ses && ses.data && ses.data.session ? ses.data.session.access_token : '';
       var r0 = state.rows.filter(function(x){ return x.id === id; })[0] || {};
       var etapa = r0.arquivado ? 'arquivado' : String(r0.processo || '').trim() ? 'protocolado' : 'pendente';
-      var d = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ acao: 'pasta', jwt: jwt, nome: nome, etapa: etapa, pastaId: r0.pastaId || '' }) }).then(function(x){ return x.json(); });
+      var d = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ acao: 'pasta', jwt: jwt, nome: nome, etapa: etapa, pastaId: r0.pastaId || '', soAchar: !!soAchar }) }).then(function(x){ return x.json(); });
       if (!d || !d.ok) throw { code: 'tool_error', message: d && d.erro };
+      if (d.achou === false) return null;
       await patchRow(id, { pastaId: d.id, pastaUrl: d.url });
       return d.url;
     } finally { folderBusy[id] = false; }

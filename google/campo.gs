@@ -260,6 +260,17 @@ function pastaDoCadastro(p){
   // evita pasta repetida: procura o mesmo nome nas três etapas antes de criar
   var achou = null;
   [PENDENTES, PROTOCOLADOS, ARQUIVADOS].some(function(n){ var it = subpasta(raiz, n).getFoldersByName(nome); if (it.hasNext()){ achou = it.next(); return true; } return false; });
+  // sem o nome exato: compara sem acento, maiúscula e espaços (ex.: "ZENEIDE  PAULINO ATRES" ou "Zeneide Paulino Atres")
+  if (!achou){
+    var chave = function(s){ return String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim(); };
+    var alvo = chave(nome);
+    [PENDENTES, PROTOCOLADOS, ARQUIVADOS].some(function(n){
+      var it = subpasta(raiz, n).getFolders();
+      while (it.hasNext()){ var f0 = it.next(), k = chave(f0.getName()); if (k === alvo || k.indexOf(alvo + ' ') === 0){ achou = f0; return true; } }
+      return false;
+    });
+  }
+  if (!achou && p.soAchar) return { ok: true, achou: false };   // botão "ligar pasta": só procura, nunca cria
   var f = achou || subpasta(raiz, etapa).createFolder(nome);
   return { ok: true, id: f.getId(), url: f.getUrl(), existente: !!achou };
 }
