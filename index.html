@@ -3799,6 +3799,21 @@ section.vw-dash{gap:10px!important}
     if (state.db){ await col().doc(id).update(data); }
     else { state.rows = state.rows.map(function(r){ return r.id === id ? Object.assign({}, r, data) : r; }); render(); }
   }
+  // cliente que veio do aplicativo com o nome todo em maiúsculas: passa para o padrão do sistema ("Eliel dos Santos")
+  function nomeProprio(n){
+    return String(n || '').toLowerCase()
+      .replace(/(^|[\s'-])([a-zà-ÿ])/g, function(m, a, b){ return a + b.toUpperCase(); })
+      .replace(/\s(De|Da|Do|Dos|Das|E)(?=\s)/g, function(m){ return m.toLowerCase(); });
+  }
+  var nomesAcertados = {};
+  function acertarNomesDoApp(){
+    (state.rows || []).forEach(function(r){
+      var n = String(r.nome || '');
+      if (r.origem !== 'campo' || nomesAcertados[r.id] || !/[A-ZÀ-Ý]/.test(n) || n !== n.toUpperCase()) return;
+      nomesAcertados[r.id] = true;
+      patchRow(r.id, { nome: nomeProprio(n) }).catch(function(){});
+    });
+  }
   async function deleteRow(id){
     if (state.db){ await col().doc(id).delete(); }
     else { state.rows = state.rows.filter(function(r){ return r.id !== id; }); render(); }
@@ -4901,7 +4916,7 @@ section.vw-dash{gap:10px!important}
     if (f.data === 'admin'){ lhStatus(); rgCarregar(); djStatus(); avMontar(); cpStatus(); clStatus(); }
     function carimbo(){ var n = new Date(); $('sync').textContent = 'Atualizado: ' + n.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ', ' + n.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); }
     function caiu(){ $('sync').textContent = 'Conexão interrompida'; banner('A conexão com a base foi interrompida. Recarregue a página.'); }
-    watchTable('clientes', function(rows){ state.rows = rows; banner(''); carimbo(); render(); }, caiu);
+    watchTable('clientes', function(rows){ state.rows = rows; banner(''); carimbo(); render(); acertarNomesDoApp(); }, caiu);
     watchTable('prospectadores', function(rows){ state.prosp = rows; render(); }, function(){});
     watchTable('equipe', function(rows){
       state.equipe = rows;
