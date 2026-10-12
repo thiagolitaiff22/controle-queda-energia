@@ -1230,6 +1230,10 @@ section.vw-dash{gap:10px!important}
 #cad-list .nome-abrir{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
 #cad-list .docs-pend{position:relative;cursor:help}
 #cad-list .docs-tip{display:none}
+#cad-stats .cad-filtro{cursor:pointer;transition:border-color .15s,background .15s}
+#cad-stats .cad-filtro:hover{border-color:var(--line-2);background:var(--hover)}
+#cad-stats .cad-filtro.ativo{border-color:var(--cor-linha);box-shadow:0 0 0 1px var(--cor-linha) inset}
+#cad-stats .cad-filtro:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 #dica-docs{position:fixed;z-index:1000;pointer-events:none;background:var(--panel);color:var(--ink);border:1px solid var(--line-2);border-radius:6px;padding:6px 10px;font-size:12px;white-space:nowrap;box-shadow:0 6px 18px rgba(0,0,0,.35)}
 #cad-list .muted-dash{color:var(--ink-3)}
 #cad-list .c-name .addr{font-size:12px;color:var(--ink-3)}
@@ -2626,18 +2630,18 @@ section.vw-dash{gap:10px!important}
     todos.forEach(function(r){ conta[situacaoCad(r)[0]]++; });
     var semTel = todos.filter(function(r){ return !temContato(r); }).length;
     var nFaltaC = todos.filter(function(r){ return faltaDocs(r).length; }).length;
-    var cardC = function(ico, rot, n, cap, cor){ return '<div class="card stat" data-cor-fixa="1" style="--cor-linha:var(' + cor + ')"><div class="stat-h"><svg class="i"><use href="#' + ico + '"/></svg>' + rot + '</div><div class="stat-v tnum">' + n + '</div><div class="stat-c">' + cap + '</div><div class="stat-viz"></div></div>'; };
+    var cardC = function(ico, rot, n, cap, cor, filtro){ return '<div class="card stat cad-filtro' + (cadSit === filtro ? ' ativo' : '') + '" role="button" tabindex="0" aria-pressed="' + (cadSit === filtro) + '" data-cad-filtro="' + filtro + '" title="Mostrar na lista" data-cor-fixa="1" style="--cor-linha:var(' + cor + ')"><div class="stat-h"><svg class="i"><use href="#' + ico + '"/></svg>' + rot + '</div><div class="stat-v tnum">' + n + '</div><div class="stat-c">' + cap + '</div><div class="stat-viz"></div></div>'; };
     $('cad-stats').innerHTML =
-      cardC('i-users', 'Em cadastro', todos.length, 'ainda sem número de processo', '--line-2') +
-      cardC('i-check', 'Prontos para protocolar', conta.pronto, 'nome, CPF e endereço preenchidos', '--green') +
-      cardC('i-clock', 'Conferir dados', conta.conferir, 'cadastrados pelo celular', '--amber') +
+      cardC('i-users', 'Em cadastro', todos.length, 'ainda sem número de processo', '--line-2', '') +
+      cardC('i-check', 'Prontos para protocolar', conta.pronto, 'nome, CPF e endereço preenchidos', '--green', 'pronto') +
+      cardC('i-clock', 'Conferir dados', conta.conferir, 'cadastrados pelo celular', '--amber', 'conferir') +
       // pendências: documento que o prospectador ainda não mandou ou dados incompletos (cada cliente conta uma vez)
-      cardC('i-bellx', 'Pendências', todos.filter(function(r){ return faltaDocs(r).length || situacaoCad(r)[0] === 'incompleto'; }).length, nFaltaC + ' com documento pendente · ' + conta.incompleto + ' falta CPF ou endereço · ' + semTel + ' sem telefone', '--red');
+      cardC('i-bellx', 'Pendências', todos.filter(function(r){ return faltaDocs(r).length || situacaoCad(r)[0] === 'incompleto'; }).length, nFaltaC + ' com documento pendente · ' + conta.incompleto + ' falta CPF ou endereço · ' + semTel + ' sem telefone', '--red', 'pendencias');
     var nFalta = todos.filter(function(r){ return faltaDocs(r).length; }).length;
-    var SITS = [['', 'Todas as situações · ' + todos.length], ['faltam', 'Faltam documentos · ' + nFalta], ['pronto', 'Prontos para protocolar · ' + conta.pronto], ['conferir', 'Conferir dados · ' + conta.conferir], ['incompleto', 'Dados incompletos · ' + conta.incompleto]];
+    var SITS = [['', 'Todas as situações · ' + todos.length], ['faltam', 'Faltam documentos · ' + nFalta], ['pronto', 'Prontos para protocolar · ' + conta.pronto], ['conferir', 'Conferir dados · ' + conta.conferir], ['incompleto', 'Dados incompletos · ' + conta.incompleto], ['pendencias', 'Pendências (documento ou dados)']];
     $('cad-sit').innerHTML = SITS.map(function(o){ return '<option value="' + o[0] + '"' + (o[0] === cadSit ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('');
     $('cad-sit').classList.toggle('ativo', !!cadSit);
-    var lista = todos.filter(function(r){ return (!cadSit || (cadSit === 'faltam' ? faltaDocs(r).length > 0 : situacaoCad(r)[0] === cadSit)) && buscaCliente(r, cadQ); })
+    var lista = todos.filter(function(r){ return (!cadSit || (cadSit === 'faltam' ? faltaDocs(r).length > 0 : cadSit === 'pendencias' ? (faltaDocs(r).length > 0 || situacaoCad(r)[0] === 'incompleto') : situacaoCad(r)[0] === cadSit)) && buscaCliente(r, cadQ); })
       .sort(function(a, b){ return String(b.dataCadastro || b.criadoEm || '').localeCompare(String(a.dataCadastro || a.criadoEm || '')) || String(a.nome || '').localeCompare(String(b.nome || ''), 'pt'); });
     $('cad-count').textContent = lista.length + (lista.length === 1 ? ' cliente' : ' clientes');
     var html = '<div class="row head"><div>Cliente</div><div>Prospectador</div><div>Contato</div><div>Cadastrado</div><div>Documentos</div><div>Situação</div><div></div></div>';
@@ -2671,6 +2675,14 @@ section.vw-dash{gap:10px!important}
   $('cad-list').addEventListener('focusin', function(e){ dicaDocs(e.target.closest('.docs-pend')); });
   $('cad-list').addEventListener('focusout', function(){ dicaDocs(null); });
   $('cad-q').addEventListener('input', function(){ cadQ = this.value.trim(); renderCad(); });
+  function filtroCartao(e){
+    var c = e.target.closest('[data-cad-filtro]'); if (!c) return;
+    if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return;
+    e.preventDefault();
+    var f = c.dataset.cadFiltro; cadSit = cadSit === f ? '' : f; renderCad();
+  }
+  $('cad-stats').addEventListener('click', filtroCartao);
+  $('cad-stats').addEventListener('keydown', filtroCartao);
   $('cad-sit').addEventListener('change', function(){ cadSit = this.value; renderCad(); });
   $('cad-list').addEventListener('click', function(e){
     var b = e.target.closest('[data-act]');
