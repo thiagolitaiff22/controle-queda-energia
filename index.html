@@ -2128,7 +2128,7 @@ section.vw-dash{gap:10px!important}
   function docsCell(r){
     var f = faltaDocs(r);
     if (f.length) return '<span class="cad-sit crit docs-pend" tabindex="0">Documentos pendentes<span class="docs-tip">Faltam: ' + esc(faltaTexto(r)) + '</span></span>';
-    return r.origem === 'campo' ? '<span class="cad-sit ok">Completos</span>' : '<span class="muted-dash">—</span>';
+    return '<span class="cad-sit ok">Documentação completa</span>';
   }
   function faltaTexto(r){ return faltaDocs(r).map(function(k){ return DOC_FALTA[k]; }).join(', '); }
   document.addEventListener('click', async function(e){
