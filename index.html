@@ -2199,6 +2199,14 @@ section.vw-dash{gap:10px!important}
     }
     catch(err){ toast('Pasta não ligada: ' + driveErr(err)); b.disabled = false; }
   });
+  // Cadastro: cliente sem pasta ligada → procura no Drive a pasta com o nome dele e liga (só procura, nunca cria). Um por vez, uma vez por sessão.
+  var pastasProcuradas = {}, filaPastas = Promise.resolve();
+  function ligarPastasQueFaltam(){
+    (state.rows || []).filter(function(r){ return noCadastro(r) && !r.pastaUrl && String(r.nome || '').trim() && !pastasProcuradas[r.id]; }).forEach(function(r){
+      pastasProcuradas[r.id] = true;
+      filaPastas = filaPastas.then(function(){ return ensureFolder(r.id, r.nome, true); }).catch(function(){});
+    });
+  }
   function faltaTexto(r){ return faltaDocs(r).map(function(k){ return DOC_FALTA[k]; }).join(', '); }
   document.addEventListener('click', async function(e){
     var b = e.target.closest('[data-act="recebido"]'); if (!b) return;
@@ -5066,7 +5074,7 @@ section.vw-dash{gap:10px!important}
     if (f.data === 'admin'){ lhStatus(); rgCarregar(); djStatus(); avMontar(); cpStatus(); clStatus(); }
     function carimbo(){ var n = new Date(); $('sync').textContent = 'Atualizado: ' + n.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ', ' + n.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); }
     function caiu(){ $('sync').textContent = 'Conexão interrompida'; banner('A conexão com a base foi interrompida. Recarregue a página.'); }
-    watchTable('clientes', function(rows){ state.rows = rows; banner(''); carimbo(); render(); acertarNomesDoApp(); }, caiu);
+    watchTable('clientes', function(rows){ state.rows = rows; banner(''); carimbo(); render(); acertarNomesDoApp(); ligarPastasQueFaltam(); }, caiu);
     watchTable('prospectadores', function(rows){ state.prosp = rows; render(); }, function(){});
     watchTable('equipe', function(rows){
       state.equipe = rows;
