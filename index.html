@@ -1252,7 +1252,7 @@ section.vw-dash{gap:10px!important}
 #f-pasta-msg{display:block;margin-top:6px}
 .ia-preencheu{border-color:var(--blue)!important;box-shadow:0 0 0 1px var(--blue) inset}
 
-/* ---------- cadastro inicial: nome, RG, CPF, endereço, UC, período e data do protocolo ---------- */
+/* ---------- cadastro inicial: nome, RG, CPF, endereço, UC, período, data do cadastro e prospectador ---------- */
 #form.novo .f-body > *{display:none!important}
 #form.novo .f-body > .section-lbl:first-child{display:block!important;order:0}
 #form.novo .f-body > .field:has(#f-nome){display:flex!important;order:1}
@@ -1262,6 +1262,8 @@ section.vw-dash{gap:10px!important}
 #form.novo .f-body > .field:has(#f-uc){display:flex!important;order:5}
 #form.novo .f-body > .field:has(#f-periodo){display:flex!important;order:6}
 #form.novo .f-body > .field:has(#f-dtcad){display:flex!important;order:7}
+#form.novo .f-body > .field:has(#f-resp){display:flex!important;order:8;grid-column:auto!important}
+#form.novo .field:has(#f-resp) .hint{display:none}
 .ficha-foto{display:flex;align-items:center;gap:12px;margin:8px 0 12px}
 .ficha-foto img{width:96px;height:96px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
 .ficha-foto span{font-size:12.5px;color:var(--ink-3)}
