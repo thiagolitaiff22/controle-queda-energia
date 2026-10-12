@@ -1228,9 +1228,9 @@ section.vw-dash{gap:10px!important}
 /* nome inteiro, sem três pontinhos: quebra a linha se precisar */
 #cad-list .c-name .name{flex-wrap:wrap;row-gap:3px}
 #cad-list .nome-abrir{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
-#cad-list .docs-falta{display:flex;flex-wrap:wrap;gap:4px}
-#cad-list .docs-falta span{font-size:11px;font-weight:600;color:var(--red);background:color-mix(in srgb,var(--red) 10%,transparent);border:1px solid color-mix(in srgb,var(--red) 45%,transparent);border-radius:4px;padding:1px 6px;white-space:nowrap}
-#cad-list .docs-falta b{font-size:11px;font-weight:700;color:var(--red);align-self:center;margin-right:2px}
+#cad-list .docs-pend{position:relative;cursor:help}
+#cad-list .docs-tip{display:none}
+#dica-docs{position:fixed;z-index:1000;pointer-events:none;background:var(--panel);color:var(--ink);border:1px solid var(--line-2);border-radius:6px;padding:6px 10px;font-size:12px;white-space:nowrap;box-shadow:0 6px 18px rgba(0,0,0,.35)}
 #cad-list .muted-dash{color:var(--ink-3)}
 #cad-list .c-name .addr{font-size:12px;color:var(--ink-3)}
 #cad-list .val{font-size:12.5px}
@@ -2126,7 +2126,7 @@ section.vw-dash{gap:10px!important}
   // coluna Documentos do Cadastro: o que o prospectador ainda precisa mandar, um por etiqueta
   function docsCell(r){
     var f = faltaDocs(r);
-    if (f.length) return '<div class="docs-falta" title="Documentos que o prospectador ainda precisa mandar"><b>Faltam</b>' + f.map(function(k){ return '<span>' + esc(DOC_FALTA[k]) + '</span>'; }).join('') + '</div>';
+    if (f.length) return '<span class="cad-sit crit docs-pend" tabindex="0">Documentos pendentes<span class="docs-tip">Faltam: ' + esc(faltaTexto(r)) + '</span></span>';
     return r.origem === 'campo' ? '<span class="cad-sit ok">Completos</span>' : '<span class="muted-dash">—</span>';
   }
   function faltaTexto(r){ return faltaDocs(r).map(function(k){ return DOC_FALTA[k]; }).join(', '); }
@@ -2390,7 +2390,6 @@ section.vw-dash{gap:10px!important}
         '<div class="c-name"><div class="name' + (r.online ? ' online' : '') + '"' + (r.online ? ' title="Audiência online"' : '') + '><button type="button" class="nome-abrir" data-act="abrir" data-id="' + esc(r.id) + '" aria-expanded="' + !!clAberto[r.id] + '" title="Ver os dados do cliente">' + esc(r.nome) + '</button>' + pastaIco(r) + (r.cpf && !cpfValido(r.cpf) ? '<span class="cpf-ruim" title="CPF inválido: confira os dígitos">CPF inválido</span>' : '') + '</div>' +
           '<div class="addr">' + (r.cpf ? 'CPF ' + esc(r.cpf) : 'CPF não informado') + '</div></div>' +
         '<div><span class="lbl">Processo</span><div class="val proc-l">' + (r.processo ? '<button type="button" class="copia" data-copiar="' + esc(r.processo) + '" title="Copiar o número do processo">' + esc(r.processo) + '<svg class="i"><use href="#i-copy"/></svg></button>' : '—') + '</div></div>' +
-        '<div><span class="lbl">Prospectador</span><div class="val">' + esc(prospName(r.responsavelId) || '—') + '</div></div>' +
         '<div><span class="lbl">Contato</span>' + telCell(r) + '</div>' +
         '<div><span class="lbl">Audiência</span>' + audLinha(r) + '</div>' +
         '<div><span class="lbl">Aviso</span>' + avisoCell(r) + '</div>' +
@@ -2627,6 +2626,7 @@ section.vw-dash{gap:10px!important}
       var st = situacaoCad(r);
       html += '<div class="row' + (cadAberto[r.id] ? ' aberto' : '') + '" data-linha="' + esc(r.id) + '">' +
         '<div class="c-name"><div class="name">' + (/^data:image\/(jpeg|png);base64,/.test(r.fotoCliente || '') ? '<img class="av-foto" src="' + r.fotoCliente + '" alt="">' : '') + '<button type="button" class="nome-abrir" data-act="abrir" data-id="' + esc(r.id) + '">' + esc(r.nome) + '</button>' + pastaIco(r) + '</div><div class="addr">' + (r.cpf ? 'CPF ' + esc(r.cpf) : 'CPF não informado') + '</div></div>' +
+        '<div><span class="lbl">Prospectador</span><div class="val">' + esc(prospName(r.responsavelId) || '—') + '</div></div>' +
         '<div><span class="lbl">Contato</span>' + telCell(r) + '</div>' +
         '<div><span class="lbl">Cadastrado em</span><div class="val">' + (r.dataCadastro || r.criadoEm ? fmtShort(String(r.dataCadastro || r.criadoEm).slice(0, 10)) : '—') + '</div></div>' +
         '<div><span class="lbl">Documentos</span>' + docsCell(r) + '</div>' +
@@ -2636,6 +2636,20 @@ section.vw-dash{gap:10px!important}
     });
     box.innerHTML = html;
   }
+  // "Documentos pendentes": ao passar o mouse mostra quais faltam (balão por cima da página, não é cortado pela tabela)
+  function dicaDocs(alvo){
+    var d = $('dica-docs');
+    if (!alvo){ if (d) d.hidden = true; return; }
+    if (!d){ d = document.createElement('div'); d.id = 'dica-docs'; document.body.appendChild(d); }
+    d.textContent = alvo.querySelector('.docs-tip').textContent; d.hidden = false;
+    var r = alvo.getBoundingClientRect(), w = d.offsetWidth;
+    d.style.left = Math.max(8, Math.min(r.left, innerWidth - w - 8)) + 'px';
+    d.style.top = (r.bottom + 6 + d.offsetHeight > innerHeight ? r.top - d.offsetHeight - 6 : r.bottom + 6) + 'px';
+  }
+  $('cad-list').addEventListener('mouseover', function(e){ dicaDocs(e.target.closest('.docs-pend')); });
+  $('cad-list').addEventListener('mouseleave', function(){ dicaDocs(null); });
+  $('cad-list').addEventListener('focusin', function(e){ dicaDocs(e.target.closest('.docs-pend')); });
+  $('cad-list').addEventListener('focusout', function(){ dicaDocs(null); });
   $('cad-q').addEventListener('input', function(){ cadQ = this.value.trim(); renderCad(); });
   $('cad-sit').addEventListener('change', function(){ cadSit = this.value; renderCad(); });
   $('cad-list').addEventListener('click', function(e){
