@@ -31,7 +31,7 @@ function doGet(){
   var g = 'ok'; try { gatilho(); } catch (x){ g = String(x && x.message || x); }
   var c = ''; try { c = chaveClaude(); } catch (x){}
   var ac = []; try { ac = ScriptApp.getProjectTriggers().map(function(t){ return t.getHandlerFunction(); }); } catch (x){ ac = ['erro: ' + x]; }
-  return saida({ ok: true, servico: 'cadastro pelo celular', claude: !!c, acionadores: ac, gatilho: g });
+  return saida({ ok: true, servico: 'cadastro pelo celular', claude: !!c, ia: c ? (/^sk-ant-/.test(c) ? 'Claude' : 'ChatGPT') : '', acionadores: ac, gatilho: g });
 }
 
 /* chave do Claude: a do sistema (Configurações › Integrações › Claude); a das propriedades do script vale como reserva */
