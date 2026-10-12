@@ -4006,7 +4006,7 @@ section.vw-dash{gap:10px!important}
     if ($('form').parentElement !== lugar) lugar.appendChild($('form'));
     state.editing = r ? r.id : null;
     $('form').classList.toggle('novo', !r || !!compacto); // cadastro inicial: só os dados do cliente
-    $('form').classList.toggle('com-pasta', !!(r && comPasta));
+    $('form').classList.toggle('com-pasta', !!(r && (comPasta || !r.pastaUrl)));   // sem pasta ligada: mostra o campo para colar o link
     $('f-title').textContent = r ? 'Editar cliente' : 'Novo cliente';
     $('f-nome').value = r ? r.nome || '' : '';
     $('f-cpf').value = r ? r.cpf || '' : '';
