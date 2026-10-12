@@ -2182,8 +2182,15 @@ section.vw-dash{gap:10px!important}
         var v = String(dd[c[0]] || '').trim();
         if (v && !String(r[c[0]] || '').trim()){ novo[c[0]] = c[0] === 'rg' ? formatarRG(v) : v; feitos.push(c[1]); }
       });
-      if (feitos.length){ novo.atualizadoEm = new Date().toISOString(); await patchRow(r.id, novo); }
-      toast(feitos.length ? 'A IA preencheu: ' + feitos.join(', ') + '. Confira na ficha.' : 'A IA não encontrou dados novos (os campos já estavam preenchidos ou os documentos não estão na pasta)');
+      // documentos do cliente que a IA achou na pasta: procuração, RG, CPF e talão de luz
+      var docsMsg = '';
+      if (dd.tem){
+        var falta = [['procuracao', 'procuracao'], ['rg', 'rg_frente'], ['cpf', 'cpf'], ['luz', 'luz']].filter(function(c){ return !dd.tem[c[0]]; }).map(function(c){ return c[1]; }).concat(faltaDocs(r).indexOf('cliente') >= 0 ? ['cliente'] : []);   // a foto do cliente a IA não confere
+        novo.faltaDocs = falta; novo.docsCompletos = !falta.length;
+        docsMsg = falta.length ? ' Na pasta falta: ' + falta.map(function(k){ return DOC_FALTA[k]; }).join(', ') + '.' : ' Documentação completa.';
+      }
+      if (feitos.length || dd.tem){ novo.atualizadoEm = new Date().toISOString(); await patchRow(r.id, novo); }
+      toast((feitos.length ? 'A IA preencheu: ' + feitos.join(', ') + '.' : 'Nenhum dado novo para preencher.') + docsMsg);
       if (dd.observacao) toast('Atenção: ' + dd.observacao);
     } catch(err){ toast('Não foi possível ler a pasta: ' + (err.message || err)); }
     finally { b.disabled = false; b.innerHTML = rot; }

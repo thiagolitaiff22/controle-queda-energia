@@ -279,7 +279,8 @@ function lerArquivos(arquivos){
   conteudo.push({ type: 'text', text:
     'Estes são documentos de um cliente de um escritório de advocacia (RG, CPF, CNH, conta de luz, procuração). ' +
     'Extraia os dados do cliente (o titular / outorgante), nunca do advogado nem de quem assina a rogo pelo cliente. Responda só com um JSON, sem texto fora dele, no formato: ' +
-    '{"nome":"","cpf":"000.000.000-00","rg":"","nascimento":"AAAA-MM-DD","endereco":"","uc":"","observacao":"","tipos":[]}. ' +
+    '{"nome":"","cpf":"000.000.000-00","rg":"","nascimento":"AAAA-MM-DD","endereco":"","uc":"","observacao":"","tipos":[],"tem":{"procuracao":false,"rg":false,"cpf":false,"luz":false}}. ' +
+    '"tem" diz quais documentos DO CLIENTE estão nos arquivos: "procuracao" (procuração assinada pelo cliente ou a rogo), "rg" (RG ou CNH do cliente), "cpf" (o número do CPF do cliente aparece em algum documento dele: cartão do CPF, RG novo ou CNH), "luz" (conta/talão de luz). Documentos de quem assina a rogo não contam. ' +
     '"tipos" é a lista com o tipo de cada arquivo, na mesma ordem (Arquivo 1, 2, ...): use "pessoais" para RG, CPF, CNH ou certidão do cliente; "arogo" para documentos (RG, CPF) de quem assina a rogo pelo cliente; "procuracao" para procuração; "residencia" para conta de luz ou outro comprovante de residência; "outro" para o resto. ' +
     'ATENÇÃO: quando o cliente não sabe assinar, outra pessoa assina a rogo por ele. Os documentos dessa pessoa (arquivos com "a rogo" no nome ou cujo nome não é o do outorgante da procuração) NUNCA são do cliente: não use o nome, CPF, RG ou data de nascimento deles. ' +
     'Nome completo em maiúsculas, como no documento. Endereço com rua, número, comunidade ou bairro e cidade (de preferência o da conta de luz). ' +
@@ -297,6 +298,7 @@ function lerArquivos(arquivos){
   var m = txt.match(/\{[\s\S]*\}/); if (!m) throw new Error('A IA não conseguiu ler os documentos.');
   var o = JSON.parse(m[0]);
   var out = { nome: limpa(o.nome), cpf: limpa(o.cpf), rg: limpa(o.rg), nascimento: limpa(o.nascimento), endereco: limpa(o.endereco), uc: limpa(o.uc), observacao: limpa(o.observacao) };
+  var tem = o.tem || {}; out.tem = { procuracao: tem.procuracao === true, rg: tem.rg === true, cpf: tem.cpf === true, luz: tem.luz === true };
   try { renomearArquivos(arquivos, o.tipos || []); } catch (x){ console.log('renomear: ' + x); }
   if (out.cpf && !cpfValido(out.cpf)) out.observacao = ('CPF lido (' + out.cpf + ') não confere: verifique no documento. ' + out.observacao).trim();
   return out;
