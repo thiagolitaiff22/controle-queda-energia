@@ -186,7 +186,7 @@ function perguntarIA(chave, conteudo, maxTokens){
   if (!/^sk-ant-/.test(chave)){
     var partes = conteudo.map(function(c){
       if (c.type === 'text') return { type: 'text', text: c.text };
-      if (c.type === 'image') return { type: 'image_url', image_url: { url: 'data:' + c.source.media_type + ';base64,' + c.source.data } };
+      if (c.type === 'image') return { type: 'image_url', image_url: { url: 'data:' + c.source.media_type + ';base64,' + c.source.data, detail: 'high' } };
       return { type: 'file', file: { filename: 'documento.pdf', file_data: 'data:application/pdf;base64,' + c.source.data } };
     });
     var ro = UrlFetchApp.fetch('https://api.openai.com/v1/chat/completions', {
@@ -304,7 +304,11 @@ function lerArquivos(arquivos){
     '"tem" diz quais documentos DO CLIENTE estão nos arquivos: "procuracao" (procuração assinada pelo cliente ou a rogo), "rg" (RG ou CNH do cliente), "cpf" (o número do CPF do cliente aparece em algum documento dele: cartão do CPF, RG novo ou CNH), "luz" (conta/talão de luz). Documentos de quem assina a rogo não contam. ' +
     '"tipos" é a lista com o tipo de cada arquivo, na mesma ordem (Arquivo 1, 2, ...): use "pessoais" para RG, CPF, CNH ou certidão do cliente; "arogo" para documentos (RG, CPF) de quem assina a rogo pelo cliente; "procuracao" para procuração; "residencia" para conta de luz ou outro comprovante de residência; "outro" para o resto. ' +
     'ATENÇÃO: quando o cliente não sabe assinar, outra pessoa assina a rogo por ele. Os documentos dessa pessoa (arquivos com "a rogo" no nome ou cujo nome não é o do outorgante da procuração) NUNCA são do cliente: não use o nome, CPF, RG ou data de nascimento deles. ' +
-    'Nome completo em maiúsculas, como no documento. Endereço com rua, número, comunidade ou bairro e cidade (de preferência o da conta de luz). ' +
+    'Nome completo em maiúsculas, como no documento. ' +
+    'ENDEREÇO: use o endereço do cliente impresso na conta de luz (o bloco com o nome do cliente, logo abaixo dele: rua/travessa, número, bairro ou comunidade, CEP e cidade). ' +
+    'NUNCA use o endereço da distribuidora (Amazonas Energia / Âmbar, sede em Manaus) nem o do escritório de advocacia; o cliente quase sempre mora no interior (ex.: Alvarães). ' +
+    'Copie o que está impresso, sem inventar nem corrigir nomes de rua; só expanda abreviações (TV = Travessa, R = Rua, AV = Avenida). Formato: "Travessa Santa Ana, S/N, Centro, Alvarães/AM, CEP 69475-000". ' +
+    'Sem conta de luz legível, use o endereço da procuração; se nenhum estiver legível, deixe vazio. ' +
     '"uc" é o número da unidade consumidora (ou conta contrato / instalação) da conta de luz. ' +
     '"rg" no formato número com hífen antes do último dígito (ex.: 2960881-3); se não houver RG nos documentos, deixe vazio (o escritório usa o CPF). ' +
     'Deixe vazio o que não estiver legível; não invente. Em "observacao", avise em uma frase se houver divergência entre os documentos ou algo ilegível.' });
