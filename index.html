@@ -2158,10 +2158,26 @@ section.vw-dash{gap:10px!important}
     try { await patchRow(r.id, { faltaDocs: resta, atualizadoEm: new Date().toISOString() }); toast(DOC_FALTA[b.dataset.doc] + ' marcado como recebido'); }
     catch(err){ toast(errMsg(err)); }
   });
-  document.addEventListener('click', function(e){
+  // "Analisar com IA" na ficha: lê a pasta e grava direto CPF, RG, endereço e UC que estiverem vazios (sem abrir o formulário)
+  document.addEventListener('click', async function(e){
     var b = e.target.closest('[data-act="ia"]'); if (!b) return;
-    var r = state.rows.filter(function(x){ return x.id === b.dataset.id; })[0]; if (!r) return;
-    openForm(r, false, true, true); setTimeout(function(){ var bt = $('f-pasta-ler'); if (bt) bt.click(); }, 400);
+    var r = state.rows.filter(function(x){ return x.id === b.dataset.id; })[0]; if (!r || !r.pastaId) return;
+    var rot = b.innerHTML; b.disabled = true; b.textContent = 'Lendo os documentos…';
+    try {
+      var url = await urlDoScript();
+      var ses = await SB.auth.getSession(), jwt = ses && ses.data && ses.data.session ? ses.data.session.access_token : '';
+      var d = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ acao: 'lerPasta', jwt: jwt, pastaId: r.pastaId }) }).then(function(x){ return x.json(); });
+      if (!d || !d.ok) throw new Error(d && d.erro || 'falhou');
+      var dd = d.dados || {}, novo = {}, feitos = [];
+      [['cpf', 'CPF'], ['rg', 'RG'], ['endereco', 'endereço'], ['uc', 'UC']].forEach(function(c){
+        var v = String(dd[c[0]] || '').trim();
+        if (v && !String(r[c[0]] || '').trim()){ novo[c[0]] = c[0] === 'rg' ? formatarRG(v) : v; feitos.push(c[1]); }
+      });
+      if (feitos.length){ novo.atualizadoEm = new Date().toISOString(); await patchRow(r.id, novo); }
+      toast(feitos.length ? 'A IA preencheu: ' + feitos.join(', ') + '. Confira na ficha.' : 'A IA não encontrou dados novos (os campos já estavam preenchidos ou os documentos não estão na pasta)');
+      if (dd.observacao) toast('Atenção: ' + dd.observacao);
+    } catch(err){ toast('Não foi possível ler a pasta: ' + (err.message || err)); }
+    finally { b.disabled = false; b.innerHTML = rot; }
   });
   // compacto (aba Cadastro): só os dados do cadastro, sem processo, audiência, aviso e pagamento
   function fichaCliente(r, compacto){
@@ -3841,7 +3857,7 @@ section.vw-dash{gap:10px!important}
       var ses = await SB.auth.getSession(), jwt = ses && ses.data && ses.data.session ? ses.data.session.access_token : '';
       var d = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ acao: 'lerPasta', jwt: jwt, pastaId: r.pastaId }) }).then(function(x){ return x.json(); });
       if (!d || !d.ok) throw new Error(d && d.erro || 'falhou');
-      var CAMPOS = [['nome', 'f-nome', 'nome'], ['cpf', 'f-cpf', 'CPF'], ['rg', 'f-rg', 'RG'], ['endereco', 'f-end', 'endereço'], ['uc', 'f-uc', 'unidade consumidora']], feitos = [];
+      var CAMPOS = [['cpf', 'f-cpf', 'CPF'], ['rg', 'f-rg', 'RG'], ['endereco', 'f-end', 'endereço'], ['uc', 'f-uc', 'unidade consumidora']], feitos = [];
       CAMPOS.forEach(function(c){ var el = $(c[1]), v = d.dados && d.dados[c[0]]; if (el && v && !el.value.trim()){ el.value = v; el.classList.add('ia-preencheu'); feitos.push(c[2]); } });
       $('f-pasta-msg').textContent = (feitos.length ? 'Preenchido pela IA: ' + feitos.join(', ') + '. Confira e clique em Salvar.' : 'Nada novo: os campos já estavam preenchidos ou não foram encontrados.') + (d.dados && d.dados.observacao ? ' Atenção: ' + d.dados.observacao : '') + ' (' + d.arquivos + ' arquivo' + (d.arquivos === 1 ? '' : 's') + ' lido' + (d.arquivos === 1 ? '' : 's') + ')';
       toast(feitos.length ? 'A IA preencheu: ' + feitos.join(', ') : 'A IA não encontrou dados novos');
