@@ -2159,6 +2159,23 @@ section.vw-dash{gap:10px!important}
     try { await patchRow(b.dataset.id, { docsCompletos: true, faltaDocs: [], atualizadoEm: new Date().toISOString() }); toast('Documentação marcada como completa'); }
     catch(err){ toast(errMsg(err)); }
   });
+  // "Conferir documentos": a IA diz o que está na pasta (procuração, RG, CPF, talão) e o sistema marca completa ou o que falta
+  document.addEventListener('click', async function(e){
+    var b = e.target.closest('[data-act="docs-ia"]'); if (!b) return;
+    var r = state.rows.filter(function(x){ return x.id === b.dataset.id; })[0]; if (!r || !r.pastaId) return;
+    var rot = b.textContent; b.disabled = true; b.textContent = 'Olhando a pasta…';
+    try {
+      var url = await urlDoScript();
+      var ses = await SB.auth.getSession(), jwt = ses && ses.data && ses.data.session ? ses.data.session.access_token : '';
+      var d = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ acao: 'conferirDocs', jwt: jwt, pastaId: r.pastaId }) }).then(function(x){ return x.json(); });
+      if (!d || !d.ok) throw new Error(d && d.erro || 'falhou');
+      var falta = [['procuracao', 'procuracao'], ['rg', 'rg_frente'], ['cpf', 'cpf'], ['luz', 'luz']].filter(function(c){ return !d.tem[c[0]]; }).map(function(c){ return c[1]; })
+        .concat(faltaDocs(r).indexOf('cliente') >= 0 ? ['cliente'] : []);   // a foto do cliente a IA não confere
+      await patchRow(r.id, { faltaDocs: falta, docsCompletos: !falta.length, atualizadoEm: new Date().toISOString() });
+      toast(!d.arquivos ? 'A pasta está vazia.' : falta.length ? 'Na pasta falta: ' + falta.map(function(k){ return DOC_FALTA[k]; }).join(', ') + '.' : 'Documentação completa: procuração, RG, CPF e talão estão na pasta.');
+    } catch(err){ toast('Não foi possível olhar a pasta: ' + (err.message || err)); }
+    finally { b.disabled = false; b.textContent = rot; }
+  });
   function faltaTexto(r){ return faltaDocs(r).map(function(k){ return DOC_FALTA[k]; }).join(', '); }
   document.addEventListener('click', async function(e){
     var b = e.target.closest('[data-act="recebido"]'); if (!b) return;
@@ -2229,9 +2246,10 @@ section.vw-dash{gap:10px!important}
     }).join('') + '</div>' +
       (fl.length ? '<div class="falta-docs"><b>Faltam documentos</b><span>O prospectador ainda precisa mandar: ' + esc(faltaTexto(r)) + '. Ele vê esta lista no aplicativo e completa por lá. Se chegou por outro meio, marque como recebido:</span><div>' +
         fl.map(function(k){ return '<button type="button" class="btn" data-act="recebido" data-id="' + esc(r.id) + '" data-doc="' + k + '"><svg class="i"><use href="#i-check"/></svg>Recebi ' + DOC_FALTA[k] + '</button>'; }).join('') + '</div></div>' :
-        compacto && !docsConferidos(r) ? '<div class="falta-docs"><b>Documentação não conferida</b><span>Abra a pasta no Drive e veja se estão lá a procuração, o RG, o CPF e o talão de luz. Se estiver tudo, marque:</span><div><button type="button" class="btn" data-act="docs-ok" data-id="' + esc(r.id) + '"><svg class="i"><use href="#i-check"/></svg>Documentação completa</button></div></div>' : '') +
+        compacto && !docsConferidos(r) ? '<div class="falta-docs"><b>Documentação não conferida</b><span>Clique em Conferir documentos (a IA olha a pasta) ou abra a pasta no Drive e, se estiver tudo, marque:</span><div><button type="button" class="btn" data-act="docs-ok" data-id="' + esc(r.id) + '"><svg class="i"><use href="#i-check"/></svg>Documentação completa</button></div></div>' : '') +
       '<div class="ficha-acoes"><button type="button" class="btn" data-act="edit" data-id="' + esc(r.id) + '"><svg class="i"><use href="#i-pencil"/></svg>Editar cadastro</button>' +
-      (r.pastaUrl ? '<a class="btn" href="' + esc(r.pastaUrl) + '" target="_blank" rel="noopener"><svg class="i"><use href="#i-folder"/></svg>Pasta no Drive</a>' : '') + '</div></div>';
+      (r.pastaUrl ? '<a class="btn" href="' + esc(r.pastaUrl) + '" target="_blank" rel="noopener"><svg class="i"><use href="#i-folder"/></svg>Pasta no Drive</a>' : '') +
+      (compacto && r.pastaId ? '<button type="button" class="btn primary" data-act="docs-ia" data-id="' + esc(r.id) + '" title="A IA olha a pasta e diz quais documentos estão lá (não preenche nada)">Conferir documentos</button>' : '') + '</div></div>';
   }
   function avisoCell(r){
     var n = daysUntil(r.audData), s = sit(r);
@@ -3289,6 +3307,7 @@ section.vw-dash{gap:10px!important}
     { k: 'regua', t: 'Régua de avisos', d: 'Avisa sozinho o cliente 3 dias antes e na véspera da audiência, das 8h às 18h.', ajuda: 'Precisa do LiderHub. Liga e desliga dentro do cartão.' },
     { k: 'lembrete', t: 'Lembrete agora', d: 'Manda um lembrete único para todos com audiência num dia escolhido.', ajuda: 'Envio manual, com intervalo seguro entre as mensagens.' },
     { k: 'datajud', t: 'Tribunal (DataJud)', d: 'Consulta os processos no TJAM todo dia às 7h: audiência, sentença, alvará.', ajuda: 'Chave pública do CNJ.' },
+    { k: 'claude', t: 'IA (ChatGPT)', d: 'Só confere quais documentos estão na pasta do cliente (botão Conferir documentos). Não preenche dados.', ajuda: 'Clique para colar a chave da API do ChatGPT.' },
     { k: 'drive', t: 'Google Drive', d: 'Cria a pasta de cada cliente em 1. CLIENTES e move para Protocolados quando há processo.', ajuda: 'Funciona pelo script do Google do Cadastro pelo celular.', painel: 'celular' },
     { k: 'celular', t: 'Cadastro pelo celular', d: 'O prospectador tira as fotos dos documentos e o cliente cai em Sem protocolo.', ajuda: 'O link de cada prospectador fica no cartão dele, em Prospectadores.' }
   ];

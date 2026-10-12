@@ -56,6 +56,7 @@ function doPost(e){
     var p = JSON.parse(e.postData.contents);
     if (p.acao === 'pasta') return saida(pastaDoCadastro(p));
     if (p.acao === 'lerPasta') return saida(lerPastaDoCadastro(p));
+    if (p.acao === 'conferirDocs') return saida(conferirDocsDaPasta(p));
     var quem = validar(p.token);
     if (!/^[A-Za-z0-9_-]{8,64}$/.test(p.envio || '')) throw new Error('Envio inválido.');
     if (p.acao === 'arquivo') return saida(arquivo(p, quem));
@@ -264,6 +265,30 @@ function pastaDoCadastro(p){
 }
 
 /* ---------- IA lê os documentos que estiverem na pasta do cliente ---------- */
+/* botão "Conferir documentos" do BI: a IA só diz quais documentos do cliente estão na pasta (não preenche nada) */
+function conferirDocsDaPasta(p){
+  equipeLogada(p.jwt);
+  var pasta; try { pasta = DriveApp.getFolderById(String(p.pastaId || '')); } catch (x){ throw new Error('Pasta do cliente não encontrada no Drive.'); }
+  var arq = arquivosDaPasta(pasta);
+  if (!arq.length) return { ok: true, arquivos: 0, tem: { procuracao: false, rg: false, cpf: false, luz: false } };
+  var chave = chaveClaude(); if (!chave) throw new Error('A chave da IA não está cadastrada (Configurações › Integrações).');
+  var conteudo = [];
+  arq.forEach(function(a, i){
+    var b = a.getBlob(), pdf = a.getMimeType() === 'application/pdf';
+    conteudo.push({ type: 'text', text: 'Arquivo ' + (i + 1) + ': ' + a.getName() });
+    conteudo.push(pdf ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: Utilities.base64Encode(b.getBytes()) } }
+                      : { type: 'image', source: { type: 'base64', media_type: a.getMimeType(), data: Utilities.base64Encode(b.getBytes()) } });
+  });
+  conteudo.push({ type: 'text', text:
+    'Estes arquivos são de um cliente de um escritório de advocacia. Diga apenas QUAIS documentos do cliente estão presentes; não extraia dados. ' +
+    'Responda só com um JSON: {"procuracao":false,"rg":false,"cpf":false,"luz":false}. ' +
+    '"procuracao": procuração assinada pelo cliente (ou a rogo). "rg": RG ou CNH do cliente. "cpf": o número do CPF do cliente aparece em algum documento dele (cartão do CPF, RG novo ou CNH). "luz": conta/talão de luz. ' +
+    'Documentos de quem assina a rogo pelo cliente não contam como RG/CPF do cliente. Uma página pode ter mais de um documento; um PDF pode ter várias páginas.' });
+  var txt = perguntarIA(chave, conteudo, 120);
+  var m = txt.match(/\{[\s\S]*\}/); if (!m) throw new Error('A IA não conseguiu olhar a pasta.');
+  var o = JSON.parse(m[0]);
+  return { ok: true, arquivos: arq.length, tem: { procuracao: o.procuracao === true, rg: o.rg === true, cpf: o.cpf === true, luz: o.luz === true } };
+}
 function equipeLogada(jwt){
   var r = UrlFetchApp.fetch(SUPABASE_URL + '/rest/v1/rpc/minha_funcao', {
     method: 'post', contentType: 'application/json', muteHttpExceptions: true,
