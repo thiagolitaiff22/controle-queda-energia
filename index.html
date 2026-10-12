@@ -2678,19 +2678,20 @@ section.vw-dash{gap:10px!important}
   function situacaoCad(r){
     if (r.conferirDados) return ['conferir', 'Conferir dados', 'warn'];
     if (!String(r.cpf || '').trim() || !String(r.endereco || '').trim() || (r.cpf && !cpfValido(r.cpf))) return ['incompleto', 'Dados incompletos', 'crit'];
+    if (docsPendentes(r)) return ['documentos', 'Aguardando documentos', 'warn'];
     return ['pronto', 'Pronto para protocolar', 'ok'];
   }
   function renderCad(){
     var box = $('cad-list'); if (!box) return;
     var todos = state.rows.filter(noCadastro);
-    var conta = { conferir: 0, incompleto: 0, pronto: 0 };
+    var conta = { conferir: 0, incompleto: 0, documentos: 0, pronto: 0 };
     todos.forEach(function(r){ conta[situacaoCad(r)[0]]++; });
     var semTel = todos.filter(function(r){ return !temContato(r); }).length;
     var nFaltaC = todos.filter(docsPendentes).length;
     var cardC = function(ico, rot, n, cap, cor, filtro){ return '<div class="card stat cad-filtro' + (cadSit === filtro ? ' ativo' : '') + '" role="button" tabindex="0" aria-pressed="' + (cadSit === filtro) + '" data-cad-filtro="' + filtro + '" title="Mostrar na lista" data-cor-fixa="1" style="--cor-linha:var(' + cor + ')"><div class="stat-h"><svg class="i"><use href="#' + ico + '"/></svg>' + rot + '</div><div class="stat-v tnum">' + n + '</div><div class="stat-c">' + cap + '</div><div class="stat-viz"></div></div>'; };
     $('cad-stats').innerHTML =
       cardC('i-users', 'Em cadastro', todos.length, 'ainda sem número de processo', '--line-2', '') +
-      cardC('i-check', 'Prontos para protocolar', conta.pronto, 'nome, CPF e endereço preenchidos', '--green', 'pronto') +
+      cardC('i-check', 'Prontos para protocolar', conta.pronto, 'dados preenchidos e documentação completa', '--green', 'pronto') +
       cardC('i-clock', 'Conferir dados', conta.conferir, 'cadastrados pelo celular', '--amber', 'conferir') +
       // pendências: documento que o prospectador ainda não mandou ou dados incompletos (cada cliente conta uma vez)
       cardC('i-bellx', 'Pendências', todos.filter(function(r){ return docsPendentes(r) || situacaoCad(r)[0] === 'incompleto'; }).length, nFaltaC + ' com documento pendente · ' + conta.incompleto + ' falta CPF ou endereço · ' + semTel + ' sem telefone', '--red', 'pendencias');
