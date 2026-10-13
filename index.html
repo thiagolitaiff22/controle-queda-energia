@@ -1220,7 +1220,8 @@ section.vw-dash{gap:10px!important}
 #view-cad > .fbar{margin-top:30px!important}
 .cad-stats{grid-template-columns:repeat(4,minmax(0,1fr))!important}
 @media (max-width:900px){ .cad-stats{grid-template-columns:repeat(2,minmax(0,1fr))!important} }
-#cad-list .row{grid-template-columns:minmax(0,2.2fr) minmax(0,1.3fr) minmax(0,1fr) minmax(0,.7fr) minmax(0,2.6fr) 36px!important;align-items:center;gap:16px!important;min-height:46px;padding-top:6px!important;padding-bottom:6px!important}
+#cad-list .row{grid-template-columns:minmax(0,2.2fr) minmax(0,1.3fr) minmax(0,1fr) minmax(0,.7fr) 334px 36px!important;align-items:center;gap:16px!important;min-height:46px;padding-top:6px!important;padding-bottom:6px!important}
+@media (max-width:900px){ #cad-list .row{grid-template-columns:1fr!important;gap:6px!important} #cad-list .row.head{display:none} }
 #cad-list .row[data-linha]{cursor:pointer}
 #cad-list .row[data-linha]:hover{background:var(--hover)}
 #cad-list .row.aberto{background:var(--soft)}
@@ -1240,8 +1241,15 @@ section.vw-dash{gap:10px!important}
 .cad-grupo b{text-transform:uppercase;letter-spacing:.04em;font-size:12px}
 .cad-grupo span{font-weight:700;color:var(--ink-2)}
 .cad-grupo em{font-style:normal;color:var(--ink-3);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.falta-txt{color:var(--red);font-size:12.5px;line-height:1.35}
-.falta-ok{color:var(--green);font-size:12.5px}
+.chk-g{display:grid;grid-template-columns:repeat(5,30px) 14px repeat(5,34px);align-items:center;justify-items:center}
+.chk-g > i{align-self:stretch;width:1px;background:var(--line);justify-self:center}
+.chk-h{row-gap:2px;font-size:10px;letter-spacing:.03em;color:var(--ink-3)}
+.chk-h .chk-t{font-size:9.5px;font-weight:600;letter-spacing:.06em;color:var(--ink-2);justify-self:stretch;text-align:center;border-bottom:1px solid var(--line);padding-bottom:2px}
+.chk{width:22px;height:22px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
+.chk .i{width:13px;height:13px}
+.chk.ok{color:var(--green)}
+.chk.no{color:var(--red);background:var(--red-soft)}
+.chk.q{color:var(--amber);background:var(--amber-soft)}
 #cad-stats .cad-filtro{cursor:pointer;transition:border-color .15s,background .15s}
 #cad-stats .cad-filtro:hover{border-color:var(--line-2);background:var(--hover)}
 #cad-stats .cad-filtro.ativo{border-color:var(--cor-linha);box-shadow:0 0 0 1px var(--cor-linha) inset}
@@ -2108,6 +2116,7 @@ section.vw-dash{gap:10px!important}
       if (p === 'e') return ' e ';
       if (!/^[\d\s().+-]+$/.test(p)) return p;
       var d = p.replace(/\D/g, ''); if (d.length > 11 && d.indexOf('55') === 0) d = d.slice(2);
+      if (d.length === 12 && d[0] === '0') d = d.slice(1);   // 097981215717: zero antes do DDD
       if (d.length === 11) return '(' + d.slice(0, 2) + ') ' + d.slice(2, 7) + '-' + d.slice(7);
       if (d.length === 10) return '(' + d.slice(0, 2) + ') ' + d.slice(2, 6) + '-' + d.slice(6);
       if (d.length === 9) return d.slice(0, 5) + '-' + d.slice(5);
@@ -2765,9 +2774,19 @@ section.vw-dash{gap:10px!important}
     var k = Object.keys(n).sort(function(a, b){ return n[b] - n[a]; });
     return k.length ? 'Falta: ' + k.slice(0, 3).map(function(t){ return t + ' (' + n[t] + ')'; }).join(' · ') : 'nada pendente';
   }
-  function faltaCell(r){
-    var f = faltasCad(r);
-    return f.length ? '<span class="falta-txt">' + esc(f.map(function(x){ return x[1]; }).join(' · ')) + '</span>' : '<span class="falta-ok">Nada falta</span>';
+  // grade de conferência do Cadastro: um ✓ / ✗ por item, alinhado como planilha (? = documento ainda não conferido)
+  var CHK_DADOS = [['CPF', 'nº do CPF'], ['RG', 'nº do RG'], ['END', 'endereço'], ['UC', 'unidade consumidora'], ['PER', 'período da ação']];
+  var CHK_DOCS = [['PROC', 'procuracao', 'procuração'], ['RG', 'rg_frente', 'foto do RG'], ['CPF', 'cpf', 'foto do CPF'], ['TAL', 'luz', 'talão de luz'], ['FOTO', 'cliente', 'foto do cliente']];
+  var IC_OK = '<svg class="i"><use href="#i-check"/></svg>', IC_NAO = '<svg viewBox="0 0 24 24" class="i"><path d="M7 7l10 10M17 7L7 17" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" fill="none"/></svg>';
+  function chkHead(){
+    return '<div class="chk-g chk-h"><b class="chk-t" style="grid-column:1/6">Dados</b><b class="chk-t" style="grid-column:7/12">Documentos</b>' +
+      CHK_DADOS.map(function(c){ return '<span>' + c[0] + '</span>'; }).join('') + '<i></i>' + CHK_DOCS.map(function(c){ return '<span>' + c[0] + '</span>'; }).join('') + '</div>';
+  }
+  function chkCell(r){
+    var f = faltasCad(r).map(function(x){ return x[1]; }), fd = faltaDocs(r), conf = docsConferidos(r);
+    var cel = function(st, rot){ return '<span class="chk ' + st + '" title="' + esc(rot) + (st === 'ok' ? ': ok' : st === 'q' ? ': ninguém conferiu a pasta' : ': falta') + '">' + (st === 'ok' ? IC_OK : st === 'q' ? '?' : IC_NAO) + '</span>'; };
+    return '<div class="chk-g">' + CHK_DADOS.map(function(c){ return cel(f.indexOf(c[1]) >= 0 || (c[0] === 'CPF' && f.indexOf('CPF inválido') >= 0) ? 'no' : 'ok', c[1]); }).join('') + '<i></i>' +
+      CHK_DOCS.map(function(c){ return cel(fd.indexOf(c[1]) >= 0 ? 'no' : conf ? 'ok' : 'q', c[2]); }).join('') + '</div>';
   }
   function situacaoCad(r){
     if (r.conferirDados) return ['conferir', 'Conferir dados', 'warn'];
@@ -2805,7 +2824,7 @@ section.vw-dash{gap:10px!important}
       // mais recente primeiro (pelo dia do cadastro); no mesmo dia, em ordem alfabética
       .sort(function(a, b){ var da = String(a.dataCadastro || a.criadoEm || '').slice(0, 10), db = String(b.dataCadastro || b.criadoEm || '').slice(0, 10); return db.localeCompare(da) || String(a.nome || '').localeCompare(String(b.nome || ''), 'pt'); });
     $('cad-count').textContent = lista.length + (lista.length === 1 ? ' cliente' : ' clientes');
-    var html = '<div class="row head"><div>Cliente</div><div>Prospectador</div><div>Contato</div><div>Cadastrado</div><div>O que falta</div><div></div></div>';
+    var html = '<div class="row head"><div>Cliente</div><div>Prospectador</div><div>Contato</div><div>Cadastrado</div><div>' + chkHead() + '</div><div></div></div>';
     if (!lista.length) html += '<div class="empty">' + (todos.length ? 'Nenhum cliente neste filtro.' : 'Nenhum cliente em cadastro. Clique em <b>Novo cliente</b> para começar.') + '</div>';
     // a lista vem em blocos, na ordem do trabalho: quem já pode protocolar, quem precisa conferir, e o que ainda falta
     var BLOCOS = [['pronto', 'Prontos para protocolar', 'pode protocolar', '--green'], ['conferir', 'Conferir dados', 'cadastrados pelo celular: confira com os documentos', '--amber'],
@@ -2824,7 +2843,7 @@ section.vw-dash{gap:10px!important}
         '<div><span class="lbl">Prospectador</span><div class="val">' + esc(prospName(r.responsavelId) || '—') + '</div></div>' +
         '<div><span class="lbl">Contato</span>' + telCell(r, true) + '</div>' +
         '<div><span class="lbl">Cadastrado</span><div class="val">' + (r.dataCadastro || r.criadoEm ? String(r.dataCadastro || r.criadoEm).slice(0, 10).replace(/^\d\d(\d\d)-(\d\d)-(\d\d)$/, '$3/$2/$1') : '—') + '</div></div>' +
-        '<div><span class="lbl">O que falta</span>' + faltaCell(r) + '</div>' +
+        '<div><span class="lbl">Conferência</span>' + chkCell(r) + '</div>' +
         '<div class="c-act"><button type="button" class="ico-btn" data-act="edit" data-id="' + esc(r.id) + '" title="Editar cadastro" aria-label="Editar ' + esc(r.nome) + '"><svg class="i"><use href="#i-pencil"/></svg></button></div>' +
       '</div>' + (cadAberto[r.id] ? fichaCliente(r, true) : '');
     }
