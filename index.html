@@ -1235,6 +1235,8 @@ section.vw-dash{gap:10px!important}
 .nome-copia.ok{color:var(--green)}
 .nome-copia svg.i,.pasta-falta svg.i{width:14px;height:14px}
 .pasta-falta{color:var(--amber)}
+.falta-txt{color:var(--red);font-size:12.5px;line-height:1.35}
+.falta-ok{color:var(--green);font-size:12.5px}
 #cad-stats .cad-filtro{cursor:pointer;transition:border-color .15s,background .15s}
 #cad-stats .cad-filtro:hover{border-color:var(--line-2);background:var(--hover)}
 #cad-stats .cad-filtro.ativo{border-color:var(--cor-linha);box-shadow:0 0 0 1px var(--cor-linha) inset}
@@ -1666,7 +1668,7 @@ section.vw-dash{gap:10px!important}
       <div class="field full"><label for="f-nome">Nome completo</label><input id="f-nome" required autocomplete="off"></div>
       <div class="field full"><label>Pasta do cliente</label><div class="folder-box" id="f-pasta"></div></div>
       <div class="field"><label for="f-cpf">CPF</label><input id="f-cpf" inputmode="numeric" placeholder="000.000.000-00" class="tnum"><span class="hint" id="h-cpf"></span></div>
-      <div class="field"><label for="f-rg">RG</label><input id="f-rg" class="tnum" inputmode="numeric" placeholder="2960881-3"><span class="hint">Sem RG? Deixe em branco: nos documentos vale o número do CPF.</span></div>
+      <div class="field"><label for="f-rg">RG</label><input id="f-rg" class="tnum" inputmode="numeric" placeholder="2960881-3"><span class="hint">Obrigatório para a petição. Sem RG? Repita o número do CPF.</span></div>
       <div class="field full"><label for="f-end">Endereço</label><input id="f-end" placeholder="Rua, número, bairro, cidade/UF"></div>
       <div class="field full"><label for="f-contato">Contato (telefone / WhatsApp)</label><input id="f-contato" inputmode="tel" placeholder="(97) 00000-0000" class="tnum"></div>
       <div class="field full"><label for="f-resp">Prospectador</label><select id="f-resp"><option value="">Sem prospectador</option></select><span class="hint">Quem trouxe o cliente. É ele quem vê o cliente no aplicativo e cuida do aviso da audiência.</span></div>
@@ -2736,9 +2738,35 @@ section.vw-dash{gap:10px!important}
   if (window.MutationObserver) new MutationObserver(function(){ clearTimeout(corDosCartoes.t); corDosCartoes.t = setTimeout(corDosCartoes, 30); }).observe(document.body, { childList: true, subtree: true });
   /* Cadastro: clientes ainda sem protocolo */
   var cadQ = '', cadSit = '', cadAberto = {};
+  // tudo o que falta para protocolar, na ordem em que se resolve: dados da petição, documentos, pasta
+  var DOC_ROT = { procuracao: 'procuração', rg_frente: 'foto do RG', cpf: 'foto do CPF', luz: 'talão de luz', cliente: 'foto do cliente' };
+  function faltasCad(r){
+    var f = [], tem = function(k){ return !!String(r[k] || '').trim(); };
+    if (!tem('cpf')) f.push(['d-cpf', 'nº do CPF']); else if (!cpfValido(r.cpf)) f.push(['d-cpfinv', 'CPF inválido']);
+    if (!tem('rg')) f.push(['d-rg', 'nº do RG']);
+    if (!tem('endereco')) f.push(['d-end', 'endereço']);
+    if (!tem('uc')) f.push(['d-uc', 'unidade consumidora']);
+    if (!tem('periodo')) f.push(['d-per', 'período da ação']);
+    var fd = faltaDocs(r);
+    fd.forEach(function(k){ f.push(['doc-' + k, DOC_ROT[k] || k]); });
+    if (!fd.length && !docsConferidos(r)) f.push(['doc-conf', 'conferir documentos']);
+    if (!r.pastaUrl) f.push(['pasta', 'pasta no Drive']);
+    return f;
+  }
+  // legenda do cartão Pendências: as três faltas mais comuns ("Falta: período da ação (11) · …")
+  function resumoFaltas(todos){
+    var n = {};
+    todos.forEach(function(r){ faltasCad(r).forEach(function(x){ n[x[1]] = (n[x[1]] || 0) + 1; }); });
+    var k = Object.keys(n).sort(function(a, b){ return n[b] - n[a]; });
+    return k.length ? 'Falta: ' + k.slice(0, 3).map(function(t){ return t + ' (' + n[t] + ')'; }).join(' · ') : 'nada pendente';
+  }
+  function faltaCell(r){
+    var f = faltasCad(r);
+    return f.length ? '<span class="falta-txt">' + esc(f.map(function(x){ return x[1]; }).join(' · ')) + '</span>' : '<span class="falta-ok">Nada falta</span>';
+  }
   function situacaoCad(r){
     if (r.conferirDados) return ['conferir', 'Conferir dados', 'warn'];
-    if (!String(r.cpf || '').trim() || !String(r.endereco || '').trim() || (r.cpf && !cpfValido(r.cpf))) return ['incompleto', 'Dados incompletos', 'crit'];
+    if (faltasCad(r).some(function(x){ return x[0].slice(0, 2) === 'd-'; })) return ['incompleto', 'Dados incompletos', 'crit'];
     if (docsPendentes(r)) return ['documentos', 'Aguardando documentos', 'warn'];
     return ['pronto', 'Pronto para protocolar', 'ok'];
   }
@@ -2755,16 +2783,24 @@ section.vw-dash{gap:10px!important}
       cardC('i-check', 'Prontos para protocolar', conta.pronto, 'dados preenchidos e documentação completa', '--green', 'pronto') +
       cardC('i-clock', 'Conferir dados', conta.conferir, 'cadastrados pelo celular', '--amber', 'conferir') +
       // pendências: documento que o prospectador ainda não mandou ou dados incompletos (cada cliente conta uma vez)
-      cardC('i-bellx', 'Pendências', todos.filter(function(r){ return docsPendentes(r) || situacaoCad(r)[0] === 'incompleto'; }).length, nFaltaC + ' com documento pendente · ' + conta.incompleto + ' falta CPF ou endereço · ' + semTel + ' sem telefone', '--red', 'pendencias');
+      cardC('i-bellx', 'Pendências', todos.filter(function(r){ return faltasCad(r).length; }).length, resumoFaltas(todos), '--red', 'pendencias');
     var nFalta = todos.filter(docsPendentes).length;
-    var SITS = [['', 'Todas as situações · ' + todos.length], ['faltam', 'Faltam documentos · ' + nFalta], ['pronto', 'Prontos para protocolar · ' + conta.pronto], ['conferir', 'Conferir dados · ' + conta.conferir], ['incompleto', 'Dados incompletos · ' + conta.incompleto], ['pendencias', 'Pendências (documento ou dados)']];
-    $('cad-sit').innerHTML = SITS.map(function(o){ return '<option value="' + o[0] + '"' + (o[0] === cadSit ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('');
+    // quantos clientes têm cada falta (para o filtro "O que falta")
+    var porFalta = {}, rotFalta = {};
+    todos.forEach(function(r){ faltasCad(r).forEach(function(x){ porFalta[x[0]] = (porFalta[x[0]] || 0) + 1; rotFalta[x[0]] = x[1]; }); });
+    var opt = function(o){ return '<option value="' + o[0] + '"' + (o[0] === cadSit ? ' selected' : '') + '>' + o[1] + '</option>'; };
+    $('cad-sit').innerHTML = opt(['', 'Todas as situações · ' + todos.length]) +
+      '<optgroup label="Situação">' + [['pronto', 'Prontos para protocolar · ' + conta.pronto], ['conferir', 'Conferir dados · ' + conta.conferir], ['incompleto', 'Dados incompletos · ' + conta.incompleto], ['faltam', 'Faltam documentos · ' + nFalta], ['pendencias', 'Com alguma pendência']].map(opt).join('') + '</optgroup>' +
+      (Object.keys(porFalta).length ? '<optgroup label="O que falta">' + Object.keys(porFalta).sort(function(a, b){ return porFalta[b] - porFalta[a]; }).map(function(k){ return opt(['f:' + k, 'Falta ' + rotFalta[k] + ' · ' + porFalta[k]]); }).join('') + '</optgroup>' : '');
     $('cad-sit').classList.toggle('ativo', !!cadSit);
-    var lista = todos.filter(function(r){ return (!cadSit || (cadSit === 'faltam' ? docsPendentes(r) : cadSit === 'pendencias' ? (docsPendentes(r) || situacaoCad(r)[0] === 'incompleto') : situacaoCad(r)[0] === cadSit)) && buscaCliente(r, cadQ); })
+    var lista = todos.filter(function(r){
+      var ok = !cadSit || (cadSit.slice(0, 2) === 'f:' ? faltasCad(r).some(function(x){ return x[0] === cadSit.slice(2); }) :
+        cadSit === 'faltam' ? docsPendentes(r) : cadSit === 'pendencias' ? faltasCad(r).length > 0 : situacaoCad(r)[0] === cadSit);
+      return ok && buscaCliente(r, cadQ); })
       // mais recente primeiro (pelo dia do cadastro); no mesmo dia, em ordem alfabética
       .sort(function(a, b){ var da = String(a.dataCadastro || a.criadoEm || '').slice(0, 10), db = String(b.dataCadastro || b.criadoEm || '').slice(0, 10); return db.localeCompare(da) || String(a.nome || '').localeCompare(String(b.nome || ''), 'pt'); });
     $('cad-count').textContent = lista.length + (lista.length === 1 ? ' cliente' : ' clientes');
-    var html = '<div class="row head"><div>Cliente</div><div>Prospectador</div><div>Contato</div><div>Cadastrado</div><div>Documentos</div><div>Situação</div><div></div></div>';
+    var html = '<div class="row head"><div>Cliente</div><div>Prospectador</div><div>Contato</div><div>Cadastrado</div><div>O que falta</div><div>Situação</div><div></div></div>';
     if (!lista.length) html += '<div class="empty">' + (todos.length ? 'Nenhum cliente neste filtro.' : 'Nenhum cliente em cadastro. Clique em <b>Novo cliente</b> para começar.') + '</div>';
     lista.slice(0, 300).forEach(function(r){
       var st = situacaoCad(r);
@@ -2775,7 +2811,7 @@ section.vw-dash{gap:10px!important}
         '<div><span class="lbl">Prospectador</span><div class="val">' + esc(prospName(r.responsavelId) || '—') + '</div></div>' +
         '<div><span class="lbl">Contato</span>' + telCell(r, true) + '</div>' +
         '<div><span class="lbl">Cadastrado</span><div class="val">' + (r.dataCadastro || r.criadoEm ? String(r.dataCadastro || r.criadoEm).slice(0, 10).replace(/^\d\d(\d\d)-(\d\d)-(\d\d)$/, '$3/$2/$1') : '—') + '</div></div>' +
-        '<div><span class="lbl">Documentos</span>' + docsCell(r) + '</div>' +
+        '<div><span class="lbl">O que falta</span>' + faltaCell(r) + '</div>' +
         '<div><span class="lbl">Situação</span><span class="cad-sit ' + st[2] + '">' + st[1] + '</span></div>' +
         '<div class="c-act"><button type="button" class="ico-btn" data-act="edit" data-id="' + esc(r.id) + '" title="Editar cadastro" aria-label="Editar ' + esc(r.nome) + '"><svg class="i"><use href="#i-pencil"/></svg></button></div>' +
       '</div>' + (cadAberto[r.id] ? fichaCliente(r, true) : '');
