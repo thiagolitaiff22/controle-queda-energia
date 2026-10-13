@@ -327,7 +327,7 @@ function peticaoInicial(p){
   var trocas = { 'Nome': d.nome, 'RG': d.rg, 'CPF': d.cpf, 'Endereço': d.endereco, 'Unidade Consumidora': d.uc, 'Período': d.periodo };
   var vazios = Object.keys(trocas).filter(function(k){ return !String(trocas[k] || '').trim(); });
   if (vazios.length) throw new Error('Preencha no cadastro: ' + vazios.join(', ') + '.');
-  var partes = Utilities.unzip(modeloPeticao()), achou = 0;
+  var partes = Utilities.unzip(modeloPeticao().setContentType('application/zip')), achou = 0;   // unzip só aceita application/zip
   partes = partes.map(function(b){
     if (!/^word\/(document|header\d*|footer\d*)\.xml$/.test(b.getName())) return b;
     var s = b.getDataAsString('UTF-8'), s0 = s;
