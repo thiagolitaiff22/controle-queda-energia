@@ -2185,7 +2185,11 @@ section.vw-dash{gap:10px!important}
   document.addEventListener('click', async function(e){
     var b = e.target.closest('[data-act="peticao"]'); if (!b) return;
     var r = state.rows.filter(function(x){ return x.id === b.dataset.id; })[0]; if (!r || !r.pastaId) return;
-    var dados = { nome: (r.nome || '').trim().toUpperCase(), rg: (r.rg || r.cpf || '').trim(), cpf: (r.cpf || '').trim(), endereco: (r.endereco || '').trim(), uc: (r.uc || '').trim(), periodo: (r.periodo || '').trim() };
+    // nome na petição: "Azamor Servalho da Cruz" (primeira letra maiúscula; da, de, do, dos, das, e em minúsculas)
+    var nomeProprio = String(r.nome || '').trim().toLowerCase().split(/\s+/).map(function(p, i){
+      return i > 0 && /^(da|de|do|das|dos|e)$/.test(p) ? p : p.replace(/(^|[-'])(\S)/g, function(m, a, c){ return a + c.toUpperCase(); });
+    }).join(' ');
+    var dados = { nome: nomeProprio, rg: (r.rg || r.cpf || '').trim(), cpf: (r.cpf || '').trim(), endereco: (r.endereco || '').trim(), uc: (r.uc || '').trim(), periodo: (r.periodo || '').trim() };
     var falta = [['nome', 'nome'], ['cpf', 'CPF'], ['endereco', 'endereço'], ['uc', 'unidade consumidora'], ['periodo', 'período da ação']].filter(function(c){ return !dados[c[0]]; }).map(function(c){ return c[1]; });
     if (falta.length){ toast('Para gerar a petição, preencha no cadastro: ' + falta.join(', ') + '.'); return; }
     var rot = b.textContent; b.disabled = true; b.textContent = 'Gerando petição…';
