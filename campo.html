@@ -449,7 +449,7 @@ body{background:transparent!important}
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 23;
+  var APP_VERSAO = 24;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
@@ -988,7 +988,7 @@ body{background:transparent!important}
           // linha verde na tela: foto inteira (resolução cheia quando o celular deixa) recortada exatamente por ela
           var cheio = document.createElement('canvas'); cheio.width = vw; cheio.height = vh; cheio.getContext('2d').drawImage(v, 0, 0, vw, vh);
           vivo = false;
-          return fotoCheia(fluxo, vw, vh, [0, 0, vw, vh]).then(function(full){ sair(); usarFoto(d, full || cheio, { cantosRel: bordas }); });
+          return fotoCheia(fluxo, vw, vh, [0, 0, vw, vh]).then(function(full){ sair(); return usarFoto(d, full || cheio, { cantosRel: bordas }); }).catch(function(){ sair(); falhaFoto(); });
         }
         vivo = false;
         // foto do cliente: recorta a área da tela
@@ -1002,7 +1002,7 @@ body{background:transparent!important}
         if (frente){ cx.translate(cv.width, 0); cx.scale(-1, 1); }
         cx.drawImage(v, sx, sy, sw, sh, 0, 0, cv.width, cv.height);
         // tenta a foto em resolução cheia (Android/Chrome); se não der, usa o quadro do vídeo
-        fotoCheia(fluxo, vw, vh, [sx, sy, sw, sh]).then(function(full){ sair(); usarFoto(d, full || cv); });
+        fotoCheia(fluxo, vw, vh, [sx, sy, sw, sh]).then(function(full){ sair(); return usarFoto(d, full || cv); }).catch(function(){ sair(); falhaFoto(); });
       };
       return v.play().catch(function(){});
     });
@@ -1025,12 +1025,30 @@ body{background:transparent!important}
   // guarda a foto tratada e abre para conferir
   // documento: abre o recorte; foto do cliente vai direto
   // tela de espera enquanto a foto é recortada e tratada (não volta para o cadastro "do nada")
+  // nunca deixa a espera presa: passou do limite, fecha, avisa e volta ao cadastro (o que já foi feito continua lá)
+  var PROC_LIMITE_MS = 25000, procTimer = null, procExpirou = false;
   function processando(on){
     var p = $('processando');
+    clearTimeout(procTimer);
     if (on){
+      procExpirou = false;
       if (!p){ p = document.createElement('div'); p.id = 'processando'; p.innerHTML = '<div><i></i><b>Processando a foto…</b><span>Recortando e deixando legível</span></div>'; document.body.appendChild(p); }
       p.hidden = false;
+      procTimer = setTimeout(function(){
+        if (p.hidden) return;
+        procExpirou = true; p.hidden = true;
+        alert('A foto demorou demais para ficar pronta. Tire de novo.');
+        telaInicial();
+      }, PROC_LIMITE_MS);
     } else if (p) p.hidden = true;
+  }
+  // qualquer erro ao tratar a foto: fecha a espera e volta ao cadastro
+  function falhaFoto(){
+    var expirou = procExpirou;
+    processando(false);
+    if (expirou) return;   // já avisou pelo limite de tempo
+    alert('Não deu para usar esta foto. Tire de novo.');
+    telaInicial();
   }
   function usarFoto(d, im, op){ return d.k === 'cliente' ? guardarFoto(d, im) : recortar(d, im, op); }
 
@@ -1164,8 +1182,8 @@ body{background:transparent!important}
   }
   function recortar(d, im, op){
     op = op || {};
-    // trabalha numa cópia de até 2400 px (rápido no celular e com boa leitura)
-    var iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height, k = Math.min(1, 3600 / Math.max(iw, ih));
+    // trabalha numa cópia de até 2400 px (rápido até em celular simples e com boa leitura)
+    var iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height, k = Math.min(1, 2400 / Math.max(iw, ih));
     var src = document.createElement('canvas'); src.width = Math.round(iw * k); src.height = Math.round(ih * k);
     src.getContext('2d').drawImage(im, 0, 0, src.width, src.height);
     var W = src.width, H = src.height, m = Math.min(W, H) * 0.06;
@@ -1258,10 +1276,11 @@ body{background:transparent!important}
       if (orig && orig.troca != null && fotos[d.k] && fotos[d.k][orig.troca]) fotos[d.k][orig.troca] = r;
       else fotos[d.k] = d.multi ? (fotos[d.k] || []).concat([r]) : [r];
       if (orig && orig.silencioso) return;
+      var atrasou = procExpirou;
       telaInicial();
       processando(false);
-      conferir(d, true);
-    }).catch(function(){ processando(false); alert('Não deu para usar esta foto. Tire de novo.'); });
+      if (!atrasou) conferir(d, true);   // chegou depois do limite: a foto fica no cadastro, sem abrir tela por cima
+    }).catch(falhaFoto);
   }
   function miniatura(x){ return x.pdf ? '<span class="pdf-mini">PDF</span>' : '<img alt="" src="' + x.url + '">'; }
   function figuraDe(x, rotulo){ return '<figure>' + (x.pdf ? '<div class="pdf-fig"><b>PDF anexado</b><span>' + esc(x.nome || '') + '</span></div>' : '<img alt="" src="' + x.url + '">') + (rotulo ? '<figcaption>' + rotulo + '</figcaption>' : ''); }
@@ -1277,7 +1296,9 @@ body{background:transparent!important}
         e.stopPropagation(); t.remove(); processando(true);
         var f = it.foto;
         setTimeout(function(){
-          if (f.reto && f.orig){ var g = girarQuad(f.orig.src, f.orig.q); return guardarFoto(it.doc, girar90(f.reto), { src: g.src, q: g.q, troca: it.i, semFiltro: f.semFiltro }); }
+          try {
+            if (f.reto && f.orig){ var g = girarQuad(f.orig.src, f.orig.q); return guardarFoto(it.doc, girar90(f.reto), { src: g.src, q: g.q, troca: it.i, semFiltro: f.semFiltro }); }
+          } catch(err){ return falhaFoto(); }
           carregar(f.blob).then(function(im){ return guardarFoto(it.doc, girar90(im), { troca: it.i }); }).catch(function(){ processando(false); alert('Não deu para girar esta foto.'); telaInicial(); });
         }, 30);
       };
@@ -1340,7 +1361,7 @@ body{background:transparent!important}
     var arq = this.files && this.files[0]; this.value = ''; if (!arq || !atual) return;
     var d = atual;
     processando(true);
-    carregar(arq).then(function(im){ return usarFoto(d, im); }).catch(function(){ processando(false); alert('Não deu para usar esta foto. Tire de novo.'); });
+    carregar(arq).then(function(im){ return usarFoto(d, im); }).catch(falhaFoto);
   });
 
   function tela(html){ var t = document.createElement('div'); t.className = 'tela'; t.innerHTML = '<div>' + html + '</div>'; document.body.appendChild(t); return t; }
