@@ -2783,7 +2783,8 @@ section.vw-dash{gap:10px!important}
       CHK_DADOS.map(function(c){ return '<span>' + c[0] + '</span>'; }).join('') + '<i></i>' + CHK_DOCS.map(function(c){ return '<span>' + c[0] + '</span>'; }).join('') + '</div>';
   }
   function chkCell(r){
-    var f = faltasCad(r).map(function(x){ return x[1]; }), fd = faltaDocs(r), conf = docsConferidos(r);
+    // com a lista do que falta (aplicativo ou "Conferir documentos"), o resto está na pasta; sem lista e sem conferência, fica "?"
+    var f = faltasCad(r).map(function(x){ return x[1]; }), fd = faltaDocs(r), conf = docsConferidos(r) || fd.length > 0;
     var cel = function(st, rot){ return '<span class="chk ' + st + '" title="' + esc(rot) + (st === 'ok' ? ': ok' : st === 'q' ? ': ninguém conferiu a pasta' : ': falta') + '">' + (st === 'ok' ? IC_OK : st === 'q' ? '?' : IC_NAO) + '</span>'; };
     return '<div class="chk-g">' + CHK_DADOS.map(function(c){ return cel(f.indexOf(c[1]) >= 0 || (c[0] === 'CPF' && f.indexOf('CPF inválido') >= 0) ? 'no' : 'ok', c[1]); }).join('') + '<i></i>' +
       CHK_DOCS.map(function(c){ return cel(fd.indexOf(c[1]) >= 0 ? 'no' : conf ? 'ok' : 'q', c[2]); }).join('') + '</div>';
