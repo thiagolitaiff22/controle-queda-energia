@@ -132,8 +132,10 @@ function fechar(p, quem){
   var digitado = nomeDigitado(p);
   var pasta = pastaDoEnvio(p.envio, quem, digitado);
   // o envio só registra o cliente (rápido); a IA lê os documentos depois, na leitura automática (a cada 10 minutos)
-  var dados = { nome: '', cpf: '', rg: '', nascimento: '', endereco: '' }, nota = [];
-  if (dados.cpf && !cpfValido(dados.cpf)){ nota.push('CPF lido (' + dados.cpf + ') não confere: verifique no documento.'); }
+  // CPF, RG e endereço vêm digitados pelo prospectador (aplicativo 25 em diante)
+  var dig = function(v, n){ return String(v || '').replace(/\s+/g, ' ').trim().slice(0, n); };
+  var dados = { nome: '', cpf: dig(p.cpf, 20), rg: dig(p.rg, 40), nascimento: '', endereco: dig(p.endereco, 300) }, nota = [];
+  if (dados.cpf && !cpfValido(dados.cpf)){ nota.push('CPF digitado (' + dados.cpf + ') não confere: verifique no documento.'); }
   if (dados.observacao) nota.push(dados.observacao);
   if (p.local && p.local.lat) nota.push('Localização da casa: https://maps.google.com/?q=' + p.local.lat + ',' + p.local.lng);
   var faltam = (p.faltam || []).map(function(k){ return NOMES[k] || k; });

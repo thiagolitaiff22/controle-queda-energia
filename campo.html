@@ -422,6 +422,7 @@ body{background:transparent!important}
   <symbol id="i-id" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="11" r="2.4"/><path d="M4.8 16.5c.6-1.6 1.8-2.4 3.2-2.4s2.6.8 3.2 2.4M14 10h5M14 13h4"/></symbol>
   <symbol id="i-idv" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M6 9h12M6 12h12M6 15h7"/></symbol>
   <symbol id="i-luz" viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></symbol>
+  <symbol id="i-casa" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/></symbol>
   <symbol id="i-dedo" viewBox="0 0 24 24"><path d="M12 3a7 7 0 0 0-7 7v2M19 10a7 7 0 0 0-3-5.7M8.5 21c1-2 1.5-4.5 1.5-7.5a2 2 0 0 1 4 0c0 3-.5 5.5-1.5 7.5M5 15.5c.7-1 1-2.3 1-4a6 6 0 0 1 12 0c0 2.5-.3 5-1 7"/></symbol>
   <symbol id="i-mais" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M12 8v8M8 12h8"/></symbol>
   <symbol id="i-pessoa" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></symbol>
@@ -449,7 +450,7 @@ body{background:transparent!important}
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 24;
+  var APP_VERSAO = 25;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
@@ -666,6 +667,22 @@ body{background:transparent!important}
     if (aba === 'clientes') return vistaClientes();
     vistaNovo();
   }
+  // dados que o prospectador digita junto com o nome (vão para o cadastro; a petição usa os três)
+  var CAMPOS_DADOS = [
+    { k: 'cpf', ph: 'CPF do cliente', ic: 'i-id', num: true, nome: 'o CPF' },
+    { k: 'rg', ph: 'RG do cliente (sem RG? repita o CPF)', ic: 'i-idv', num: true, nome: 'o RG' },
+    { k: 'endereco', ph: 'Endereço: rua, número, bairro', ic: 'i-casa', nome: 'o endereço' }
+  ];
+  function mascaraCPF(v){
+    var d = String(v || '').replace(/\D/g, '').slice(0, 11);
+    return d.length > 9 ? d.replace(/^(\d{3})(\d{3})(\d{3})(\d{1,2})$/, '$1.$2.$3-$4') : d.length > 6 ? d.replace(/^(\d{3})(\d{3})(\d{1,3})$/, '$1.$2.$3') : d.length > 3 ? d.replace(/^(\d{3})(\d{1,3})$/, '$1.$2') : d;
+  }
+  function cpfCerto(v){
+    var d = String(v || '').replace(/\D/g, ''); if (d.length !== 11 || /^(\d)\1{10}$/.test(d)) return false;
+    for (var t = 9; t < 11; t++){ var s = 0; for (var i = 0; i < t; i++) s += +d[i] * (t + 1 - i); if (((s * 10) % 11) % 10 !== +d[t]) return false; }
+    return true;
+  }
+  function campoOk(c, v){ v = String(v || '').trim(); return c.k === 'cpf' ? cpfCerto(v) : c.k === 'endereco' ? v.length >= 8 : v.replace(/\D/g, '').length >= 4; }
   function vistaNovo(){
     guardarRascunho();
     var n = Object.keys(fotos).length;
@@ -675,6 +692,10 @@ body{background:transparent!important}
       '<div class="completar"><small>Completar documentos de</small><b>' + esc(completando.nome) + '</b><span>Tire só as fotos que estavam faltando e envie.</span><button type="button" id="cancelar-comp">Cancelar</button></div>' :
       '<div class="rot" style="margin-top:0">Dados do cliente</div><div class="dados">' +
         '<label class="fone' + (lsGet('campo_nome').trim() ? '' : ' falta') + '" id="l-nome"><svg viewBox="0 0 24 24"><use href="#i-pessoa"/></svg><input id="nome" autocomplete="off" autocapitalize="characters" placeholder="Nome completo do cliente" value="' + esc(lsGet('campo_nome')) + '"></label>' +
+        CAMPOS_DADOS.map(function(c){
+          var v = lsGet('campo_' + c.k);
+          return '<label class="fone' + (campoOk(c, v) ? '' : ' falta') + '" id="l-' + c.k + '"><svg viewBox="0 0 24 24"><use href="#' + c.ic + '"/></svg><input id="' + c.k + '" autocomplete="off"' + (c.num ? ' inputmode="numeric"' : ' autocapitalize="words"') + ' placeholder="' + c.ph + '" value="' + esc(v) + '"></label>';
+        }).join('') +
         '<label class="fone"><svg viewBox="0 0 24 24"><use href="#i-fone"/></svg><input id="fone" inputmode="tel" placeholder="Número de telefone" value="' + esc(lsGet('campo_fone')) + '"></label>' +
       '</div>') +
       '<div class="rot">' + (completando ? 'Documentos que faltam' : 'Documentos') + '</div><div class="grid">' + visiveis.map(function(d){
@@ -692,6 +713,14 @@ body{background:transparent!important}
     $('fone').addEventListener('input', function(){ lsSet('campo_fone', this.value); });
     $('nome').addEventListener('input', function(){ lsSet('campo_nome', this.value); $('l-nome').classList.toggle('falta', !this.value.trim()); });
     $('nome').addEventListener('blur', function(){ this.value = this.value.replace(/\s+/g, ' ').trim().toUpperCase(); lsSet('campo_nome', this.value); });
+    CAMPOS_DADOS.forEach(function(c){
+      var el = $(c.k);
+      el.addEventListener('input', function(){
+        if (c.k === 'cpf') this.value = mascaraCPF(this.value);
+        lsSet('campo_' + c.k, this.value); $('l-' + c.k).classList.toggle('falta', !campoOk(c, this.value));
+      });
+      el.addEventListener('blur', function(){ this.value = this.value.replace(/\s+/g, ' ').trim(); lsSet('campo_' + c.k, this.value); });
+    });
     }
     if ($('som')) $('som').addEventListener('click', function(){ falar(falta.length ? 'Digite o nome e o número do cliente. Depois toque em cada quadro e tire a foto, encaixando o documento no quadro. Faltam: ' + falta.map(function(d){ return d.t; }).join(', ') + '. Quando terminar, aperte o botão verde, enviar.' : 'Tudo pronto. Aperte o botão verde, enviar.'); });
     Array.prototype.forEach.call(document.querySelectorAll('.doc'), function(b){
@@ -871,7 +900,7 @@ body{background:transparent!important}
       if (Object.keys(fotos).length && !confirm('Há fotos de um cadastro em andamento. Sair mesmo assim? As fotos serão apagadas.')) return;
       if (!confirm('Sair desta conta? Para entrar de novo você vai precisar do usuário e da senha.')) return;
       fotos = {}; guardarRascunho();
-      ['campo_token', 'campo_quem', 'campo_painel', 'campo_nome', 'campo_fone', 'campo_aba'].forEach(function(k){ lsSet(k, ''); });
+      ['campo_token', 'campo_quem', 'campo_painel', 'campo_nome', 'campo_fone', 'campo_cpf', 'campo_rg', 'campo_endereco', 'campo_aba'].forEach(function(k){ lsSet(k, ''); });
       token = ''; quem = null; painel = null; aba = 'painel';
       pedirLink();
     });
@@ -1380,6 +1409,11 @@ body{background:transparent!important}
     }
     var nm = ($('nome') || {}).value || '';
     if (!nm.trim()){ falar('Digite o nome completo do cliente.'); alert('Digite o nome completo do cliente.'); $('nome').focus(); return; }
+    var ruim = CAMPOS_DADOS.filter(function(c){ return !campoOk(c, ($(c.k) || {}).value); })[0];
+    if (ruim){
+      var msg = ruim.k === 'cpf' && String($('cpf').value).replace(/\D/g, '').length === 11 ? 'Este CPF não existe. Confira os números no documento.' : 'Digite ' + ruim.nome + ' do cliente.';
+      falar(msg); alert(msg); $(ruim.k).focus(); return;
+    }
     var falta = DOCS.filter(function(d){ return d.req && !fotos[d.k]; });
     if (falta.length){
       falar('Está faltando: ' + falta.map(function(d){ return d.t; }).join(', ') + '. Quer enviar assim mesmo?');
@@ -1423,7 +1457,7 @@ body{background:transparent!important}
       cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height); fotoMini = cv.toDataURL('image/jpeg', 0.72);
     }).catch(function(){}); });
     p     .then(function(){
-       var envio = { id: id, token: token, criado: new Date().toISOString(), completar: comp ? comp.id : '', foto: fotoMini, contato: ($('fone') || {}).value || '', cliente: comp ? comp.nome : (($('nome') || {}).value || '').replace(/\s+/g, ' ').trim().toUpperCase(), local: local, faltam: falta.map(function(d){ return d.k; }),
+       var envio = { id: id, token: token, criado: new Date().toISOString(), completar: comp ? comp.id : '', foto: fotoMini, contato: ($('fone') || {}).value || '', cpf: comp ? '' : (($('cpf') || {}).value || '').trim(), rg: comp ? '' : (($('rg') || {}).value || '').trim(), endereco: comp ? '' : (($('endereco') || {}).value || '').trim(), cliente: comp ? comp.nome : (($('nome') || {}).value || '').replace(/\s+/g, ' ').trim().toUpperCase(), local: local, faltam: falta.map(function(d){ return d.k; }),
          docs: DOCS.filter(function(d){ return fotos[d.k]; }).map(function(d){ return d.k; }), arquivos: [] };
        return Promise.all(arquivos.map(function(a){ return paraBytes(a.blob).then(function(b){ return { nome: a.nome, mime: a.mime, buf: b, tam: b.byteLength, ok: false }; }, function(){ return { nome: a.nome, mime: a.mime, blob: a.blob, tam: a.blob.size, ok: false }; }); }))
          .then(function(l){ envio.arquivos = l; return filaPor(envio); }).then(function(){ return histPor({ id: envio.id, token: token, cliente: envio.cliente + (comp ? ' · documentos' : ''), clienteId: comp ? comp.id : '', criado: envio.criado, enviado: null }); }).then(function(){ return envio; });
@@ -1431,7 +1465,7 @@ body{background:transparent!important}
      .then(function(envio){
        fotos = {}; local = null;
        if (comp){ completando = null; lsSet('campo_completando', ''); if (painel) painel.clientes.forEach(function(c){ if (c.id === comp.id) c.faltaDocs = comp.faltaDocs.filter(function(k){ return envio.docs.indexOf(k) < 0; }); }); }
-       else { lsSet('campo_fone', ''); lsSet('campo_nome', ''); }
+       else { ['campo_fone', 'campo_nome', 'campo_cpf', 'campo_rg', 'campo_endereco'].forEach(function(k){ lsSet(k, ''); }); }
        t.remove(); aba = comp ? 'painel' : 'novo'; telaInicial(); window.scrollTo(0, 0);
        var ok = tela('<svg viewBox="0 0 24 24" style="stroke:var(--ok)"><use href="#i-ok"/></svg><b>' + (comp ? 'Documentos guardados' : 'Cadastro guardado') + '</b><p>' + esc(envio.cliente || '') + '<br>' + (comp ? 'Vão para a pasta do cliente sozinhos quando tiver internet.' : 'Está sendo enviado agora: acompanhe na barra azul embaixo. Pode cadastrar o próximo cliente.') + '</p><button id="t-ok">' + (comp ? 'Entendi' : 'Cadastrar o próximo') + '</button>');
        ok.querySelector('#t-ok').onclick = function(){ ok.remove(); };
@@ -1514,7 +1548,7 @@ body{background:transparent!important}
     return p.then(function(){
         barraEnvio({ nome: envio.cliente, pct: 0.99, passo: 'registrando no sistema' });
         if (envio.completar) return post({ acao: 'completar', token: envio.token, envio: envio.id, completar: envio.completar, docs: envio.docs });
-        return post({ acao: 'fechar', token: envio.token, envio: envio.id, cliente: envio.cliente || '', contato: envio.contato, local: envio.local, docs: envio.docs, faltam: envio.faltam, foto: envio.foto || '' }); })
+        return post({ acao: 'fechar', token: envio.token, envio: envio.id, cliente: envio.cliente || '', contato: envio.contato, cpf: envio.cpf || '', rg: envio.rg || '', endereco: envio.endereco || '', local: envio.local, docs: envio.docs, faltam: envio.faltam, foto: envio.foto || '' }); })
       .then(function(d){
         // só tira da fila depois de ver o cliente no sistema
         if (envio.completar) return d;
