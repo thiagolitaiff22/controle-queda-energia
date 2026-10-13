@@ -338,10 +338,24 @@ function peticaoInicial(p){
     return s === s0 ? b : Utilities.newBlob(s, 'application/xml', b.getName());
   });
   if (!achou) throw new Error('O modelo da pasta MODELOS não tem as marcações <<Nome>>, <<CPF>>…');
-  var nome = 'PETIÇÃO INICIAL - ' + String(d.nome).trim().toUpperCase().replace(/[\\/:*?"<>|]/g, '') + '.docx';
-  // gerar de novo substitui a anterior (a antiga vai para a lixeira do Drive)
-  var velhas = pasta.getFilesByName(nome); while (velhas.hasNext()) velhas.next().setTrashed(true);
-  var arq = pasta.createFile(Utilities.zip(partes, nome).setContentType(DOCX));
+  var base = 'PETIÇÃO INICIAL - ' + String(d.nome).trim().toUpperCase().replace(/[\\/:*?"<>|]/g, ''), nome = base + '.pdf';
+  // o Word preenchido vira um Google Docs provisório só para sair o PDF; depois vai para a lixeira
+  var bound = 'xxpeticaoxx', docx = Utilities.zip(partes, base + '.docx').getBytes();
+  var corpo = Utilities.newBlob('--' + bound + '\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n' +
+    JSON.stringify({ name: base + ' (provisório)', mimeType: MimeType.GOOGLE_DOCS, parents: [pasta.getId()] }) +
+    '\r\n--' + bound + '\r\nContent-Type: ' + DOCX + '\r\n\r\n').getBytes().concat(docx, Utilities.newBlob('\r\n--' + bound + '--').getBytes());
+  var up = UrlFetchApp.fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true', {
+    method: 'post', contentType: 'multipart/related; boundary=' + bound, payload: corpo, muteHttpExceptions: true,
+    headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() }
+  });
+  if (up.getResponseCode() >= 300) throw new Error('O Drive não converteu a petição (' + up.getResponseCode() + ').');
+  var prov = DriveApp.getFileById(JSON.parse(up.getContentText()).id);
+  try {
+    var pdf = prov.getAs(MimeType.PDF).setName(nome);
+    // gerar de novo substitui a anterior (a antiga vai para a lixeira do Drive)
+    var velhas = pasta.getFilesByName(nome); while (velhas.hasNext()) velhas.next().setTrashed(true);
+    var arq = pasta.createFile(pdf);
+  } finally { prov.setTrashed(true); }
   return { ok: true, id: arq.getId(), url: arq.getUrl(), nome: nome };
 }
 function equipeLogada(jwt){

@@ -2181,7 +2181,7 @@ section.vw-dash{gap:10px!important}
     } catch(err){ toast('Não foi possível olhar a pasta: ' + (err.message || err)); }
     finally { b.disabled = false; b.textContent = rot; }
   });
-  // "Gerar petição inicial": o script preenche o modelo do Drive (MODELOS) e salva o Word na pasta do cliente
+  // "Gerar petição inicial": o script preenche o modelo do Drive (MODELOS) e salva o PDF na pasta do cliente
   document.addEventListener('click', async function(e){
     var b = e.target.closest('[data-act="peticao"]'); if (!b) return;
     var r = state.rows.filter(function(x){ return x.id === b.dataset.id; })[0]; if (!r || !r.pastaId) return;
