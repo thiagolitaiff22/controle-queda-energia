@@ -2181,6 +2181,24 @@ section.vw-dash{gap:10px!important}
     } catch(err){ toast('Não foi possível olhar a pasta: ' + (err.message || err)); }
     finally { b.disabled = false; b.textContent = rot; }
   });
+  // "Gerar petição inicial": o script preenche o modelo do Drive (MODELOS) e salva o Word na pasta do cliente
+  document.addEventListener('click', async function(e){
+    var b = e.target.closest('[data-act="peticao"]'); if (!b) return;
+    var r = state.rows.filter(function(x){ return x.id === b.dataset.id; })[0]; if (!r || !r.pastaId) return;
+    var dados = { nome: (r.nome || '').trim().toUpperCase(), rg: (r.rg || r.cpf || '').trim(), cpf: (r.cpf || '').trim(), endereco: (r.endereco || '').trim(), uc: (r.uc || '').trim(), periodo: (r.periodo || '').trim() };
+    var falta = [['nome', 'nome'], ['cpf', 'CPF'], ['endereco', 'endereço'], ['uc', 'unidade consumidora'], ['periodo', 'período da ação']].filter(function(c){ return !dados[c[0]]; }).map(function(c){ return c[1]; });
+    if (falta.length){ toast('Para gerar a petição, preencha no cadastro: ' + falta.join(', ') + '.'); return; }
+    var rot = b.textContent; b.disabled = true; b.textContent = 'Gerando petição…';
+    try {
+      var url = await urlDoScript();
+      var ses = await SB.auth.getSession(), jwt = ses && ses.data && ses.data.session ? ses.data.session.access_token : '';
+      var d = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ acao: 'peticao', jwt: jwt, pastaId: r.pastaId, dados: dados }) }).then(function(x){ return x.json(); });
+      if (!d || !d.ok) throw new Error(d && d.erro || 'falhou');
+      await patchRow(r.id, { peticaoUrl: d.url, peticaoEm: new Date().toISOString(), atualizadoEm: new Date().toISOString() });
+      toast('Petição inicial salva na pasta de ' + r.nome + '.');
+    } catch(err){ toast('Não foi possível gerar a petição: ' + (err.message || err)); }
+    finally { b.disabled = false; b.textContent = rot; }
+  });
   // copiar o nome do cliente (para pesquisar no PROJUDI)
   document.addEventListener('click', async function(e){
     var b = e.target.closest('[data-copiar-nome]'); if (!b) return;
@@ -2280,7 +2298,9 @@ section.vw-dash{gap:10px!important}
         compacto && !docsConferidos(r) ? '<div class="falta-docs"><b>Documentação não conferida</b><span>Clique em Conferir documentos (a IA olha a pasta) ou abra a pasta no Drive e, se estiver tudo, marque:</span><div><button type="button" class="btn" data-act="docs-ok" data-id="' + esc(r.id) + '"><svg class="i"><use href="#i-check"/></svg>Documentação completa</button></div></div>' : '') +
       '<div class="ficha-acoes"><button type="button" class="btn" data-act="edit" data-id="' + esc(r.id) + '"><svg class="i"><use href="#i-pencil"/></svg>Editar cadastro</button>' +
       (r.pastaUrl ? '<a class="btn" href="' + esc(r.pastaUrl) + '" target="_blank" rel="noopener"><svg class="i"><use href="#i-folder"/></svg>Pasta no Drive</a>' : '') +
-      (compacto && r.pastaId ? '<button type="button" class="btn primary" data-act="docs-ia" data-id="' + esc(r.id) + '" title="A IA olha a pasta e diz quais documentos estão lá (não preenche nada)">Conferir documentos</button>' : '') + '</div></div>';
+      (compacto && r.pastaId ? '<button type="button" class="btn primary" data-act="docs-ia" data-id="' + esc(r.id) + '" title="A IA olha a pasta e diz quais documentos estão lá (não preenche nada)">Conferir documentos</button>' +
+        '<button type="button" class="btn" data-act="peticao" data-id="' + esc(r.id) + '" title="Preenche o modelo com nome, RG, CPF, endereço, UC e período e salva na pasta do cliente">Gerar petição inicial</button>' +
+        (r.peticaoUrl ? '<a class="btn" href="' + esc(r.peticaoUrl) + '" target="_blank" rel="noopener">Abrir petição</a>' : '') : '') + '</div></div>';
   }
   function avisoCell(r){
     var n = daysUntil(r.audData), s = sit(r);

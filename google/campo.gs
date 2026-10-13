@@ -57,6 +57,7 @@ function doPost(e){
     if (p.acao === 'pasta') return saida(pastaDoCadastro(p));
     if (p.acao === 'lerPasta') return saida(lerPastaDoCadastro(p));
     if (p.acao === 'conferirDocs') return saida(conferirDocsDaPasta(p));
+    if (p.acao === 'peticao') return saida(peticaoInicial(p));
     var quem = validar(p.token);
     if (!/^[A-Za-z0-9_-]{8,64}$/.test(p.envio || '')) throw new Error('Envio inválido.');
     if (p.acao === 'arquivo') return saida(arquivo(p, quem));
@@ -299,6 +300,49 @@ function conferirDocsDaPasta(p){
   var m = txt.match(/\{[\s\S]*\}/); if (!m) throw new Error('A IA não conseguiu olhar a pasta.');
   var o = JSON.parse(m[0]);
   return { ok: true, arquivos: arq.length, tem: { procuracao: o.procuracao === true, rg: o.rg === true, cpf: o.cpf === true, luz: o.luz === true } };
+}
+
+/* ---------- botão "Gerar petição inicial" do Cadastro ---------- */
+/* o modelo é o .docx mais recente da pasta AMBAR ENERGIA › MODELOS (para trocar o modelo, basta pôr um novo lá);
+   as marcações <<Nome>>, <<RG>>, <<CPF>>, <<Endereço>>, <<Unidade Consumidora>> e <<Período>> são trocadas no próprio Word,
+   então a formatação e o timbre ficam iguais aos do modelo */
+var PASTA_MODELOS = '18DzMiKIX2KmCO-QgvFRXAHeTv6OOxigt';
+var DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+function modeloPeticao(){
+  var it = DriveApp.getFolderById(PASTA_MODELOS).getFiles(), melhor = null;
+  while (it.hasNext()){
+    var a = it.next(), t = a.getMimeType();
+    if (a.isTrashed() || (t !== DOCX && t !== MimeType.GOOGLE_DOCS) || !/PETI/i.test(a.getName())) continue;
+    if (!melhor || a.getLastUpdated() > melhor.getLastUpdated()) melhor = a;
+  }
+  if (!melhor) throw new Error('Coloque o modelo da petição (Word) na pasta AMBAR ENERGIA › MODELOS do Drive.');
+  if (melhor.getMimeType() === DOCX) return melhor.getBlob();
+  // modelo convertido em Google Docs: baixa como Word
+  return UrlFetchApp.fetch('https://docs.google.com/document/d/' + melhor.getId() + '/export?format=docx', { headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() } }).getBlob();
+}
+function peticaoInicial(p){
+  equipeLogada(p.jwt);
+  var pasta; try { pasta = DriveApp.getFolderById(String(p.pastaId || '')); } catch (x){ throw new Error('Pasta do cliente não encontrada no Drive.'); }
+  var d = p.dados || {}, xml = function(s){ return String(s == null ? '' : s).trim().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); };
+  var trocas = { 'Nome': d.nome, 'RG': d.rg, 'CPF': d.cpf, 'Endereço': d.endereco, 'Unidade Consumidora': d.uc, 'Período': d.periodo };
+  var vazios = Object.keys(trocas).filter(function(k){ return !String(trocas[k] || '').trim(); });
+  if (vazios.length) throw new Error('Preencha no cadastro: ' + vazios.join(', ') + '.');
+  var partes = Utilities.unzip(modeloPeticao()), achou = 0;
+  partes = partes.map(function(b){
+    if (!/^word\/(document|header\d*|footer\d*)\.xml$/.test(b.getName())) return b;
+    var s = b.getDataAsString('UTF-8'), s0 = s;
+    Object.keys(trocas).forEach(function(k){
+      var marca = '&lt;&lt;' + k + '&gt;&gt;';
+      if (s.indexOf(marca) >= 0){ achou++; s = s.split(marca).join(xml(trocas[k])); }
+    });
+    return s === s0 ? b : Utilities.newBlob(s, 'application/xml', b.getName());
+  });
+  if (!achou) throw new Error('O modelo da pasta MODELOS não tem as marcações <<Nome>>, <<CPF>>…');
+  var nome = 'PETIÇÃO INICIAL - ' + String(d.nome).trim().toUpperCase().replace(/[\\/:*?"<>|]/g, '') + '.docx';
+  // gerar de novo substitui a anterior (a antiga vai para a lixeira do Drive)
+  var velhas = pasta.getFilesByName(nome); while (velhas.hasNext()) velhas.next().setTrashed(true);
+  var arq = pasta.createFile(Utilities.zip(partes, nome).setContentType(DOCX));
+  return { ok: true, id: arq.getId(), url: arq.getUrl(), nome: nome };
 }
 function equipeLogada(jwt){
   var r = UrlFetchApp.fetch(SUPABASE_URL + '/rest/v1/rpc/minha_funcao', {
