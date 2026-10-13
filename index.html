@@ -1220,7 +1220,7 @@ section.vw-dash{gap:10px!important}
 #view-cad > .fbar{margin-top:30px!important}
 .cad-stats{grid-template-columns:repeat(4,minmax(0,1fr))!important}
 @media (max-width:900px){ .cad-stats{grid-template-columns:repeat(2,minmax(0,1fr))!important} }
-#cad-list .row{grid-template-columns:minmax(0,2.2fr) minmax(0,1.3fr) minmax(0,1fr) minmax(0,.7fr) minmax(0,1.7fr) minmax(150px,1.1fr) 36px!important;align-items:center;gap:16px!important;min-height:46px;padding-top:6px!important;padding-bottom:6px!important}
+#cad-list .row{grid-template-columns:minmax(0,2.2fr) minmax(0,1.3fr) minmax(0,1fr) minmax(0,.7fr) minmax(0,2.6fr) 36px!important;align-items:center;gap:16px!important;min-height:46px;padding-top:6px!important;padding-bottom:6px!important}
 #cad-list .row[data-linha]{cursor:pointer}
 #cad-list .row[data-linha]:hover{background:var(--hover)}
 #cad-list .row.aberto{background:var(--soft)}
@@ -1235,6 +1235,11 @@ section.vw-dash{gap:10px!important}
 .nome-copia.ok{color:var(--green)}
 .nome-copia svg.i,.pasta-falta svg.i{width:14px;height:14px}
 .pasta-falta{color:var(--amber)}
+.cad-grupo{display:flex;align-items:baseline;gap:8px;padding:18px 16px 8px;border-bottom:1px solid var(--line);font-size:13px}
+.cad-grupo i{width:8px;height:8px;border-radius:50%;background:var(--cor-g);align-self:center;flex:none}
+.cad-grupo b{text-transform:uppercase;letter-spacing:.04em;font-size:12px}
+.cad-grupo span{font-weight:700;color:var(--ink-2)}
+.cad-grupo em{font-style:normal;color:var(--ink-3);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .falta-txt{color:var(--red);font-size:12.5px;line-height:1.35}
 .falta-ok{color:var(--green);font-size:12.5px}
 #cad-stats .cad-filtro{cursor:pointer;transition:border-color .15s,background .15s}
@@ -2800,10 +2805,18 @@ section.vw-dash{gap:10px!important}
       // mais recente primeiro (pelo dia do cadastro); no mesmo dia, em ordem alfabética
       .sort(function(a, b){ var da = String(a.dataCadastro || a.criadoEm || '').slice(0, 10), db = String(b.dataCadastro || b.criadoEm || '').slice(0, 10); return db.localeCompare(da) || String(a.nome || '').localeCompare(String(b.nome || ''), 'pt'); });
     $('cad-count').textContent = lista.length + (lista.length === 1 ? ' cliente' : ' clientes');
-    var html = '<div class="row head"><div>Cliente</div><div>Prospectador</div><div>Contato</div><div>Cadastrado</div><div>O que falta</div><div>Situação</div><div></div></div>';
+    var html = '<div class="row head"><div>Cliente</div><div>Prospectador</div><div>Contato</div><div>Cadastrado</div><div>O que falta</div><div></div></div>';
     if (!lista.length) html += '<div class="empty">' + (todos.length ? 'Nenhum cliente neste filtro.' : 'Nenhum cliente em cadastro. Clique em <b>Novo cliente</b> para começar.') + '</div>';
-    lista.slice(0, 300).forEach(function(r){
-      var st = situacaoCad(r);
+    // a lista vem em blocos, na ordem do trabalho: quem já pode protocolar, quem precisa conferir, e o que ainda falta
+    var BLOCOS = [['pronto', 'Prontos para protocolar', 'pode protocolar', '--green'], ['conferir', 'Conferir dados', 'cadastrados pelo celular: confira com os documentos', '--amber'],
+      ['documentos', 'Faltam documentos', 'o prospectador ainda precisa mandar ou alguém precisa conferir a pasta', '--amber'], ['incompleto', 'Faltam dados', 'preencha no cadastro (lápis)', '--red']];
+    var grupos = {}; lista.slice(0, 300).forEach(function(r){ var k = situacaoCad(r)[0]; (grupos[k] = grupos[k] || []).push(r); });
+    BLOCOS.forEach(function(bl){
+      var g = grupos[bl[0]]; if (!g) return;
+      html += '<div class="cad-grupo" style="--cor-g:var(' + bl[3] + ')"><i></i><b>' + bl[1] + '</b><span class="tnum">' + g.length + '</span><em>' + bl[2] + '</em></div>';
+      g.forEach(linhaCad);
+    });
+    function linhaCad(r){
       html += '<div class="row' + (cadAberto[r.id] ? ' aberto' : '') + '" data-linha="' + esc(r.id) + '">' +
         '<div class="c-name"><div class="name">' + (/^data:image\/(jpeg|png);base64,/.test(r.fotoCliente || '') ? '<img class="av-foto" src="' + r.fotoCliente + '" alt="">' : '') + '<button type="button" class="nome-abrir" data-act="abrir" data-id="' + esc(r.id) + '">' + esc(r.nome) + '</button>' +
           '<button type="button" class="nome-copia" data-copiar-nome="' + esc(r.nome) + '" title="Copiar o nome" aria-label="Copiar o nome de ' + esc(r.nome) + '"><svg class="i"><use href="#i-copy"/></svg></button>' +
@@ -2812,10 +2825,9 @@ section.vw-dash{gap:10px!important}
         '<div><span class="lbl">Contato</span>' + telCell(r, true) + '</div>' +
         '<div><span class="lbl">Cadastrado</span><div class="val">' + (r.dataCadastro || r.criadoEm ? String(r.dataCadastro || r.criadoEm).slice(0, 10).replace(/^\d\d(\d\d)-(\d\d)-(\d\d)$/, '$3/$2/$1') : '—') + '</div></div>' +
         '<div><span class="lbl">O que falta</span>' + faltaCell(r) + '</div>' +
-        '<div><span class="lbl">Situação</span><span class="cad-sit ' + st[2] + '">' + st[1] + '</span></div>' +
         '<div class="c-act"><button type="button" class="ico-btn" data-act="edit" data-id="' + esc(r.id) + '" title="Editar cadastro" aria-label="Editar ' + esc(r.nome) + '"><svg class="i"><use href="#i-pencil"/></svg></button></div>' +
       '</div>' + (cadAberto[r.id] ? fichaCliente(r, true) : '');
-    });
+    }
     box.innerHTML = html;
   }
   // "Documentos pendentes": ao passar o mouse mostra quais faltam (balão por cima da página, não é cortado pela tabela)
