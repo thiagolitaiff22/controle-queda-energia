@@ -338,7 +338,7 @@ function peticaoInicial(p){
     return s === s0 ? b : Utilities.newBlob(s, 'application/xml', b.getName());
   });
   if (!achou) throw new Error('O modelo da pasta MODELOS não tem as marcações <<Nome>>, <<CPF>>…');
-  var base = 'PETIÇÃO INICIAL - ' + String(d.nome).trim().toUpperCase().replace(/[\\/:*?"<>|]/g, ''), nome = base + '.pdf';
+  var base = 'PETIÇÃO INICIAL', nome = base + '.pdf';   // a pasta já é do cliente: o arquivo leva só o nome do documento
   // o Word preenchido vira um Google Docs provisório só para sair o PDF; depois vai para a lixeira
   var bound = 'xxpeticaoxx', docx = Utilities.zip(partes, base + '.docx').getBytes();
   var corpo = Utilities.newBlob('--' + bound + '\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n' +
