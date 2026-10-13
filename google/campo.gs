@@ -329,7 +329,8 @@ var GENERO_PETICAO = [
   ['sossego da consumidora', 'sossego do consumidor', 'sossego da consumidora'],
   ['danos morais ao autor, uma vez que este', 'danos morais ao autor, uma vez que este', 'danos morais à autora, uma vez que esta'],
   ['ficou impossibilitado', 'ficou impossibilitado', 'ficou impossibilitada'], ['expor o requerente', 'expor o requerente', 'expor a requerente'],
-  ['indenizar o Autor', 'indenizar o Autor', 'indenizar a Autora'], ['dano causado ao autor', 'dano causado ao autor', 'dano causado à autora']
+  ['indenizar o Autor', 'indenizar o Autor', 'indenizar a Autora'], ['dano causado ao autor', 'dano causado ao autor', 'dano causado à autora'],
+  ['expôs o Requerente', 'expôs o Requerente', 'expôs a Requerente'], ['dano moral do Requerente', 'dano moral do Requerente', 'dano moral da Requerente']
 ];
 /* homem ou mulher pelo nome do cliente: pergunta à IA; sem IA, usa a terminação do primeiro nome */
 function sexoDoNome(nome){
@@ -370,7 +371,7 @@ function peticaoInicial(p){
   // o Word preenchido vira um Google Docs provisório só para sair o PDF; depois vai para a lixeira
   var bound = 'xxpeticaoxx', docx = Utilities.zip(partes, base + '.docx').getBytes();
   var corpo = Utilities.newBlob('--' + bound + '\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n' +
-    JSON.stringify({ name: base + ' (provisório)', mimeType: MimeType.GOOGLE_DOCS, parents: [pasta.getId()] }) +
+    JSON.stringify({ name: base, mimeType: MimeType.GOOGLE_DOCS, parents: [pasta.getId()] }) +
     '\r\n--' + bound + '\r\nContent-Type: ' + DOCX + '\r\n\r\n').getBytes().concat(docx, Utilities.newBlob('\r\n--' + bound + '--').getBytes());
   var up = UrlFetchApp.fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true', {
     method: 'post', contentType: 'multipart/related; boundary=' + bound, payload: corpo, muteHttpExceptions: true,
