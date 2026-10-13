@@ -2181,6 +2181,11 @@ section.vw-dash{gap:10px!important}
     } catch(err){ toast('Não foi possível olhar a pasta: ' + (err.message || err)); }
     finally { b.disabled = false; b.textContent = rot; }
   });
+  // o botão "Gerar petição inicial" só fica ativo com todos estes dados preenchidos
+  function faltaPeticao(r){
+    return [['nome', 'nome'], ['rg', 'RG'], ['cpf', 'CPF'], ['endereco', 'endereço'], ['uc', 'unidade consumidora'], ['periodo', 'período da ação']]
+      .filter(function(c){ return !String(r[c[0]] || '').trim(); }).map(function(c){ return c[1]; });
+  }
   // "Gerar petição inicial": o script preenche o modelo do Drive (MODELOS) e salva o PDF na pasta do cliente
   document.addEventListener('click', async function(e){
     var b = e.target.closest('[data-act="peticao"]'); if (!b) return;
@@ -2189,8 +2194,8 @@ section.vw-dash{gap:10px!important}
     var nomeProprio = String(r.nome || '').trim().toLowerCase().split(/\s+/).map(function(p, i){
       return i > 0 && /^(da|de|do|das|dos|e)$/.test(p) ? p : p.replace(/(^|[-'])(\S)/g, function(m, a, c){ return a + c.toUpperCase(); });
     }).join(' ');
-    var dados = { nome: nomeProprio, rg: (r.rg || r.cpf || '').trim(), cpf: (r.cpf || '').trim(), endereco: (r.endereco || '').trim(), uc: (r.uc || '').trim(), periodo: (r.periodo || '').trim() };
-    var falta = [['nome', 'nome'], ['cpf', 'CPF'], ['endereco', 'endereço'], ['uc', 'unidade consumidora'], ['periodo', 'período da ação']].filter(function(c){ return !dados[c[0]]; }).map(function(c){ return c[1]; });
+    var dados = { nome: nomeProprio, rg: (r.rg || '').trim(), cpf: (r.cpf || '').trim(), endereco: (r.endereco || '').trim(), uc: (r.uc || '').trim(), periodo: (r.periodo || '').trim() };
+    var falta = faltaPeticao(r);
     if (falta.length){ toast('Para gerar a petição, preencha no cadastro: ' + falta.join(', ') + '.'); return; }
     var rot = b.textContent; b.disabled = true; b.textContent = 'Gerando petição…';
     try {
@@ -2199,7 +2204,7 @@ section.vw-dash{gap:10px!important}
       var d = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ acao: 'peticao', jwt: jwt, pastaId: r.pastaId, dados: dados }) }).then(function(x){ return x.json(); });
       if (!d || !d.ok) throw new Error(d && d.erro || 'falhou');
       await patchRow(r.id, { peticaoUrl: d.url, peticaoEm: new Date().toISOString(), atualizadoEm: new Date().toISOString() });
-      toast('Petição inicial salva na pasta de ' + r.nome + '.');
+      toast('Petição inicial salva na pasta de ' + r.nome + (d.sexo ? ' (texto no ' + (d.sexo === 'F' ? 'feminino' : 'masculino') + ')' : '') + '.');
     } catch(err){ toast('Não foi possível gerar a petição: ' + (err.message || err)); }
     finally { b.disabled = false; b.textContent = rot; }
   });
@@ -2303,7 +2308,8 @@ section.vw-dash{gap:10px!important}
       '<div class="ficha-acoes"><button type="button" class="btn" data-act="edit" data-id="' + esc(r.id) + '"><svg class="i"><use href="#i-pencil"/></svg>Editar cadastro</button>' +
       (r.pastaUrl ? '<a class="btn" href="' + esc(r.pastaUrl) + '" target="_blank" rel="noopener"><svg class="i"><use href="#i-folder"/></svg>Pasta no Drive</a>' : '') +
       (compacto && r.pastaId ? '<button type="button" class="btn primary" data-act="docs-ia" data-id="' + esc(r.id) + '" title="A IA olha a pasta e diz quais documentos estão lá (não preenche nada)">Conferir documentos</button>' +
-        '<button type="button" class="btn" data-act="peticao" data-id="' + esc(r.id) + '" title="Preenche o modelo com nome, RG, CPF, endereço, UC e período e salva na pasta do cliente">Gerar petição inicial</button>' +
+        (function(){ var fp = faltaPeticao(r);
+          return '<button type="button" class="btn" data-act="peticao" data-id="' + esc(r.id) + '"' + (fp.length ? ' disabled title="Para gerar, preencha no cadastro: ' + esc(fp.join(', ')) + '"' : ' title="Preenche o modelo com os dados do cliente e salva o PDF na pasta dele"') + '>Gerar petição inicial</button>'; })() +
         (r.peticaoUrl ? '<a class="btn" href="' + esc(r.peticaoUrl) + '" target="_blank" rel="noopener">Abrir petição</a>' : '') : '') + '</div></div>';
   }
   function avisoCell(r){
@@ -4062,8 +4068,7 @@ section.vw-dash{gap:10px!important}
     $('f-meio').value = r && r.meioAviso ? r.meioAviso : '';
     $('f-proc').value = r ? r.processo || '' : '';
     $('f-uc').value = r ? r.uc || '' : '';
-    $('f-periodo').value = r ? r.periodo || '' : '';
-    $('f-tese').value = r ? r.tese || '' : '';
+    $('f-periodo').value = r ? r.periodo || '' : '';    $('f-tese').value = r ? r.tese || '' : '';
     $('f-protocolo').value = r ? r.protocolo || '' : ''; // protocolo só quando o processo for protocolado no PROJUDI
     $('f-dtcad').value = r ? (r.dataCadastro || String(r.criadoEm || '').slice(0, 10)) : iso(new Date()); // cadastro inicial: hoje
     $('f-contatado').value = r && r.contatadoRetorno ? 'sim' : '';

@@ -320,6 +320,32 @@ function modeloPeticao(){
   // modelo convertido em Google Docs: baixa como Word
   return UrlFetchApp.fetch('https://docs.google.com/document/d/' + melhor.getId() + '/export?format=docx', { headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() } }).getBlob();
 }
+/* trechos do modelo que mudam conforme o cliente: [como está no modelo, homem, mulher]
+   (citações de lei e de jurisprudência ficam como estão) */
+var GENERO_PETICAO = [
+  ['brasileiro(a)', 'brasileiro', 'brasileira'], ['portador(a)', 'portador', 'portadora'], ['domiciliada', 'domiciliado', 'domiciliada'],
+  ['usuária dos serviços', 'usuário dos serviços', 'usuária dos serviços'], ['privada da Autora', 'privada do Autor', 'privada da Autora'],
+  ['sujeitou a consumidora', 'sujeitou o consumidor', 'sujeitou a consumidora'], ['sofridos pela Autora', 'sofridos pelo Autor', 'sofridos pela Autora'],
+  ['sossego da consumidora', 'sossego do consumidor', 'sossego da consumidora'],
+  ['danos morais ao autor, uma vez que este', 'danos morais ao autor, uma vez que este', 'danos morais à autora, uma vez que esta'],
+  ['ficou impossibilitado', 'ficou impossibilitado', 'ficou impossibilitada'], ['expor o requerente', 'expor o requerente', 'expor a requerente'],
+  ['indenizar o Autor', 'indenizar o Autor', 'indenizar a Autora'], ['dano causado ao autor', 'dano causado ao autor', 'dano causado à autora']
+];
+/* homem ou mulher pelo nome do cliente: pergunta à IA; sem IA, usa a terminação do primeiro nome */
+function sexoDoNome(nome){
+  var primeiro = String(nome || '').trim().split(/\s+/)[0] || '';
+  try {
+    var chave = chaveClaude();
+    if (chave){
+      var txt = perguntarIA(chave, [{ type: 'text', text: 'Nome completo de uma pessoa brasileira: "' + String(nome).slice(0, 120) + '". É nome de homem ou de mulher? Responda só com um JSON: {"sexo":"M"} ou {"sexo":"F"}.' }], 20);
+      var m = txt.match(/"sexo"\s*:\s*"([MF])"/); if (m) return m[1];
+    }
+  } catch (x){}
+  var n = primeiro.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  if (/^(raquel|isabel|beatriz|ester|rute|ruth|lurdes|lourdes|miriam|carmem|carmen|ingrid|nazare|socorro|darci|iraci|luz|ines|liz)$/.test(n)) return 'F';
+  if (/^(luca|joshua|jonatha|valderrama|garcia|nikita)$/.test(n)) return 'M';
+  return /(a|ene|ane|ine|ete|ice|ilde|iz|ely|eli|ly)$/.test(n) ? 'F' : 'M';
+}
 function peticaoInicial(p){
   equipeLogada(p.jwt);
   var pasta; try { pasta = DriveApp.getFolderById(String(p.pastaId || '')); } catch (x){ throw new Error('Pasta do cliente não encontrada no Drive.'); }
@@ -327,6 +353,7 @@ function peticaoInicial(p){
   var trocas = { 'Nome': d.nome, 'RG': d.rg, 'CPF': d.cpf, 'Endereço': d.endereco, 'Unidade Consumidora': d.uc, 'Período': d.periodo };
   var vazios = Object.keys(trocas).filter(function(k){ return !String(trocas[k] || '').trim(); });
   if (vazios.length) throw new Error('Preencha no cadastro: ' + vazios.join(', ') + '.');
+  var fem = sexoDoNome(d.nome) === 'F';
   var partes = Utilities.unzip(modeloPeticao().setContentType('application/zip')), achou = 0;   // unzip só aceita application/zip
   partes = partes.map(function(b){
     if (!/^word\/(document|header\d*|footer\d*)\.xml$/.test(b.getName())) return b;
@@ -335,6 +362,7 @@ function peticaoInicial(p){
       var marca = '&lt;&lt;' + k + '&gt;&gt;';
       if (s.indexOf(marca) >= 0){ achou++; s = s.split(marca).join(xml(trocas[k])); }
     });
+    GENERO_PETICAO.forEach(function(g){ s = s.split(g[0]).join(fem ? g[2] : g[1]); });
     return s === s0 ? b : Utilities.newBlob(s, 'application/xml', b.getName());
   });
   if (!achou) throw new Error('O modelo da pasta MODELOS não tem as marcações <<Nome>>, <<CPF>>…');
@@ -356,7 +384,7 @@ function peticaoInicial(p){
     var velhas = pasta.getFilesByName(nome); while (velhas.hasNext()) velhas.next().setTrashed(true);
     var arq = pasta.createFile(pdf);
   } finally { prov.setTrashed(true); }
-  return { ok: true, id: arq.getId(), url: arq.getUrl(), nome: nome };
+  return { ok: true, id: arq.getId(), url: arq.getUrl(), nome: nome, sexo: fem ? 'F' : 'M' };
 }
 function equipeLogada(jwt){
   var r = UrlFetchApp.fetch(SUPABASE_URL + '/rest/v1/rpc/minha_funcao', {
