@@ -1379,6 +1379,20 @@ section.vw-dash{gap:10px!important}
 /* ícones de copiar e pasta logo depois do nome */
 #app #cad-list .c-name{grid-template-columns:34px minmax(0,max-content) 22px 22px minmax(0,1fr)!important}
 #app #cad-list .c-name .addr{grid-column:2 / -1!important}
+/* planilha: cliente | celular | prospectador | período | documentos | petição | protocolo */
+#app #cad-list .row{grid-template-columns:minmax(230px,2.2fr) 128px minmax(110px,1fr) minmax(220px,1.8fr) 96px minmax(120px,1fr) 130px 30px!important;gap:12px!important}
+.prot-btn{color:var(--ink-2)}
+.prot-btn:hover{color:var(--ink);border-color:var(--ink-3)}
+.prot-card{border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--ink);padding:22px 22px 18px;width:min(440px,92vw);box-shadow:0 20px 50px rgba(0,0,0,.35)}
+.prot-card::backdrop{background:rgba(0,0,0,.45)}
+.prot-card h3{margin:0 0 4px;font-size:18px}
+.prot-card .prot-nome{margin:0 0 16px;color:var(--ink-3);font-size:13px}
+.prot-card label{display:flex;flex-direction:column;gap:6px;font-size:12.5px;font-weight:600;color:var(--ink-2)}
+.prot-card input{height:42px;border:1px solid var(--line-2);border-radius:9px;background:var(--bg);color:var(--ink);padding:0 12px;font:inherit;font-size:16px;letter-spacing:.02em}
+.prot-card input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft)}
+.prot-card .prot-data{margin:12px 0 0;font-size:12.5px;color:var(--ink-3)}
+.prot-card .prot-erro{margin:10px 0 0;font-size:12.5px;color:var(--red)}
+.prot-card .prot-acoes{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -3037,6 +3051,51 @@ section.vw-dash{gap:10px!important}
   function iniciais(n){ var p = String(n || '').trim().split(/\s+/).filter(function(x){ return !/^(da|de|do|das|dos|e)$/i.test(x); }); return ((p[0] || '')[0] || '') + ((p.length > 1 ? p[p.length - 1] : '')[0] || ''); }
   // "Marivalda Barco Rodrigues" -> "Marivalda Rodrigues"
   function primeiroUltimo(n){ var p = String(n || '').trim().split(/\s+/).filter(Boolean); return p.length > 1 ? p[0] + ' ' + p[p.length - 1] : p.join(''); }
+  /* "Protocolado": card para digitar o número do processo; grava o número e a data de hoje e o cliente vai para o Controle */
+  // número no padrão do CNJ: 0000000-00.0000.8.04.2000
+  function mascaraProc(v){
+    var d = String(v || '').replace(/\D/g, '').slice(0, 20), cortes = [7, 9, 13, 14, 16], sep = ['-', '.', '.', '.', '.'], s = '';
+    for (var i = 0; i < d.length; i++){ var k = cortes.indexOf(i); if (k >= 0) s += sep[k]; s += d[i]; }
+    return s;
+  }
+  function abrirProtocolo(r){
+    var dl = $('dlg-prot');
+    if (!dl){
+      dl = document.createElement('dialog'); dl.id = 'dlg-prot'; dl.className = 'prot-card';
+      dl.innerHTML = '<form method="dialog"><h3>Protocolado</h3><p class="prot-nome"></p>' +
+        '<label>Número do processo<input id="prot-num" class="tnum" inputmode="numeric" autocomplete="off" placeholder="0000000-00.0000.8.04.2000"></label>' +
+        '<p class="prot-data"></p><p class="prot-erro" hidden></p>' +
+        '<div class="prot-acoes"><button type="button" class="tb-btn" value="cancelar" id="prot-cancelar">Cancelar</button><button type="button" class="btn primary" id="prot-salvar">Salvar e enviar para o Controle</button></div></form>';
+      document.body.appendChild(dl);
+      $('prot-num').addEventListener('input', function(){ this.value = mascaraProc(this.value); $('dlg-prot').querySelector('.prot-erro').hidden = true; });
+      $('prot-cancelar').addEventListener('click', function(){ dl.close(); });
+      $('prot-num').addEventListener('keydown', function(e){ if (e.key === 'Enter'){ e.preventDefault(); $('prot-salvar').click(); } });
+      $('prot-salvar').addEventListener('click', async function(){
+        var rr = state.rows.filter(function(x){ return x.id === dl.dataset.id; })[0]; if (!rr) return dl.close();
+        var num = $('prot-num').value.trim(), erro = dl.querySelector('.prot-erro');
+        if (num.replace(/\D/g, '').length !== 20){ erro.textContent = 'O número do processo tem 20 dígitos (ex.: 0003123-27.2026.8.04.2000).'; erro.hidden = false; $('prot-num').focus(); return; }
+        var outro = state.rows.filter(function(x){ return x.id !== rr.id && String(x.processo || '').replace(/\D/g, '') === num.replace(/\D/g, ''); })[0];
+        if (outro){ erro.textContent = 'Esse número já está no cadastro de ' + outro.nome + '.'; erro.hidden = false; return; }
+        this.disabled = true;
+        try {
+          await patchRow(rr.id, { processo: num, protocolo: iso(new Date()), atualizadoEm: new Date().toISOString() });
+          dl.close();
+          toast(rr.nome + ': protocolado em ' + fmtDate(iso(new Date())) + ' (processo ' + num + '). Foi para o Controle.');
+        } catch(err){ erro.textContent = errMsg(err); erro.hidden = false; }
+        finally { this.disabled = false; }
+      });
+    }
+    dl.dataset.id = r.id;
+    dl.querySelector('.prot-nome').textContent = r.nome + (r.cpf ? ' · CPF ' + r.cpf : '');
+    dl.querySelector('.prot-data').textContent = 'Data do protocolo: hoje, ' + fmtDate(iso(new Date())) + ' (registrada sozinha).';
+    dl.querySelector('.prot-erro').hidden = true;
+    $('prot-num').value = mascaraProc(r.processo || '');
+    dl.showModal(); setTimeout(function(){ $('prot-num').focus(); }, 30);
+  }
+  document.addEventListener('click', function(e){
+    var b = e.target.closest('[data-protocolar]'); if (!b) return;
+    var r = state.rows.filter(function(x){ return x.id === b.dataset.protocolar; })[0]; if (r) abrirProtocolo(r);
+  });
   function celCad(r, campo, rot){
     var v = String(r[campo] || '');
     return '<div><span class="lbl">' + rot + '</span><input class="cel-in' + (v.trim() ? '' : ' vazio') + ((campo === 'endereco' && endForaAlvaraes(r)) || (campo === 'uc' && v.trim() && !ucValida(v)) ? ' fora' : '') + '" data-cad-campo="' + campo + '" data-id="' + esc(r.id) + '" value="' + esc(v) + '" placeholder="' + (campo === 'periodo' ? 'ex.: JANEIRO DE 2026 ATÉ A PRESENTE DATA' : rot) + '" title="' + esc(v || rot) + '"' + (campo === 'periodo' ? ' list="dl-periodos"' : '') + (campo === 'uc' ? ' inputmode="numeric"' : '') + '></div>';
@@ -3111,7 +3170,7 @@ section.vw-dash{gap:10px!important}
     } else
     if (semLeitura.length) $('cad-ia').innerHTML = '<b>A IA não conseguiu ler o talão de ' + semLeitura.length + (semLeitura.length === 1 ? ' cliente' : ' clientes') + '.</b> <span>Preencha à mão o endereço ou a UC (lápis): ' + esc(semLeitura.slice(0, 4).map(function(r){ return r.nome + ' (' + iaNaoLeu(r).join(' e ') + ')'; }).join(' · ')) + (semLeitura.length > 4 ? ' …' : '') + '</span>' +
       '<button type="button" class="btn" data-cad-ia="1">' + (cadSit === 'ia' ? 'Ver todos' : 'Ver só esses') + '</button>';
-    var html = '<div class="row head"><div>Cliente</div><div>Celular</div><div>Prospectador</div><div>Período da ação</div><div>Documentos</div><div>Petição</div><div></div></div>';
+    var html = '<div class="row head"><div>Cliente</div><div>Celular</div><div>Prospectador</div><div>Período da ação</div><div>Documentos</div><div>Petição</div><div>Protocolo</div><div></div></div>';
     if (!lista.length) html += '<div class="empty">' + (todos.length ? 'Nenhum cliente neste filtro.' : 'Nenhum cliente em cadastro. Os cadastros chegam pelo aplicativo dos prospectadores.') + '</div>';
     // a lista vem em blocos, na ordem do trabalho: quem já pode protocolar, quem precisa conferir, e o que ainda falta
     var BLOCOS = [['pronto', 'Prontos para protocolar', 'pode protocolar', '--green'], ['conferir', 'Conferir dados', 'cadastrados pelo celular: confira com os documentos', '--amber'],
@@ -3132,6 +3191,7 @@ section.vw-dash{gap:10px!important}
         celCad(r, 'periodo', 'Período da ação') +   // endereço e UC: a IA preenche pelo talão; correção pelo lápis
         '<div><span class="lbl">Documentos</span>' + docCurto(r) + '</div>' +
         '<div><span class="lbl">Petição</span>' + petCell(r) + '</div>' +
+        '<div><span class="lbl">Protocolo</span><button type="button" class="tb-btn pet-btn prot-btn" data-protocolar="' + esc(r.id) + '" title="Já protocolou no PROJUDI? Registre o número do processo"><svg class="i"><use href="#i-check"/></svg>Protocolado</button></div>' +
         '<div class="c-act"><button type="button" class="ico-btn" data-act="edit" data-id="' + esc(r.id) + '" title="Editar cadastro" aria-label="Editar ' + esc(r.nome) + '"><svg class="i"><use href="#i-pencil"/></svg></button></div>' +
       '</div>' + (cadAberto[r.id] ? fichaCliente(r, true) : '');
     }
