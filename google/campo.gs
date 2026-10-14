@@ -17,6 +17,7 @@
 var SUPABASE_URL = 'https://etmknidodbmtpvbzgvhp.supabase.co';
 var SUPABASE_KEY = 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r'; // chave pública do site
 var PASTA_CLIENTES = '1IqUpcNe7FCEdmVnfsLj0KP9k7K3Ck2dG'; // AMBAR ENERGIA › CLIENTES
+var PASTA_FOTO = 'FOTO DO CLIENTE';   // subpasta da foto dentro da pasta de cada cliente
 var PENDENTES = 'PENDENTES DE PROTOCOLO', PROTOCOLADOS = 'PROTOCOLADOS', ARQUIVADOS = 'ARQUIVADOS';
 var MODELO = 'claude-sonnet-5-5';
 var MODELO_GPT = 'gpt-4o';   // ChatGPT: lê fotos e PDFs
@@ -58,6 +59,7 @@ function doPost(e){
     if (p.acao === 'lerPasta') return saida(lerPastaDoCadastro(p));
     if (p.acao === 'conferirDocs') return saida(conferirDocsDaPasta(p));
     if (p.acao === 'peticao') return saida(peticaoInicial(p));
+    if (p.acao === 'organizarFotos') return saida(organizarFotos(p));
     var quem = validar(p.token);
     if (!/^[A-Za-z0-9_-]{8,64}$/.test(p.envio || '')) throw new Error('Envio inválido.');
     if (p.acao === 'arquivo') return saida(arquivo(p, quem));
@@ -120,7 +122,8 @@ function pastaDoCliente(p){
 function arquivo(p, quem){
   var pasta = p.completar ? pastaDoCliente(p) : pastaDoEnvio(p.envio, quem, nomeDigitado(p));
   var nome = String(p.nome || 'arquivo').replace(/[\\/:*?"<>|]/g, '').slice(0, 120);
-  var sub = /\.pdf$/i.test(nome) || /^FOTO DO CLIENTE/i.test(nome) ? pasta : subpasta(pasta, 'Imagens escaneadas');
+  // foto do cliente fica na subpasta FOTO DO CLIENTE; PDFs na pasta do cliente; outras imagens em Imagens escaneadas
+  var sub = /^FOTO DO CLIENTE/i.test(nome) ? subpasta(pasta, PASTA_FOTO) : /\.pdf$/i.test(nome) ? pasta : subpasta(pasta, 'Imagens escaneadas');
   var ja = sub.getFilesByName(nome);
   if (!ja.hasNext()) sub.createFile(Utilities.newBlob(Utilities.base64Decode(p.b64), p.mime || 'application/octet-stream', nome));
   return { ok: true };
@@ -487,7 +490,7 @@ function enderecoDoTalao(chave, soArquivos){
   // ação de queda de energia: o endereço tem que ser de Alvarães (CEP 69475-000); outro município não é preenchido
   var deAlvaraes = /alvaraes/.test(semAcento(linhas.slice(1).join(' '))) || /69\.?475-?\d{3}/.test(linhas.slice(1).join(' '));
   if (!deAlvaraes) return { endereco: '', uc: uc, fora: linhas.slice(1).join(' / ') };
-  var end = (confere ? bonito : montado).replace(/\balvar[aã]?es\b(\s*\/\s*AM)?/ig, 'Alvarães/AM');
+  var end = (confere ? bonito : montado).replace(/(^|[^a-zà-ú])[aáÁA]lvar[aã]?es\b(\s*[\/-]\s*AM)?/ig, '$1Alvarães/AM').replace(/(Alvarães\/AM,\s*)+Alvarães\/AM/g, 'Alvarães/AM');
   if (!/Alvarães/.test(end)) end = end.replace(/,?\s*CEP\s/i, ', Alvarães/AM, CEP ');
   if (!/Alvarães/.test(end)) end += ', Alvarães/AM';
   return { endereco: end, uc: uc };
@@ -650,7 +653,8 @@ function organizarPasta_(pasta){
   acha(/^00 - Documentos completos/i).forEach(function(a){ a.setTrashed(true); });
   var foto = acha(/^(Foto do cliente|FOTO DO CLIENTE)/i, /image/)[0];
   if (foto){
-    if (foto.getName() !== 'FOTO DO CLIENTE.jpg'){ foto.setName('FOTO DO CLIENTE.jpg'); try { foto.moveTo(pasta); } catch (x){} feito.push('foto'); }
+    if (foto.getName() !== 'FOTO DO CLIENTE.jpg'){ foto.setName('FOTO DO CLIENTE.jpg'); feito.push('foto'); }
+    try { foto.moveTo(subpasta(pasta, PASTA_FOTO)); } catch (x){}
     var seg = PropertiesService.getScriptProperties().getProperty('SEGREDO_SISTEMA'), mini = null;
     try { mini = foto.getThumbnail(); } catch (x){}
     if (seg && mini){ rpc('campo_foto_pasta', { p_segredo: seg, p_pasta: pasta.getId(), p_foto: 'data:image/png;base64,' + Utilities.base64Encode(mini.getBytes()) }); feito.push('foto no sistema'); }
@@ -673,4 +677,26 @@ function organizarExistentes(){
   });
   console.log(log.length ? log.join('\n') : 'nada para organizar');
   return log;
+}
+
+/* move a foto do cliente (imagem com nome FOTO DO CLIENTE) para a subpasta FOTO DO CLIENTE, em todas as pastas de clientes.
+ * Roda em partes (o Google limita o tempo): devolve quantas pastas faltam; chamar de novo até faltar 0. */
+function organizarFotos(p){
+  equipeLogada(p.jwt);
+  var props = PropertiesService.getScriptProperties(), inicio = Date.now(), raiz = DriveApp.getFolderById(PASTA_CLIENTES);
+  var feitas = JSON.parse(props.getProperty('fotos_feitas') || '{}'), movidas = 0, vistas = 0, falta = 0;
+  [PENDENTES, PROTOCOLADOS, ARQUIVADOS].forEach(function(n){
+    var it = subpasta(raiz, n).getFolders();
+    while (it.hasNext()){
+      var f = it.next(), id = f.getId();
+      if (feitas[id]) continue;
+      if (Date.now() - inicio > 270000){ falta++; continue; }
+      var arqs = f.getFiles(), fotos = [];
+      while (arqs.hasNext()){ var a = arqs.next(); if (/^(FOTO DO CLIENTE|Foto do cliente)/i.test(a.getName()) && /image/.test(a.getMimeType())) fotos.push(a); }
+      if (fotos.length){ var sub = subpasta(f, PASTA_FOTO); fotos.forEach(function(a){ a.moveTo(sub); movidas++; }); }
+      feitas[id] = 1; vistas++;
+    }
+  });
+  props.setProperty('fotos_feitas', JSON.stringify(feitas));
+  return { ok: true, pastas: vistas, fotos: movidas, falta: falta };
 }
