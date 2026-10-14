@@ -3191,7 +3191,8 @@ section.vw-dash{gap:10px!important}
         celCad(r, 'periodo', 'Período da ação') +   // endereço e UC: a IA preenche pelo talão; correção pelo lápis
         '<div><span class="lbl">Documentos</span>' + docCurto(r) + '</div>' +
         '<div><span class="lbl">Petição</span>' + petCell(r) + '</div>' +
-        '<div><span class="lbl">Protocolo</span><button type="button" class="tb-btn pet-btn prot-btn" data-protocolar="' + esc(r.id) + '" title="Já protocolou no PROJUDI? Registre o número do processo"><svg class="i"><use href="#i-check"/></svg>Protocolado</button></div>' +
+        // botão Protocolado só para quem está pronto para protocolar
+        '<div><span class="lbl">Protocolo</span>' + (situacaoCad(r)[0] === 'pronto' ? '<button type="button" class="tb-btn pet-btn prot-btn" data-protocolar="' + esc(r.id) + '" title="Já protocolou no PROJUDI? Registre o número do processo"><svg class="i"><use href="#i-check"/></svg>Protocolado</button>' : '<span class="pet-st" title="Aparece quando o cliente estiver pronto para protocolar">—</span>') + '</div>' +
         '<div class="c-act"><button type="button" class="ico-btn" data-act="edit" data-id="' + esc(r.id) + '" title="Editar cadastro" aria-label="Editar ' + esc(r.nome) + '"><svg class="i"><use href="#i-pencil"/></svg></button></div>' +
       '</div>' + (cadAberto[r.id] ? fichaCliente(r, true) : '');
     }
