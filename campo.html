@@ -710,6 +710,8 @@ html,body{font-size:15px}
 .vista:not(.novo){padding-bottom:calc(140px + env(safe-area-inset-bottom))!important}
 /* topo nunca embaixo do relógio e da bateria (iPhone) */
 .topo{padding-top:max(10px, calc(6px + env(safe-area-inset-top)))!important}
+/* barra colorida embaixo dos cartões do painel: sem legenda, não dizia nada (retirada) */
+.funil{display:none!important}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><script>try{var t=localStorage.getItem("campo_tema");if(!t)t="dark";document.documentElement.setAttribute("data-tema",t);}catch(e){document.documentElement.setAttribute("data-tema","light");}</script>
 </head>
@@ -748,7 +750,7 @@ html,body{font-size:15px}
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 34;
+  var APP_VERSAO = 35;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
