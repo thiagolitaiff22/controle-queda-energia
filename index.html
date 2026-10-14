@@ -1423,6 +1423,8 @@ section.vw-dash{gap:10px!important}
 .na-quando.ok{color:var(--green)}.na-quando.warn{color:var(--amber)}.na-quando.muted{color:var(--ink-3);font-weight:500}
 .na-acoes{display:flex;justify-content:space-between;align-items:center;gap:8px;padding-top:8px;border-top:1px solid var(--line)}
 .na-mais{grid-column:1 / -1;justify-self:center}
+#app #cad-list .c-name .pasta-ico{grid-column:3!important;grid-row:1;display:inline-flex!important;align-items:center;justify-content:center;width:22px;height:22px;position:static!important;transform:none!important;opacity:1!important;color:var(--ink-3)}
+#app #cad-list .c-name .pasta-ico:hover{color:var(--ink)}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -3229,7 +3231,7 @@ section.vw-dash{gap:10px!important}
         '<div class="c-name"><div class="name">' + (/^data:image\/(jpeg|png);base64,/.test(r.fotoCliente || '') ? '<img class="av-foto" src="' + r.fotoCliente + '" alt="">' : '<span class="av-ini" aria-hidden="true">' + esc(iniciais(r.nome)) + '</span>') +
           // clicar no nome copia o nome; clicar no CPF copia o CPF (sem botõezinhos); a pasta fica na ficha (só aparece aqui quando falta ligar)
           '<button type="button" class="nome-abrir copiavel" data-copiar-nome="' + esc(r.nome) + '" title="Clique para copiar o nome">' + esc(r.nome) + '</button>' +
-          (r.pastaUrl ? '' : '<button type="button" class="pasta-falta" data-pasta-cad="' + esc(r.id) + '" title="Pasta não ligada ao cadastro: clique para procurar a pasta dela no Drive" aria-label="Ligar pasta de ' + esc(r.nome) + '"><svg class="i"><use href="#i-folder"/></svg>+</button>') + '</div><div class="addr">' + (r.cpf ? '<button type="button" class="copiavel cpf-txt" data-copiar-cpf="' + esc(r.cpf) + '" title="Clique para copiar o CPF">CPF ' + esc(r.cpf) + '</button>' : 'CPF não informado') + '</div></div>' +
+          (r.pastaUrl ? pastaIco(r) : '<button type="button" class="pasta-falta" data-pasta-cad="' + esc(r.id) + '" title="Pasta não ligada ao cadastro: clique para procurar a pasta dela no Drive" aria-label="Ligar pasta de ' + esc(r.nome) + '"><svg class="i"><use href="#i-folder"/></svg>+</button>') + '</div><div class="addr">' + (r.cpf ? '<button type="button" class="copiavel cpf-txt" data-copiar-cpf="' + esc(r.cpf) + '" title="Clique para copiar o CPF">CPF ' + esc(r.cpf) + '</button>' : 'CPF não informado') + '</div></div>' +
         '<div><span class="lbl">Celular</span>' + telCell(r, true) + '</div>' +
         celCad(r, 'periodo', 'Período da ação') +   // endereço e UC: a IA preenche pelo talão; correção pelo lápis
         '<div><span class="lbl">Documentos</span>' + docCurto(r) + '</div>' +
