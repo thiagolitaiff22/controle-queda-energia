@@ -2040,6 +2040,15 @@ body,button,input,select,textarea{font-family:var(--font)}
 #app #cad-list .cel-in.vazio{border-color:var(--amber);background:var(--amber-soft)}
 #app #cad-list .tel-edit,#app #cad-list .val{font-size:13px}
 #app #cad-list .pet-st{font-size:12.5px}
+/* ajuste das colunas da planilha (nome inteiro, celular numa linha, ícones junto do nome) */
+#app #cad-list .row{grid-template-columns:minmax(220px,2.3fr) 128px minmax(0,2fr) 118px minmax(0,1.5fr) 92px 92px 30px!important;gap:12px!important}
+#app #cad-list .c-name{grid-template-columns:34px minmax(0,1fr) 22px 22px!important;column-gap:6px!important;padding-right:0!important}
+#app #cad-list .c-name .av-foto,#app #cad-list .c-name .av-ini{margin-right:4px!important}
+#app #cad-list .c-name .nome-copia,#app #cad-list .c-name .pasta-ico,#app #cad-list .c-name .pasta-falta{position:static!important;transform:none!important;grid-row:1;width:22px;height:22px;display:inline-flex!important;align-items:center;justify-content:center}
+#app #cad-list .c-name .nome-copia{grid-column:3}
+#app #cad-list .c-name .pasta-ico,#app #cad-list .c-name .pasta-falta{grid-column:4}
+#app #cad-list .c-name .addr{grid-column:2 / span 3!important}
+#app #cad-list .tel-edit,#app #cad-list .tel-add{white-space:nowrap}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="vendor/supabase.min.js"></script>
