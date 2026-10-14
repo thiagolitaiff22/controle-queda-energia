@@ -1733,7 +1733,6 @@ section.vw-dash{gap:10px!important}
           <div class="search tb-busca"><svg class="i"><use href="#i-search"/></svg><input id="au-q" type="search" placeholder="Buscar cliente por nome ou CPF"></div>
           <span class="tb-fim" id="au-count"></span>
         </div>
-        <div class="card au-teses" id="au-teses"></div>
         <div class="card list" id="au-list"></div>
         <p class="foot-note">Uma audiência vem para cá quando todos os clientes dela têm resultado lançado em Contestações (nenhum "sem resultado"). Clique numa audiência para ver os clientes.</p>
       </section>
@@ -4242,18 +4241,6 @@ section.vw-dash{gap:10px!important}
       }).join('') + '</div>';
     });
     box.innerHTML = html;
-    // histórico das teses: em todas as audiências concluídas, quantos clientes por tese e como terminou
-    var T = {}, todos = [];
-    Object.keys(S).forEach(function(k){ todos = todos.concat(S[k]); });
-    todos.forEach(function(r){ var c = comboDe(r) || '__sem'; var t = T[c] = T[c] || { n: 0, procedente: 0, improcedente: 0, conclusos: 0, faltou: 0 }; t.n++; t[resAud(r)]++; });
-    var ordem = Object.keys(T).sort(function(a, b){ return (a === '__sem') - (b === '__sem') || T[b].n - T[a].n; });
-    $('au-teses').innerHTML = !todos.length ? '' : '<div class="au-t-head"><b>Histórico das teses</b><span class="small">Todas as audiências concluídas · ' + todos.length + ' clientes</span></div>' +
-      '<div class="au-t-row au-t-tit"><span>Tese da Âmbar</span><span>Clientes</span><span>Procedentes</span><span>Improcedentes</span><span>Conclusos</span><span>Faltaram</span><span>Procedência</span></div>' +
-      ordem.map(function(c){
-        var t = T[c], julg = t.procedente + t.improcedente, pct = julg ? Math.round(t.procedente / julg * 100) : null;
-        return '<div class="au-t-row"><span>' + (c === '__sem' ? '<span class="small">Sem tese registrada</span>' : nomeComboHtml(c)) + '</span><span class="tnum">' + t.n + '</span><span class="tnum au-ok">' + t.procedente + '</span><span class="tnum au-crit">' + t.improcedente + '</span><span class="tnum au-warn">' + t.conclusos + '</span><span class="tnum au-crit">' + t.faltou + '</span>' +
-          '<span class="au-pct">' + (pct == null ? '—' : '<span class="au-bar"><i style="width:' + pct + '%"></i></span><b class="tnum">' + pct + '%</b>') + '</span></div>';
-      }).join('');
   }
   function renderContest(){
     var chips = $('ct-chips'); if (!chips) return;
