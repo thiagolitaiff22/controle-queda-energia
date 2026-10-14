@@ -1358,6 +1358,8 @@ section.vw-dash{gap:10px!important}
 #app #cad-list .cel-in.fora{border-color:var(--red);background:var(--red-soft);color:var(--red)}
 #app #cad-list .av-ini{background:var(--soft);color:var(--ink-2)}
 #btn-novo{display:none!important}
+/* planilha enxuta: cliente | celular | período (obrigatório) | documentos | petição */
+#app #cad-list .row{grid-template-columns:minmax(260px,2.4fr) 140px minmax(260px,2fr) 110px minmax(150px,1.2fr) 30px!important;gap:14px!important}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -3029,7 +3031,7 @@ section.vw-dash{gap:10px!important}
     if (petGerando[r.id]) return '<span class="pet-st gerando">Gerando…</span>';
     if (!r.pastaId) return '<span class="pet-st" title="Ligue a pasta do Drive (ícone + ao lado do nome)">Sem pasta</span>';
     var falta = faltaPeticao(r);
-    if (falta.length) return '<span class="pet-st" title="Falta: ' + esc(falta.join(', ')) + '">Falta ' + esc(falta[0]) + (falta.length > 1 ? ' +' + (falta.length - 1) : '') + '</span>';
+    if (falta.length) return '<span class="pet-st' + (falta[0] === 'período da ação' ? ' aviso-t' : ' erro-t') + '" title="Falta: ' + esc(falta.join(', ')) + '">Falta ' + esc(falta[0]) + (falta.length > 1 ? ' +' + (falta.length - 1) : '') + '</span>';
     if (petFalhou[r.id] === chavePeticao(r)) return '<button type="button" class="pet-st erro" data-act="peticao" data-id="' + esc(r.id) + '" title="Não deu certo: clique para tentar de novo">Tentar de novo</button>';
     if (r.peticaoUrl && r.peticaoChave === chavePeticao(r)) return '<a class="pet-st ok" href="' + esc(r.peticaoUrl) + '" target="_blank" rel="noopener" title="Abrir a petição inicial (PDF)">Petição ✓</a>';
     return '<span class="pet-st gerando">Na fila…</span>';
@@ -3088,7 +3090,7 @@ section.vw-dash{gap:10px!important}
     } else
     if (semLeitura.length) $('cad-ia').innerHTML = '<b>A IA não conseguiu ler o talão de ' + semLeitura.length + (semLeitura.length === 1 ? ' cliente' : ' clientes') + '.</b> <span>Preencha à mão o endereço ou a UC (lápis): ' + esc(semLeitura.slice(0, 4).map(function(r){ return r.nome + ' (' + iaNaoLeu(r).join(' e ') + ')'; }).join(' · ')) + (semLeitura.length > 4 ? ' …' : '') + '</span>' +
       '<button type="button" class="btn" data-cad-ia="1">' + (cadSit === 'ia' ? 'Ver todos' : 'Ver só esses') + '</button>';
-    var html = '<div class="row head"><div>Cliente</div><div>Celular</div><div>Endereço</div><div>UC</div><div>Período</div><div>Documentos</div><div>Petição</div><div></div></div>';
+    var html = '<div class="row head"><div>Cliente</div><div>Celular</div><div>Período da ação</div><div>Documentos</div><div>Petição</div><div></div></div>';
     if (!lista.length) html += '<div class="empty">' + (todos.length ? 'Nenhum cliente neste filtro.' : 'Nenhum cliente em cadastro. Os cadastros chegam pelo aplicativo dos prospectadores.') + '</div>';
     // a lista vem em blocos, na ordem do trabalho: quem já pode protocolar, quem precisa conferir, e o que ainda falta
     var BLOCOS = [['pronto', 'Prontos para protocolar', 'pode protocolar', '--green'], ['conferir', 'Conferir dados', 'cadastrados pelo celular: confira com os documentos', '--amber'],
@@ -3105,7 +3107,7 @@ section.vw-dash{gap:10px!important}
           '<button type="button" class="nome-copia" data-copiar-nome="' + esc(r.nome) + '" title="Copiar o nome" aria-label="Copiar o nome de ' + esc(r.nome) + '"><svg class="i"><use href="#i-copy"/></svg></button>' +
           (r.pastaUrl ? pastaIco(r) : '<button type="button" class="pasta-falta" data-pasta-cad="' + esc(r.id) + '" title="Pasta não ligada ao cadastro: clique para procurar a pasta dela no Drive" aria-label="Ligar pasta de ' + esc(r.nome) + '"><svg class="i"><use href="#i-folder"/></svg>+</button>') + '</div><div class="addr">' + (r.cpf ? 'CPF ' + esc(r.cpf) : 'CPF não informado') + '</div></div>' +
         '<div><span class="lbl">Celular</span>' + telCell(r, true) + '</div>' +
-        celCad(r, 'endereco', 'Endereço (rua, nº, bairro)') + celCad(r, 'uc', 'UC') + celCad(r, 'periodo', 'Período da ação') +
+        celCad(r, 'periodo', 'Período da ação') +   // endereço e UC: a IA preenche pelo talão; correção pelo lápis
         '<div><span class="lbl">Documentos</span>' + docCurto(r) + '</div>' +
         '<div><span class="lbl">Petição</span>' + petCell(r) + '</div>' +
         '<div class="c-act"><button type="button" class="ico-btn" data-act="edit" data-id="' + esc(r.id) + '" title="Editar cadastro" aria-label="Editar ' + esc(r.nome) + '"><svg class="i"><use href="#i-pencil"/></svg></button></div>' +
