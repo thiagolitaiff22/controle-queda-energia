@@ -1399,6 +1399,13 @@ section.vw-dash{gap:10px!important}
 .cpf-copia.ok{color:var(--green)}
 /* planilha sem a coluna do prospectador: cliente | celular | período | documentos | petição | protocolo */
 #app #cad-list .row{grid-template-columns:minmax(260px,2.3fr) 130px minmax(260px,2fr) 100px minmax(130px,1fr) 136px 30px!important;gap:14px!important}
+/* nome e CPF copiáveis com um clique (sem ícones) */
+#app #cad-list .copiavel{border:0;background:none;padding:0;font:inherit;color:inherit;cursor:copy;text-align:left}
+#app #cad-list .copiavel:hover{text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px}
+#app #cad-list .copiavel.ok{color:var(--green)}
+#app #cad-list .cpf-txt{font-size:12px;color:var(--ink-3)}
+#app #cad-list .c-name{grid-template-columns:34px minmax(0,max-content) 22px minmax(0,1fr)!important}
+#app #cad-list .c-name .pasta-falta{grid-column:3!important}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -3195,9 +3202,10 @@ section.vw-dash{gap:10px!important}
     });
     function linhaCad(r){
       html += '<div class="row' + (cadAberto[r.id] ? ' aberto' : '') + '" data-linha="' + esc(r.id) + '">' +
-        '<div class="c-name"><div class="name">' + (/^data:image\/(jpeg|png);base64,/.test(r.fotoCliente || '') ? '<img class="av-foto" src="' + r.fotoCliente + '" alt="">' : '<span class="av-ini" aria-hidden="true">' + esc(iniciais(r.nome)) + '</span>') + '<button type="button" class="nome-abrir" data-act="abrir" data-id="' + esc(r.id) + '" title="' + esc(r.nome) + '">' + esc(r.nome) + '</button>' +
-          '<button type="button" class="nome-copia" data-copiar-nome="' + esc(r.nome) + '" title="Copiar o nome" aria-label="Copiar o nome de ' + esc(r.nome) + '"><svg class="i"><use href="#i-copy"/></svg></button>' +
-          (r.pastaUrl ? pastaIco(r) : '<button type="button" class="pasta-falta" data-pasta-cad="' + esc(r.id) + '" title="Pasta não ligada ao cadastro: clique para procurar a pasta dela no Drive" aria-label="Ligar pasta de ' + esc(r.nome) + '"><svg class="i"><use href="#i-folder"/></svg>+</button>') + '</div><div class="addr">' + (r.cpf ? 'CPF ' + esc(r.cpf) + '<button type="button" class="cpf-copia" data-copiar-cpf="' + esc(r.cpf) + '" title="Copiar o CPF" aria-label="Copiar o CPF de ' + esc(r.nome) + '"><svg class="i"><use href="#i-copy"/></svg></button>' : 'CPF não informado') + '</div></div>' +
+        '<div class="c-name"><div class="name">' + (/^data:image\/(jpeg|png);base64,/.test(r.fotoCliente || '') ? '<img class="av-foto" src="' + r.fotoCliente + '" alt="">' : '<span class="av-ini" aria-hidden="true">' + esc(iniciais(r.nome)) + '</span>') +
+          // clicar no nome copia o nome; clicar no CPF copia o CPF (sem botõezinhos); a pasta fica na ficha (só aparece aqui quando falta ligar)
+          '<button type="button" class="nome-abrir copiavel" data-copiar-nome="' + esc(r.nome) + '" title="Clique para copiar o nome">' + esc(r.nome) + '</button>' +
+          (r.pastaUrl ? '' : '<button type="button" class="pasta-falta" data-pasta-cad="' + esc(r.id) + '" title="Pasta não ligada ao cadastro: clique para procurar a pasta dela no Drive" aria-label="Ligar pasta de ' + esc(r.nome) + '"><svg class="i"><use href="#i-folder"/></svg>+</button>') + '</div><div class="addr">' + (r.cpf ? '<button type="button" class="copiavel cpf-txt" data-copiar-cpf="' + esc(r.cpf) + '" title="Clique para copiar o CPF">CPF ' + esc(r.cpf) + '</button>' : 'CPF não informado') + '</div></div>' +
         '<div><span class="lbl">Celular</span>' + telCell(r, true) + '</div>' +
         celCad(r, 'periodo', 'Período da ação') +   // endereço e UC: a IA preenche pelo talão; correção pelo lápis
         '<div><span class="lbl">Documentos</span>' + docCurto(r) + '</div>' +
