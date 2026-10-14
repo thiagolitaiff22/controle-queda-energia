@@ -1982,9 +1982,10 @@ td,.row{font-size:13px}
 /* cadastro só pelo aplicativo: sem botão Novo cliente no sistema */
 #btn-novo{display:none!important}
 /* logo pequena da RL no quadradinho azul (igual ao aplicativo) */
-.topnav .brand{display:flex;align-items:center;gap:10px}
-.topnav .brand .logo{width:40px!important;height:40px!important;flex:none;border-radius:12px!important;background:linear-gradient(140deg,#1d4fd7,#0f2f7a)!important;display:grid!important;place-items:center!important;box-shadow:0 4px 12px rgba(29,79,215,.25)!important;overflow:hidden}
-.topnav .brand .logo img{height:24px!important;width:auto!important;max-width:30px!important;filter:none!important}
+#app .topnav .brand{display:flex!important;align-items:center!important;gap:10px!important}
+#app .topnav .brand .logo{width:40px!important;height:40px!important;flex:none;border-radius:12px!important;background:linear-gradient(140deg,#1d4fd7,#0f2f7a)!important;display:grid!important;place-items:center!important;box-shadow:0 4px 12px rgba(29,79,215,.25)!important;overflow:hidden}
+#app .topnav .brand .logo img{height:24px!important;width:auto!important;max-width:30px!important;filter:none!important}
+#app.collapsed .topnav .brand .logo{width:36px!important;height:36px!important}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
