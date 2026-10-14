@@ -1425,6 +1425,14 @@ section.vw-dash{gap:10px!important}
 .na-mais{grid-column:1 / -1;justify-self:center}
 #app #cad-list .c-name .pasta-ico{grid-column:3!important;grid-row:1;display:inline-flex!important;align-items:center;justify-content:center;width:22px;height:22px;position:static!important;transform:none!important;opacity:1!important;color:var(--ink-3)}
 #app #cad-list .c-name .pasta-ico:hover{color:var(--ink)}
+/* Retorno em lista (sem cards) */
+#r-list{display:block!important;background:var(--panel)!important;border:1px solid var(--line)!important;padding:0!important}
+#r-list .ret-row{grid-template-columns:minmax(220px,2.2fr) minmax(150px,1.3fr) minmax(190px,1.5fr) minmax(150px,1.2fr) 150px 32px!important;gap:14px!important;align-items:center}
+#r-list .ret-row .addr{font-size:12px;color:var(--ink-3)}
+#r-list .ret-q{display:block;font-size:12px;font-weight:600;color:var(--blue)}
+#r-list .ret-q.ok{color:var(--green)}#r-list .ret-q.warn{color:var(--amber)}
+#r-list .ret-mais{display:flex;justify-content:center;padding:12px}
+@media (max-width:900px){ #r-list .ret-row{grid-template-columns:1fr!important} #r-list .row.head{display:none} }
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -2974,27 +2982,25 @@ section.vw-dash{gap:10px!important}
     }).sort(function(a, b){ return retornoEm(a).localeCompare(retornoEm(b)); });
     $('r-title').textContent = 'Clientes · ' + list.length + (f.mes ? (f.mes === 'passado' ? ' · liberados em meses anteriores' : ' · liberam em ' + mesLabel(f.mes, true)) : '');
     $('r-count').textContent = list.length + (list.length === 1 ? ' cliente' : ' clientes') + (f.mes ? (f.mes === 'passado' ? ' · liberados antes' : ' · ' + mesLabel(f.mes, true)) : '');
-    // um card por cliente: última audiência, protocolo e quando pode entrar com a nova ação
+    // lista: cliente | última audiência | protocolo | pode entrar com a nova ação | contatado
     var RES_N = { procedente: ['Procedente', 'ok'], faltou: ['Faltou', 'crit'], conclusos: ['Conclusos', 'warn'], improcedente: ['Improcedente', 'crit'] };
-    var html = '';
-    if (!list.length) html = '<div class="empty">' + (com.length ? 'Nenhum cliente neste filtro.' : 'Nenhum cliente passou pela audiência ainda.') + '</div>';
-    list.slice(0, state.r.lim || 60).forEach(function(r){
+    var html = '<div class="row head ret-row"><div>Cliente</div><div>Última audiência</div><div>Protocolo</div><div>Nova ação a partir de</div><div>Contato</div><div></div></div>';
+    if (!list.length) html += '<div class="empty">' + (com.length ? 'Nenhum cliente neste filtro.' : 'Nenhum cliente passou pela audiência ainda.') + '</div>';
+    list.slice(0, state.r.lim || 100).forEach(function(r){
       var ret = retornoEm(r), n = ret ? daysUntil(ret) : null, res = RES_N[resAud(r)];
-      var quando = !ret ? '<span class="na-quando muted">sem data de protocolo</span>' : r.contatadoRetorno ? '<span class="na-quando ok">Contatado</span>' :
-        n <= 0 ? '<span class="na-quando ok">Já pode entrar</span>' : '<span class="na-quando' + (n <= 30 ? ' warn' : '') + '">em ' + n + (n === 1 ? ' dia' : ' dias') + '</span>';
-      html += '<div class="na-card">' +
-        '<div class="na-top"><div class="na-nome"><b>' + esc(r.nome) + '</b><span>' + esc(r.cpf ? 'CPF ' + r.cpf : '') + '</span></div>' + (r.arquivado ? '<span class="pill ok">Pago</span>' : '') + '</div>' +
-        '<div class="na-bloco"><span class="na-rot">Última audiência</span><b>' + (r.audData ? fmtDate(r.audData) + (r.audHora ? ' · ' + esc(r.audHora) : '') : '—') + '</b>' +
-          '<span class="na-sub">' + (r.online ? 'online' : 'presencial') + (res ? ' · <span class="cad-sit ' + res[1] + '">' + res[0] + '</span>' : ' · sem resultado') + '</span></div>' +
-        '<div class="na-bloco"><span class="na-rot">Protocolo</span><b>' + (r.protocolo ? fmtDate(r.protocolo) : '—') + '</b><span class="na-sub tnum">' + esc(r.processo || '') + '</span></div>' +
-        '<div class="na-bloco na-dest"><span class="na-rot">Nova ação a partir de</span><b>' + (ret ? fmtDate(ret) : '—') + '</b>' + quando + '</div>' +
-        '<div class="na-acoes"><button type="button" class="toggle" data-act="contato" data-id="' + esc(r.id) + '" aria-pressed="' + (r.contatadoRetorno ? 'true' : 'false') + '"><span class="dot"></span>' + (r.contatadoRetorno ? 'Contatado' : 'Marcar contatado') + '</button>' +
-          '<button type="button" class="edit" data-act="edit" data-id="' + esc(r.id) + '">Editar</button></div>' +
+      var quando = !ret ? '' : r.contatadoRetorno ? '' : n <= 0 ? '<span class="ret-q ok">já pode entrar</span>' : '<span class="ret-q' + (n <= 30 ? ' warn' : '') + '">em ' + n + (n === 1 ? ' dia' : ' dias') + '</span>';
+      html += '<div class="row ret-row">' +
+        '<div class="c-name"><div class="name">' + esc(r.nome) + (r.arquivado ? ' <span class="pill ok">Pago</span>' : '') + '</div><div class="addr">' + esc(r.cpf ? 'CPF ' + r.cpf : '') + '</div></div>' +
+        '<div><span class="lbl">Última audiência</span><div class="val">' + (r.audData ? fmtDate(r.audData) + (r.audHora ? ' · ' + esc(r.audHora) : '') : '—') + '</div><div class="addr">' + (res ? '<span class="cad-sit ' + res[1] + '">' + res[0] + '</span>' : 'sem resultado') + '</div></div>' +
+        '<div><span class="lbl">Protocolo</span><div class="val">' + (r.protocolo ? fmtDate(r.protocolo) : '—') + '</div><div class="addr tnum">' + esc(r.processo || '') + '</div></div>' +
+        '<div><span class="lbl">Nova ação a partir de</span><div class="val" style="font-weight:600">' + (ret ? fmtDate(ret) : '—') + '</div>' + quando + '</div>' +
+        '<div><span class="lbl">Contato</span><button type="button" class="toggle" data-act="contato" data-id="' + esc(r.id) + '" aria-pressed="' + (r.contatadoRetorno ? 'true' : 'false') + '"><span class="dot"></span>' + (r.contatadoRetorno ? 'Contatado' : 'Marcar contatado') + '</button></div>' +
+        '<div class="c-act"><button type="button" class="ico-btn" data-act="edit" data-id="' + esc(r.id) + '" title="Editar cadastro" aria-label="Editar ' + esc(r.nome) + '"><svg class="i"><use href="#i-pencil"/></svg></button></div>' +
       '</div>';
     });
-    if (list.length > (state.r.lim || 60)) html += '<button type="button" class="tb-btn na-mais" id="na-mais">Mostrar mais (' + (list.length - (state.r.lim || 60)) + ')</button>';
+    if (list.length > (state.r.lim || 100)) html += '<div class="ret-mais"><button type="button" class="tb-btn" id="na-mais">Mostrar mais (' + (list.length - (state.r.lim || 100)) + ')</button></div>';
     $('r-list').innerHTML = html;
-    var mais = $('na-mais'); if (mais) mais.onclick = function(){ state.r.lim = (state.r.lim || 60) + 60; renderRet(); };
+    var mais = $('na-mais'); if (mais) mais.onclick = function(){ state.r.lim = (state.r.lim || 100) + 100; renderRet(); };
   }
 
   function pautaProsp(p, fut){
