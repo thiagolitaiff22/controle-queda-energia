@@ -2072,6 +2072,12 @@ body,button,input,select,textarea{font-family:var(--font)}
 #app #cad-list .row::before{left:14px!important}
 #app #cad-list .cad-grupo{padding-left:16px}
 #app #cad-list .cel-in.fora{border-color:var(--red);background:var(--red-soft);color:var(--red)}
+/* ---------- tons neutros: azul só nos botões, no item ativo e nos links ---------- */
+:root{--hover:#f4f4f5;--active:#ececef;--soft:#f6f6f7;--tile:#f4f4f5;--gsoft:#f4f4f5;--gline:#e4e4e7}
+:root[data-theme="dark"]{--bg:#0f1115;--panel:#16191f;--soft:#1c2027;--hover:#1c2027;--active:#232832;--line:#262b34;--line-2:#323844;--tile:#1c2027;--ink:#f4f5f7;--ink-2:#d1d5db;--ink-3:#9aa1ad;--gsoft:rgba(96,165,250,.10);--gline:#262b34}
+:root[data-theme="dark"] body,:root[data-theme="dark"] .main{background:#0f1115!important}
+:root[data-theme="dark"] .topnav{background:#13161b!important;border-color:#262b34!important}
+#app #cad-list .av-ini{background:var(--soft);color:var(--ink-2)}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="vendor/supabase.min.js"></script>
@@ -2992,10 +2998,22 @@ body,button,input,select,textarea{font-family:var(--font)}
   // o botão "Gerar petição inicial" só fica ativo com todos estes dados preenchidos
   // ação de queda de energia: endereço tem que ser de Alvarães (cidade ou CEP 69475)
   function endForaAlvaraes(r){ var e = String(r.endereco || '').trim(); return !!e && !/alvar[aã]es/i.test(e.normalize('NFC')) && !/69\.?475/.test(e); }
+  // UC: só números, com o traço antes dos 2 últimos (9 ou 10 números + 2): 607722002-38 · 1605765002-46
+  function normUC(v){
+    var s = String(v || '').replace(/\s+/g, '').trim(), m = s.match(/^(\d+)-+(\d+)$/);
+    if (m) return m[2].length === 2 ? m[1] + '-' + m[2] : s;   // só tira traço dobrado; dígito faltando fica para alguém conferir
+    return /^\d{11,12}$/.test(s) ? s.slice(0, -2) + '-' + s.slice(-2) : s;
+  }
+  function ucValida(v){ return /^\d{9,10}-\d{2}$/.test(String(v || '').trim()) && !/^123456789/.test(String(v || '')); }
+  // endereço: tira traço dobrado, espaços e vírgulas repetidas; cidade sempre "Alvarães/AM"
+  function normEnd(v){
+    return String(v || '').replace(/\s+/g, ' ').replace(/-{2,}/g, '-').replace(/\s*,\s*(,\s*)+/g, ', ').replace(/(^|[^a-zà-ú])[aá]lvar[aã]?es\b(\s*[\/-]\s*am\b)?/ig, '$1Alvarães/AM').replace(/(Alvarães\/AM,\s*)+Alvarães\/AM/g, 'Alvarães/AM').trim();
+  }
   function faltaPeticao(r){
     var f = [['nome', 'nome'], ['cpf', 'CPF'], ['endereco', 'endereço'], ['uc', 'unidade consumidora'], ['periodo', 'período da ação']]
       .filter(function(c){ return !String(r[c[0]] || '').trim(); }).map(function(c){ return c[1]; });
     if (endForaAlvaraes(r)) f.unshift('endereço de Alvarães');
+    if (String(r.uc || '').trim() && !ucValida(r.uc)) f.unshift('UC no formato 000000000-00');
     return f;
   }
   // relê só o talão (mesma leitura do automático) dos clientes com endereço fora de Alvarães
@@ -3069,6 +3087,9 @@ body,button,input,select,textarea{font-family:var(--font)}
     var r = state.rows.filter(function(x){ return x.id === el.dataset.id; })[0]; if (!r) return;
     var campo = el.dataset.cadCampo, v = el.value.replace(/\s+/g, ' ').trim();
     if (campo === 'periodo') v = v.toUpperCase();
+    if (campo === 'uc') v = normUC(v);
+    if (campo === 'endereco') v = normEnd(v);
+    el.value = v;
     if (v === String(r[campo] || '').trim()) return;
     var p = { atualizadoEm: new Date().toISOString() }; p[campo] = v;
     try { await patchRow(r.id, p); toast((campo === 'periodo' ? 'Período' : campo === 'uc' ? 'UC' : 'Endereço') + ' salvo: ' + r.nome); }
@@ -3716,7 +3737,7 @@ body,button,input,select,textarea{font-family:var(--font)}
   function iniciais(n){ var p = String(n || '').trim().split(/\s+/).filter(function(x){ return !/^(da|de|do|das|dos|e)$/i.test(x); }); return ((p[0] || '')[0] || '') + ((p.length > 1 ? p[p.length - 1] : '')[0] || ''); }
   function celCad(r, campo, rot){
     var v = String(r[campo] || '');
-    return '<div><span class="lbl">' + rot + '</span><input class="cel-in' + (v.trim() ? '' : ' vazio') + (campo === 'endereco' && endForaAlvaraes(r) ? ' fora' : '') + '" data-cad-campo="' + campo + '" data-id="' + esc(r.id) + '" value="' + esc(v) + '" placeholder="' + (campo === 'periodo' ? 'ex.: JANEIRO DE 2026 ATÉ A PRESENTE DATA' : rot) + '" title="' + esc(v || rot) + '"' + (campo === 'periodo' ? ' list="dl-periodos"' : '') + (campo === 'uc' ? ' inputmode="numeric"' : '') + '></div>';
+    return '<div><span class="lbl">' + rot + '</span><input class="cel-in' + (v.trim() ? '' : ' vazio') + ((campo === 'endereco' && endForaAlvaraes(r)) || (campo === 'uc' && v.trim() && !ucValida(v)) ? ' fora' : '') + '" data-cad-campo="' + campo + '" data-id="' + esc(r.id) + '" value="' + esc(v) + '" placeholder="' + (campo === 'periodo' ? 'ex.: JANEIRO DE 2026 ATÉ A PRESENTE DATA' : rot) + '" title="' + esc(v || rot) + '"' + (campo === 'periodo' ? ' list="dl-periodos"' : '') + (campo === 'uc' ? ' inputmode="numeric"' : '') + '></div>';
   }
   // documentos em uma palavra (cabe na planilha); o que falta aparece ao passar o mouse
   function docCurto(r){
@@ -3735,6 +3756,16 @@ body,button,input,select,textarea{font-family:var(--font)}
     return '<span class="pet-st gerando">Na fila…</span>';
   }
   var cadPendente = false;
+  var formatosCorrigidos = false;
+  function corrigirFormatos(){
+    if (formatosCorrigidos) return; formatosCorrigidos = true;
+    state.rows.filter(noCadastro).forEach(function(r){
+      var p = {}, uc = normUC(r.uc), en = normEnd(r.endereco);
+      if (r.uc && uc !== r.uc && ucValida(uc)) p.uc = uc;
+      if (r.endereco && en !== String(r.endereco)) p.endereco = en;
+      if (Object.keys(p).length){ p.atualizadoEm = new Date().toISOString(); patchRow(r.id, p).catch(function(){}); }
+    });
+  }
   function renderCad(){
     var ae = document.activeElement;
     if (ae && ae.classList && ae.classList.contains('cel-in') && $('cad-list') && $('cad-list').contains(ae)){ cadPendente = true; return; }
@@ -3805,6 +3836,7 @@ body,button,input,select,textarea{font-family:var(--font)}
     var pers = {}; state.rows.forEach(function(x){ var p = String(x.periodo || '').trim(); if (p) pers[p] = (pers[p] || 0) + 1; });
     var dl = $('dl-periodos'); if (!dl){ dl = document.createElement('datalist'); dl.id = 'dl-periodos'; document.body.appendChild(dl); }
     dl.innerHTML = Object.keys(pers).sort(function(a, b){ return pers[b] - pers[a]; }).map(function(p){ return '<option value="' + esc(p) + '">'; }).join('');
+    if (state.rows.length) corrigirFormatos();
     setTimeout(peticoesAutomaticas, 500);
   }
   // "Documentos pendentes": ao passar o mouse mostra quais faltam (balão por cima da página, não é cortado pela tabela)
