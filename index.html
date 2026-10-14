@@ -1443,6 +1443,19 @@ section.vw-dash{gap:10px!important}
 #au-list .au-cli{display:grid;grid-template-columns:minmax(0,1fr) 230px 120px;gap:12px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line);font-size:13px}
 #au-list .au-cli:last-child{border-bottom:0}
 @media (max-width:900px){ #au-list .au-row{grid-template-columns:1fr 1fr!important} #au-list .row.head{display:none} }
+/* aba Audiências: histórico das teses */
+.au-teses{padding:16px 18px}
+.au-teses:empty{display:none}
+.au-t-head{display:flex;align-items:baseline;gap:10px;margin-bottom:10px}
+.au-t-row{display:grid;grid-template-columns:minmax(0,2.4fr) repeat(5,minmax(70px,.7fr)) minmax(130px,1.1fr);gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:13px}
+.au-t-tit{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);border-top:0}
+.au-pct{display:flex;align-items:center;gap:8px}
+.au-bar{flex:1;height:6px;border-radius:4px;background:var(--line);overflow:hidden}
+.au-bar i{display:block;height:100%;background:var(--green)}
+.au-ok{color:var(--green);font-weight:600}.au-warn{color:var(--amber);font-weight:600}.au-crit{color:var(--red);font-weight:600}
+#au-list .au-cli{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) 210px 110px!important}
+#au-list .au-tese{font-size:12px}
+@media (max-width:900px){ .au-t-row{grid-template-columns:1fr 1fr} }
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -1720,6 +1733,7 @@ section.vw-dash{gap:10px!important}
           <div class="search tb-busca"><svg class="i"><use href="#i-search"/></svg><input id="au-q" type="search" placeholder="Buscar cliente por nome ou CPF"></div>
           <span class="tb-fim" id="au-count"></span>
         </div>
+        <div class="card au-teses" id="au-teses"></div>
         <div class="card list" id="au-list"></div>
         <p class="foot-note">Uma audiência vem para cá quando todos os clientes dela têm resultado lançado em Contestações (nenhum "sem resultado"). Clique numa audiência para ver os clientes.</p>
       </section>
@@ -4223,10 +4237,23 @@ section.vw-dash{gap:10px!important}
         '<div class="tnum">' + (julg ? pct + '%' : '—') + '</div></div>';
       if (aberto) html += '<div class="au-clientes">' + rs.filter(bate).sort(function(a, b){ return String(a.nome).localeCompare(String(b.nome), 'pt'); }).map(function(r){
         var x = RES[resAud(r)];
-        return '<div class="au-cli"><span>' + esc(r.nome) + '</span><span class="small tnum">' + esc(r.processo || '') + '</span><span class="cad-sit ' + x[1] + '">' + x[0] + '</span></div>';
+        var tc = comboDe(r);
+        return '<div class="au-cli"><span>' + esc(r.nome) + '</span><span class="au-tese">' + (tc ? nomeComboHtml(tc) : '<span class="small">sem tese</span>') + '</span><span class="small tnum">' + esc(r.processo || '') + '</span><span class="cad-sit ' + x[1] + '">' + x[0] + '</span></div>';
       }).join('') + '</div>';
     });
     box.innerHTML = html;
+    // histórico das teses: em todas as audiências concluídas, quantos clientes por tese e como terminou
+    var T = {}, todos = [];
+    Object.keys(S).forEach(function(k){ todos = todos.concat(S[k]); });
+    todos.forEach(function(r){ var c = comboDe(r) || '__sem'; var t = T[c] = T[c] || { n: 0, procedente: 0, improcedente: 0, conclusos: 0, faltou: 0 }; t.n++; t[resAud(r)]++; });
+    var ordem = Object.keys(T).sort(function(a, b){ return (a === '__sem') - (b === '__sem') || T[b].n - T[a].n; });
+    $('au-teses').innerHTML = !todos.length ? '' : '<div class="au-t-head"><b>Histórico das teses</b><span class="small">Todas as audiências concluídas · ' + todos.length + ' clientes</span></div>' +
+      '<div class="au-t-row au-t-tit"><span>Tese da Âmbar</span><span>Clientes</span><span>Procedentes</span><span>Improcedentes</span><span>Conclusos</span><span>Faltaram</span><span>Procedência</span></div>' +
+      ordem.map(function(c){
+        var t = T[c], julg = t.procedente + t.improcedente, pct = julg ? Math.round(t.procedente / julg * 100) : null;
+        return '<div class="au-t-row"><span>' + (c === '__sem' ? '<span class="small">Sem tese registrada</span>' : nomeComboHtml(c)) + '</span><span class="tnum">' + t.n + '</span><span class="tnum au-ok">' + t.procedente + '</span><span class="tnum au-crit">' + t.improcedente + '</span><span class="tnum au-warn">' + t.conclusos + '</span><span class="tnum au-crit">' + t.faltou + '</span>' +
+          '<span class="au-pct">' + (pct == null ? '—' : '<span class="au-bar"><i style="width:' + pct + '%"></i></span><b class="tnum">' + pct + '%</b>') + '</span></div>';
+      }).join('');
   }
   function renderContest(){
     var chips = $('ct-chips'); if (!chips) return;
@@ -4240,7 +4267,7 @@ section.vw-dash{gap:10px!important}
     if (ctSessao && !sess[ctSessao]) ctSessao = '';
     montarSelectSessao($('ct-aud-sel'), ctSessao, $('ct-aud-info'), $('ct-aud-ant'), $('ct-aud-prox'), function(k){ return k === ctSessao || !sessoesConcluidas()[k]; });
     $('ct-geral').hidden = !ctSessao; $('ct-xlsx').hidden = !ctSessao;
-    var nOn = state.rows.filter(function(r){ return r.online && (!ctSessao || chaveS(r) === ctSessao); }).length;
+    var conclOn = sessoesConcluidas(), nOn = state.rows.filter(function(r){ return r.online && !!r.audData && (ctSessao ? chaveS(r) === ctSessao : !conclOn[chaveS(r)]); }).length;
     $('ct-on-btn').hidden = !nOn && !ctOnline; $('ct-on-btn').setAttribute('aria-pressed', ctOnline); $('ct-on-btn').innerHTML = 'Online · ' + nOn;
     var concl = sessoesConcluidas();   // audiências concluídas foram para a aba Audiências
     var rows = state.rows.filter(function(r){ return !!r.audData && (ctSessao ? chaveS(r) === ctSessao : !concl[chaveS(r)]); });   // só quem tem audiência   // audiência escolhida aparece mesmo se acabou de ser concluída
