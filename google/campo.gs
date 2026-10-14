@@ -223,8 +223,9 @@ function cpfValido(c){
 /* de hora em hora: pastas de PENDENTES cujo cliente já foi protocolado vão para PROTOCOLADOS */
 function gatilho(){
   var props = PropertiesService.getScriptProperties();
-  // a IA só lê quando o escritório clica em "Ler documentos da pasta" no BI: desliga a leitura automática antiga
-  ScriptApp.getProjectTriggers().forEach(function(t){ if (t.getHandlerFunction() === 'lerPendentes') ScriptApp.deleteTrigger(t); });
+  // leitura automática (2026-10-13): a cada 10 minutos a IA lê as pastas com arquivo novo e preenche endereço e UC pelo talão
+  if (!ScriptApp.getProjectTriggers().some(function(t){ return t.getHandlerFunction() === 'lerPendentes'; }))
+    ScriptApp.newTrigger('lerPendentes').timeBased().everyMinutes(10).create();
   if (props.getProperty('gatilho_ok')) return;
   if (!ScriptApp.getProjectTriggers().some(function(t){ return t.getHandlerFunction() === 'moverProtocolados'; }))
     ScriptApp.newTrigger('moverProtocolados').timeBased().everyHours(1).create();
@@ -436,7 +437,7 @@ function lerArquivos(arquivos){
     'Não use nenhum outro endereço do talão (o da distribuidora, em Manaus, ou qualquer outro) nem endereço de RG, CNH ou procuração. ' +
     'Copie como está impresso, sem inventar nem corrigir nomes; só expanda abreviações (TV = Travessa, R = Rua, AV = Avenida). Na linha da rua o talão repete o número depois de "AME" (ex.: "R WENCESLAU FATIM 246 AME 246"): ignore o "AME" e a repetição. Exemplos: "R WENCESLAU FATIM 246 AME 246 / SAO LAZARO / CEP 69.475-000 - ALVARAES" vira "Rua Wenceslau Fatim, 246, São Lázaro, Alvarães/AM, CEP 69475-000"; "TV SANTA ANA S/N AME S/N / CENTRO / CEP 69.475-000 - ALVARAES" vira "Travessa Santa Ana, S/N, Centro, Alvarães/AM, CEP 69475-000". ' +
     'Se não houver talão de luz ou essas linhas estiverem ilegíveis, deixe o endereço vazio. ' +
-    '"uc" é o número da unidade consumidora (ou conta contrato / instalação) da conta de luz. ' +
+    '"uc" é o número da unidade consumidora: no talão da Amazonas Energia fica no quadro do canto superior direito (acima do código de barras), no formato 000000000-00. ' +
     '"rg" no formato número com hífen antes do último dígito (ex.: 2960881-3); se não houver RG nos documentos, deixe vazio (o escritório usa o CPF). ' +
     'Deixe vazio o que não estiver legível; não invente. Em "observacao", avise em uma frase se houver divergência entre os documentos ou algo ilegível.' });
   var soArquivos = conteudo.slice(0, conteudo.length - 1);
@@ -448,26 +449,31 @@ function lerArquivos(arquivos){
   try { renomearArquivos(arquivos, o.tipos || []); } catch (x){ console.log('renomear: ' + x); }
   if (out.cpf && !cpfValido(out.cpf)) out.observacao = ('CPF lido (' + out.cpf + ') não confere: verifique no documento. ' + out.observacao).trim();
   // endereço: só o que está impresso no talão, logo abaixo do nome do cliente (leitura própria, cópia literal das linhas)
-  try { out.endereco = enderecoDoTalao(chave, soArquivos); } catch (x){ console.log('talão: ' + x); out.endereco = ''; }
+  try { var tl = enderecoDoTalao(chave, soArquivos); out.endereco = tl.endereco; if (tl.uc) out.uc = tl.uc; } catch (x){ console.log('talão: ' + x); out.endereco = ''; }
+  out.uc = formatarUC(out.uc);
   return out;
 }
 
-/* Lê no talão da Amazonas Energia as linhas logo abaixo do nome do cliente e monta o endereço.
+/* Lê no talão da Amazonas Energia o endereço (linhas logo abaixo do nome do cliente) e a unidade consumidora (quadro do canto superior direito).
  * Nunca usa outro documento: se não achar o talão, devolve vazio (o escritório preenche). */
+// UC: 11 dígitos no formato 000000000-00
+function formatarUC(v){ var d = String(v || '').replace(/\D/g, ''); return d.length === 11 ? d.slice(0, 9) + '-' + d.slice(9) : limpa(v); }
 function enderecoDoTalao(chave, soArquivos){
   var pedido = soArquivos.concat([{ type: 'text', text:
     'Entre estes arquivos há uma conta de luz (talão) da Amazonas Energia. Procure SOMENTE nela. ' +
-    'Logo abaixo de "CONTA MÊS" e "VENCIMENTO" fica o bloco do cliente: primeira linha é o NOME do cliente, e as linhas seguintes (2 a 4) são o endereço dele, terminando na linha que começa com "CEP". ' +
+    'O talão é sempre o mesmo modelo: no topo, à esquerda, o logotipo AMAZONAS ENERGIA e o endereço da empresa (ignore); no canto superior DIREITO, um quadro com o número da UNIDADE CONSUMIDORA (formato 000000000-00, acima do código de barras); ' +
+    'logo abaixo da faixa "CONTA MÊS" / "VENCIMENTO" / "CONSUMO" / "TOTAL A PAGAR", à ESQUERDA, fica o bloco do cliente: primeira linha é o NOME do cliente, e as linhas seguintes (2 a 4) são o endereço dele, terminando na linha que começa com "CEP" e o nome da cidade. ' +
     'Copie essas linhas EXATAMENTE como estão impressas, letra por letra, sem corrigir, sem completar e sem usar nenhum outro documento (procuração, RG, CNH) nem outro endereço do talão (o da empresa, no topo). ' +
-    'Responda só com um JSON: {"achou":true,"linhas":["NOME DO CLIENTE","linha 2","linha 3","CEP ..."],"endereco":""}. ' +
+    'Responda só com um JSON: {"achou":true,"linhas":["NOME DO CLIENTE","linha 2","linha 3","CEP ..."],"endereco":"","uc":"000000000-00"}. Em "uc", copie o número do quadro do canto superior direito (vazio se ilegível). ' +
     'Em "endereco", escreva o endereço dessas linhas (sem o nome) de forma legível: abra as abreviações (R = Rua, TV = Travessa, AV = Avenida, EST = Estrada, RAM = Ramal), ignore o "AME" e o número repetido depois dele, ponha acentos nos nomes conhecidos, e termine com Cidade/AM e o CEP. ' +
     'Ex.: linhas ["MARCELO RODRIGUES BEZERRA","R WENCESLAU FATIM 246 AME 246","SAO LAZARO","CEP 69.475-000 - ALVARAES"] → "Rua Wenceslau Fatim, 246, São Lázaro, Alvarães/AM, CEP 69475-000". ' +
-    'Se não houver talão ou o bloco estiver ilegível, responda {"achou":false,"linhas":[],"endereco":""}.' }]);
-  var txt = perguntarIA(chave, pedido, 400);
-  var m = txt.match(/\{[\s\S]*\}/); if (!m) return '';
+    'Se não houver talão ou o bloco estiver ilegível, responda {"achou":false,"linhas":[],"endereco":"","uc":""}.' }]);
+  var txt = perguntarIA(chave, pedido, 450);
+  var m = txt.match(/\{[\s\S]*\}/); if (!m) return { endereco: '', uc: '' };
   var o = JSON.parse(m[0]);
   var linhas = (o.linhas || []).map(function(l){ return String(l || '').trim(); }).filter(String);
-  if (!o.achou || linhas.length < 2) return '';
+  var uc = formatarUC(o.uc);
+  if (!o.achou || linhas.length < 2) return { endereco: '', uc: uc };
   var montado = montarEndereco(linhas.slice(1));
   var bonito = limpa(o.endereco);
   // só aceita o texto "bonito" se a rua das linhas copiadas estiver nele (senão usa o montado aqui)
@@ -475,7 +481,7 @@ function enderecoDoTalao(chave, soArquivos){
   var rua = semAcento(linhas[1]).replace(/\s+ame\b.*$/, '').replace(/^(r|rua|tv|trav|travessa|av|avenida|est|estrada|ram|ramal|al|beco|bc|pc|praca|com)\.?\s+/, '').replace(/\s+(\d+|s\/?n)$/, '').trim();
   var palavras = rua.split(/\s+/).filter(function(p){ return p.length > 2; });
   var confere = bonito && palavras.length && palavras.every(function(p){ return semAcento(bonito).indexOf(p) >= 0; });
-  return confere ? bonito : montado;
+  return { endereco: confere ? bonito : montado, uc: uc };
 }
 // monta "Rua X, 246, Bairro, Cidade/AM, CEP 69475-000" a partir das linhas do talão (sem o nome)
 function montarEndereco(linhas){

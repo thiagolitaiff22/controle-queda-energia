@@ -450,7 +450,7 @@ body{background:transparent!important}
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 26;
+  var APP_VERSAO = 27;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
@@ -667,10 +667,9 @@ body{background:transparent!important}
     if (aba === 'clientes') return vistaClientes();
     vistaNovo();
   }
-  // dados que o prospectador digita junto com o nome (vão para o cadastro; a petição usa os três)
+  // dados que o prospectador digita junto com o nome (endereço e UC a IA lê do talão de luz)
   var CAMPOS_DADOS = [
     { k: 'cpf', ph: 'CPF do cliente', ic: 'i-id', num: true, nome: 'o CPF' },
-    { k: 'endereco', ph: 'Endereço: rua, número, bairro', ic: 'i-casa', nome: 'o endereço' }
   ];
   function mascaraCPF(v){
     var d = String(v || '').replace(/\D/g, '').slice(0, 11);
