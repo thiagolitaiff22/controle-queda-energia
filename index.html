@@ -1433,6 +1433,16 @@ section.vw-dash{gap:10px!important}
 #r-list .ret-q.ok{color:var(--green)}#r-list .ret-q.warn{color:var(--amber)}
 #r-list .ret-mais{display:flex;justify-content:center;padding:12px}
 @media (max-width:900px){ #r-list .ret-row{grid-template-columns:1fr!important} #r-list .row.head{display:none} }
+/* aba Audiências: histórico das audiências concluídas */
+#au-list .au-row{grid-template-columns:minmax(200px,1.8fr) repeat(5,minmax(80px,.8fr)) minmax(90px,.8fr)!important;gap:12px;align-items:center}
+#au-list .au-sess{cursor:pointer}
+#au-list .au-sess:hover{background:var(--hover)}
+#au-list .au-sess.aberto{background:var(--soft)}
+#au-list .au-ok{color:var(--green);font-weight:600}#au-list .au-warn{color:var(--amber);font-weight:600}#au-list .au-crit{color:var(--red);font-weight:600}
+#au-list .au-clientes{padding:6px 20px 12px 52px;background:var(--soft);border-top:1px solid var(--line)}
+#au-list .au-cli{display:grid;grid-template-columns:minmax(0,1fr) 230px 120px;gap:12px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line);font-size:13px}
+#au-list .au-cli:last-child{border-bottom:0}
+@media (max-width:900px){ #au-list .au-row{grid-template-columns:1fr 1fr!important} #au-list .row.head{display:none} }
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -1507,6 +1517,7 @@ section.vw-dash{gap:10px!important}
       <button class="tab" role="tab" id="tab-cad" aria-selected="false" type="button" title="Cadastro"><svg class="i"><use href="#i-plus"/></svg><span>Cadastro</span></button>
       <button class="tab" role="tab" id="tab-clientes" aria-selected="true" type="button" title="Controle"><svg class="i"><use href="#i-users"/></svg><span>Controle</span></button>
       <button class="tab" role="tab" id="tab-ct" aria-selected="false" type="button" title="Contestações"><svg class="i"><use href="#i-scale"/></svg><span>Contestações</span></button>
+      <button class="tab" role="tab" id="tab-aud" aria-selected="false" type="button" title="Audiências"><svg class="i"><use href="#i-cal"/></svg><span>Audiências</span></button>
       <button class="tab admin-only" role="tab" id="tab-fin" aria-selected="false" type="button" title="Financeiro"><svg class="i"><use href="#i-cash"/></svg><span>Financeiro</span></button>
       <button class="tab" role="tab" id="tab-ret" aria-selected="false" type="button" title="Nova ação"><svg class="i"><use href="#i-file"/></svg><span>Nova ação</span></button>
       <button class="tab admin-only" role="tab" id="tab-equipe" aria-selected="false" type="button" title="Configurações"><svg class="i"><use href="#i-gear"/></svg><span>Configurações</span></button>
@@ -1704,6 +1715,14 @@ section.vw-dash{gap:10px!important}
         </div>
       </section>
 
+      <section id="view-aud" hidden style="display:flex;flex-direction:column;gap:18px">
+        <div class="fbar">
+          <div class="search tb-busca"><svg class="i"><use href="#i-search"/></svg><input id="au-q" type="search" placeholder="Buscar cliente por nome ou CPF"></div>
+          <span class="tb-fim" id="au-count"></span>
+        </div>
+        <div class="card list" id="au-list"></div>
+        <p class="foot-note">Uma audiência vem para cá quando todos os clientes dela têm resultado lançado em Contestações (nenhum "sem resultado"). Clique numa audiência para ver os clientes.</p>
+      </section>
       <section id="view-ret" class="vw-dash" hidden style="display:flex;flex-direction:column;gap:18px">
         <div class="fbar">
           <div class="search tb-busca"><svg class="i"><use href="#i-search"/></svg><input id="r-q" type="search" placeholder="Buscar cliente por nome ou CPF"></div>
@@ -3289,7 +3308,7 @@ section.vw-dash{gap:10px!important}
     if (cadAberto[ln.dataset.linha]) delete cadAberto[ln.dataset.linha]; else cadAberto[ln.dataset.linha] = 1;
     renderCad();
   });
-  function render(){ renderCad(); renderStats(); renderPauta(); renderList(); renderLista(); renderPos(); renderRet(); renderProsp(); renderEquipe(); renderContest(); renderBusca(); renderClSessao(); renderFin(); if (typeof AV !== 'undefined' && AV && !AV.rodando) avMontar(); }
+  function render(){ renderAud(); renderCad(); renderStats(); renderPauta(); renderList(); renderLista(); renderPos(); renderRet(); renderProsp(); renderEquipe(); renderContest(); renderBusca(); renderClSessao(); renderFin(); if (typeof AV !== 'undefined' && AV && !AV.rodando) avMontar(); }
   var clQ = '';
   // stage of each process, derived from what is already recorded (no extra typing)
   var ETAPAS = [
@@ -3501,8 +3520,8 @@ section.vw-dash{gap:10px!important}
     var sess = {}; state.rows.forEach(function(r){ if (r.audData){ var k = r.audData + '|' + (r.audHora || ''); sess[k] = (sess[k] || 0) + 1; } });
     return { cont: sess, ks: Object.keys(sess).sort() };
   }
-  function montarSelectSessao(sel, atual, info, ant, prox){
-    var S = sessoesAudiencia(), ks = S.ks, sess = S.cont;
+  function montarSelectSessao(sel, atual, info, ant, prox, filtro){
+    var S = sessoesAudiencia(), ks = filtro ? S.ks.filter(filtro) : S.ks, sess = S.cont;
     var MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
     var DL = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
     var rot = function(k){ var p = k.split('|'), n = daysUntil(p[0]);
@@ -4172,6 +4191,43 @@ section.vw-dash{gap:10px!important}
     catch(err){ inp.value = moedaTxt(valorCond(r)); toast(errMsg(err)); }
   });
 
+  /* audiência concluída = todos os clientes dela já têm resultado (procedente, conclusos, faltou, improcedente) */
+  function chaveSessao(r){ return (r.audData || '') + '|' + (r.audHora || ''); }
+  function sessoesConcluidas(){
+    var g = {};
+    state.rows.forEach(function(r){ if (!r.audData || !jaRealizada(r)) return; var k = chaveSessao(r); (g[k] = g[k] || []).push(r); });
+    var feitas = {};
+    Object.keys(g).forEach(function(k){ if (g[k].every(function(r){ return !!resAud(r); })) feitas[k] = g[k]; });
+    return feitas;
+  }
+  var auAberta = {}, auQ = '';
+  function renderAud(){
+    var box = $('au-list'); if (!box) return;
+    var S = sessoesConcluidas(), ks = Object.keys(S).sort().reverse();
+    var q = auQ.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(), qd = auQ.replace(/\D/g, '');
+    var bate = function(r){ if (!q) return true; var n = String(r.nome || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); return n.indexOf(q) >= 0 || (qd.length >= 3 && String(r.cpf || '').replace(/\D/g, '').indexOf(qd) >= 0); };
+    if (q) ks = ks.filter(function(k){ return S[k].some(bate); });
+    var DL = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+    var tot = 0; ks.forEach(function(k){ tot += S[k].length; });
+    $('au-count').textContent = ks.length + (ks.length === 1 ? ' audiência' : ' audiências') + ' · ' + tot + ' clientes';
+    var RES = { procedente: ['Procedente', 'ok'], conclusos: ['Conclusos', 'warn'], faltou: ['Faltou', 'crit'], improcedente: ['Improcedente', 'crit'] };
+    var html = '<div class="row head au-row"><div>Audiência</div><div>Clientes</div><div>Procedentes</div><div>Conclusos</div><div>Faltaram</div><div>Improcedentes</div><div>Procedência</div></div>';
+    if (!ks.length) html += '<div class="empty">' + (q ? 'Nenhuma audiência com esse cliente.' : 'Nenhuma audiência concluída ainda: quando todos os clientes de uma audiência tiverem resultado em Contestações, ela aparece aqui.') + '</div>';
+    ks.forEach(function(k){
+      var rs = S[k], p = k.split('|'), c = { procedente: 0, conclusos: 0, faltou: 0, improcedente: 0 };
+      rs.forEach(function(r){ c[resAud(r)]++; });
+      var julg = c.procedente + c.improcedente, pct = julg ? Math.round(c.procedente / julg * 100) : 0, aberto = auAberta[k] || !!q;
+      html += '<div class="row au-row au-sess' + (aberto ? ' aberto' : '') + '" data-au="' + esc(k) + '">' +
+        '<div><b>' + fmtDate(p[0]) + '</b> <span class="small">' + DL[parseDate(p[0]).getDay()] + (p[1] ? ' · ' + esc(p[1]) : '') + '</span></div>' +
+        '<div class="tnum">' + rs.length + '</div><div class="tnum au-ok">' + c.procedente + '</div><div class="tnum au-warn">' + c.conclusos + '</div><div class="tnum au-crit">' + c.faltou + '</div><div class="tnum au-crit">' + c.improcedente + '</div>' +
+        '<div class="tnum">' + (julg ? pct + '%' : '—') + '</div></div>';
+      if (aberto) html += '<div class="au-clientes">' + rs.filter(bate).sort(function(a, b){ return String(a.nome).localeCompare(String(b.nome), 'pt'); }).map(function(r){
+        var x = RES[resAud(r)];
+        return '<div class="au-cli"><span>' + esc(r.nome) + '</span><span class="small tnum">' + esc(r.processo || '') + '</span><span class="cad-sit ' + x[1] + '">' + x[0] + '</span></div>';
+      }).join('') + '</div>';
+    });
+    box.innerHTML = html;
+  }
   function renderContest(){
     var chips = $('ct-chips'); if (!chips) return;
     var DSEM = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
@@ -4182,11 +4238,12 @@ section.vw-dash{gap:10px!important}
     var hoje = iso(new Date());
     if (ctSessao === null) ctSessao = ''; // opens on the general view (all hearings)
     if (ctSessao && !sess[ctSessao]) ctSessao = '';
-    montarSelectSessao($('ct-aud-sel'), ctSessao, $('ct-aud-info'), $('ct-aud-ant'), $('ct-aud-prox'));
+    montarSelectSessao($('ct-aud-sel'), ctSessao, $('ct-aud-info'), $('ct-aud-ant'), $('ct-aud-prox'), function(k){ return k === ctSessao || !sessoesConcluidas()[k]; });
     $('ct-geral').hidden = !ctSessao; $('ct-xlsx').hidden = !ctSessao;
     var nOn = state.rows.filter(function(r){ return r.online && (!ctSessao || chaveS(r) === ctSessao); }).length;
     $('ct-on-btn').hidden = !nOn && !ctOnline; $('ct-on-btn').setAttribute('aria-pressed', ctOnline); $('ct-on-btn').innerHTML = 'Online · ' + nOn;
-    var rows = state.rows.filter(function(r){ return !ctSessao || chaveS(r) === ctSessao; });
+    var concl = sessoesConcluidas();   // audiências concluídas foram para a aba Audiências
+    var rows = state.rows.filter(function(r){ return ctSessao ? chaveS(r) === ctSessao : !concl[chaveS(r)]; });   // audiência escolhida aparece mesmo se acabou de ser concluída
     var cont = {}, sem = 0;
     rows.forEach(function(r){ var c = comboDe(r); if (!c) sem++; else cont[c] = (cont[c] || 0) + 1; });
     /* Primeiro quem tem uma tese só, depois as combinações; dentro de cada, o maior primeiro. */
@@ -4280,6 +4337,8 @@ section.vw-dash{gap:10px!important}
   $('ct-tese-sel').addEventListener('change', function(){ ctFiltro = this.value; ctLimite = 200; renderContest(); });
   $('ct-geral').addEventListener('click', function(){ ctSessao = ''; ctLimite = 200; renderContest(); });
   $('ct-aud-sel').addEventListener('change', function(){ ctSessao = this.value; ctLimite = 200; renderContest(); });
+  $('au-list').addEventListener('click', function(e){ var s = e.target.closest('[data-au]'); if (!s) return; var k = s.dataset.au; auAberta[k] = !auAberta[k]; renderAud(); });
+  $('au-q').addEventListener('input', function(){ auQ = this.value.trim(); renderAud(); });
   $('ct-aud-ant').addEventListener('click', function(){ var ks = ctSessoes(), p = ks.indexOf(ctSessao); ctSessao = p > 0 ? ks[p - 1] : (p < 0 ? ks[ks.length - 1] || '' : ctSessao); ctLimite = 200; renderContest(); });
   $('ct-aud-prox').addEventListener('click', function(){ var ks = ctSessoes(), p = ks.indexOf(ctSessao); ctSessao = p < 0 ? ks[0] || '' : (ks[p + 1] || ctSessao); ctLimite = 200; renderContest(); });
   $('ct-cart').addEventListener('click', function(e){ var b = e.target.closest('[data-tese]'); if (!b || b.disabled) return; ctFiltro = ctFiltro === b.dataset.tese ? '' : b.dataset.tese; ctLimite = 200; renderContest(); });
@@ -4857,7 +4916,7 @@ section.vw-dash{gap:10px!important}
     } catch(err){ toast(errMsg(err)); }
     finally { $('av-save').disabled = false; }
   });
-  var VIEWS = { d: ['tab-cad', 'view-cad'], c: ['tab-clientes', 'view-clientes'], f: ['tab-fin', 'view-fin'], r: ['tab-ret', 'view-ret'], t: ['tab-ct', 'view-ct'], e: ['tab-equipe', 'view-equipe'] };
+  var VIEWS = { d: ['tab-cad', 'view-cad'], c: ['tab-clientes', 'view-clientes'], f: ['tab-fin', 'view-fin'], r: ['tab-ret', 'view-ret'], t: ['tab-ct', 'view-ct'], h: ['tab-aud', 'view-aud'], e: ['tab-equipe', 'view-equipe'] };
   var TITULOS = {
     d: ['Cadastro', 'Clientes em cadastro, ainda sem protocolo · Ações contra a Âmbar Energia, Alvarães/AM'],
     c: ['Controle', 'Processos protocolados: avisos e audiências até a audiência acontecer'],
@@ -4866,7 +4925,8 @@ section.vw-dash{gap:10px!important}
     p: ['Pós-audiência', 'Resultados, conclusos, embargos e pagamentos'],
     f: ['Financeiro', 'Depois da audiência: condenações, previsão de pagamento, honorários e repasse'],
     r: ['Nova ação', 'Clientes que já passaram pela audiência · última audiência, protocolo e quando podem entrar com a nova ação'],
-    t: ['Contestações', 'Audiência, resultado, teses da Âmbar e pagamento'],
+    t: ['Contestações', 'Audiências ainda com resultado a lançar: teses da Âmbar e resultado de cada cliente'],
+    h: ['Audiências', 'Histórico das audiências concluídas: quantos procedentes, conclusos, faltaram e improcedentes'],
     e: ['Configurações', 'Equipe, integrações e prospectadores']
   };
   function showTab(which){
