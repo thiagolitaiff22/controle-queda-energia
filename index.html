@@ -4243,7 +4243,7 @@ section.vw-dash{gap:10px!important}
     var nOn = state.rows.filter(function(r){ return r.online && (!ctSessao || chaveS(r) === ctSessao); }).length;
     $('ct-on-btn').hidden = !nOn && !ctOnline; $('ct-on-btn').setAttribute('aria-pressed', ctOnline); $('ct-on-btn').innerHTML = 'Online · ' + nOn;
     var concl = sessoesConcluidas();   // audiências concluídas foram para a aba Audiências
-    var rows = state.rows.filter(function(r){ return ctSessao ? chaveS(r) === ctSessao : !concl[chaveS(r)]; });   // audiência escolhida aparece mesmo se acabou de ser concluída
+    var rows = state.rows.filter(function(r){ return !!r.audData && (ctSessao ? chaveS(r) === ctSessao : !concl[chaveS(r)]); });   // só quem tem audiência   // audiência escolhida aparece mesmo se acabou de ser concluída
     var cont = {}, sem = 0;
     rows.forEach(function(r){ var c = comboDe(r); if (!c) sem++; else cont[c] = (cont[c] || 0) + 1; });
     /* Primeiro quem tem uma tese só, depois as combinações; dentro de cada, o maior primeiro. */
