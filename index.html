@@ -2071,6 +2071,7 @@ body,button,input,select,textarea{font-family:var(--font)}
 #app #cad-list .row{grid-template-columns:minmax(220px,2.3fr) 118px minmax(0,2.3fr) 128px minmax(0,1.6fr) 80px 82px 26px!important;gap:8px!important;padding-left:44px!important;padding-right:12px!important}
 #app #cad-list .row::before{left:14px!important}
 #app #cad-list .cad-grupo{padding-left:16px}
+#app #cad-list .cel-in.fora{border-color:var(--red);background:var(--red-soft);color:var(--red)}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="vendor/supabase.min.js"></script>
@@ -2989,9 +2990,36 @@ body,button,input,select,textarea{font-family:var(--font)}
     finally { b.disabled = false; b.textContent = rot; }
   });
   // o botão "Gerar petição inicial" só fica ativo com todos estes dados preenchidos
+  // ação de queda de energia: endereço tem que ser de Alvarães (cidade ou CEP 69475)
+  function endForaAlvaraes(r){ var e = String(r.endereco || '').trim(); return !!e && !/alvar[aã]es/i.test(e.normalize('NFC')) && !/69\.?475/.test(e); }
   function faltaPeticao(r){
-    return [['nome', 'nome'], ['cpf', 'CPF'], ['endereco', 'endereço'], ['uc', 'unidade consumidora'], ['periodo', 'período da ação']]
+    var f = [['nome', 'nome'], ['cpf', 'CPF'], ['endereco', 'endereço'], ['uc', 'unidade consumidora'], ['periodo', 'período da ação']]
       .filter(function(c){ return !String(r[c[0]] || '').trim(); }).map(function(c){ return c[1]; });
+    if (endForaAlvaraes(r)) f.unshift('endereço de Alvarães');
+    return f;
+  }
+  // relê só o talão (mesma leitura do automático) dos clientes com endereço fora de Alvarães
+  async function relerForaAlvaraes(btn){
+    var lista = state.rows.filter(noCadastro).filter(function(r){ return endForaAlvaraes(r) && r.pastaId; });
+    if (!lista.length) return;
+    btn.disabled = true;
+    var url = await urlDoScript();
+    var ses = await SB.auth.getSession(), jwt = ses && ses.data && ses.data.session ? ses.data.session.access_token : '';
+    var certos = 0, vazios = 0;
+    for (var i = 0; i < lista.length; i++){
+      var r = lista[i]; btn.textContent = 'Lendo ' + (i + 1) + ' de ' + lista.length + '…';
+      try {
+        var d = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ acao: 'lerPasta', soTalao: true, jwt: jwt, pastaId: r.pastaId }) }).then(function(x){ return x.json(); });
+        var novo = d && d.ok && d.dados ? String(d.dados.endereco || '').trim() : '';
+        var p = { endereco: novo, atualizadoEm: new Date().toISOString() };
+        if (novo && d.dados.uc && !String(r.uc || '').trim()) p.uc = d.dados.uc;
+        await patchRow(r.id, p);
+        if (novo) certos++; else vazios++;
+      } catch(e){ vazios++; }
+    }
+    btn.disabled = false;
+    toast('Talões relidos: ' + certos + ' com endereço de Alvarães' + (vazios ? ' · ' + vazios + ' ficaram em branco para preencher à mão' : '') + '.');
+    renderCad();
   }
   // petição inicial: o script preenche o modelo do Drive (MODELOS) e salva o PDF na pasta do cliente
   // chave = os dados que vão na petição; mudou algum, a petição é refeita sozinha
@@ -3688,7 +3716,7 @@ body,button,input,select,textarea{font-family:var(--font)}
   function iniciais(n){ var p = String(n || '').trim().split(/\s+/).filter(function(x){ return !/^(da|de|do|das|dos|e)$/i.test(x); }); return ((p[0] || '')[0] || '') + ((p.length > 1 ? p[p.length - 1] : '')[0] || ''); }
   function celCad(r, campo, rot){
     var v = String(r[campo] || '');
-    return '<div><span class="lbl">' + rot + '</span><input class="cel-in' + (v.trim() ? '' : ' vazio') + '" data-cad-campo="' + campo + '" data-id="' + esc(r.id) + '" value="' + esc(v) + '" placeholder="' + (campo === 'periodo' ? 'ex.: JANEIRO DE 2026 ATÉ A PRESENTE DATA' : rot) + '" title="' + esc(v || rot) + '"' + (campo === 'periodo' ? ' list="dl-periodos"' : '') + (campo === 'uc' ? ' inputmode="numeric"' : '') + '></div>';
+    return '<div><span class="lbl">' + rot + '</span><input class="cel-in' + (v.trim() ? '' : ' vazio') + (campo === 'endereco' && endForaAlvaraes(r) ? ' fora' : '') + '" data-cad-campo="' + campo + '" data-id="' + esc(r.id) + '" value="' + esc(v) + '" placeholder="' + (campo === 'periodo' ? 'ex.: JANEIRO DE 2026 ATÉ A PRESENTE DATA' : rot) + '" title="' + esc(v || rot) + '"' + (campo === 'periodo' ? ' list="dl-periodos"' : '') + (campo === 'uc' ? ' inputmode="numeric"' : '') + '></div>';
   }
   // documentos em uma palavra (cabe na planilha); o que falta aparece ao passar o mouse
   function docCurto(r){
@@ -3742,7 +3770,12 @@ body,button,input,select,textarea{font-family:var(--font)}
     $('cad-count').textContent = lista.length + (lista.length === 1 ? ' cliente' : ' clientes');
     // alerta: a IA leu a pasta mas não conseguiu tirar endereço ou UC do talão
     var semLeitura = todos.filter(function(r){ return iaNaoLeu(r).length; });
-    $('cad-ia').hidden = !semLeitura.length;
+    var fora = todos.filter(endForaAlvaraes);
+    $('cad-ia').hidden = !semLeitura.length && !fora.length;
+    if (fora.length){
+      $('cad-ia').innerHTML = '<b>' + fora.length + (fora.length === 1 ? ' cliente com endereço fora de Alvarães.' : ' clientes com endereço fora de Alvarães.') + '</b> <span>A ação de queda de energia é de Alvarães: ' + esc(fora.slice(0, 4).map(function(r){ return r.nome; }).join(' · ')) + (fora.length > 4 ? ' …' : '') + '</span>' +
+        '<button type="button" class="btn" data-reler-fora="1">Ler o talão de novo</button>';
+    } else
     if (semLeitura.length) $('cad-ia').innerHTML = '<b>A IA não conseguiu ler o talão de ' + semLeitura.length + (semLeitura.length === 1 ? ' cliente' : ' clientes') + '.</b> <span>Preencha à mão o endereço ou a UC (lápis): ' + esc(semLeitura.slice(0, 4).map(function(r){ return r.nome + ' (' + iaNaoLeu(r).join(' e ') + ')'; }).join(' · ')) + (semLeitura.length > 4 ? ' …' : '') + '</span>' +
       '<button type="button" class="btn" data-cad-ia="1">' + (cadSit === 'ia' ? 'Ver todos' : 'Ver só esses') + '</button>';
     var html = '<div class="row head"><div>Cliente</div><div>Celular</div><div>Endereço</div><div>UC</div><div>Período</div><div>Documentos</div><div>Petição</div><div></div></div>';
@@ -3798,6 +3831,7 @@ body,button,input,select,textarea{font-family:var(--font)}
   $('cad-stats').addEventListener('click', filtroCartao);
   $('cad-stats').addEventListener('keydown', filtroCartao);
   $('cad-sit').addEventListener('change', function(){ cadSit = this.value; renderCad(); });
+  $('cad-ia').addEventListener('click', function(e){ var rb = e.target.closest('[data-reler-fora]'); if (rb) relerForaAlvaraes(rb); });
   $('cad-ia').addEventListener('click', function(e){ if (!e.target.closest('[data-cad-ia]')) return; cadSit = cadSit === 'ia' ? '' : 'ia'; renderCad(); });
   $('cad-list').addEventListener('click', function(e){
     var b = e.target.closest('[data-act]');
