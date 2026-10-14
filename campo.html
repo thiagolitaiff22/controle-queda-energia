@@ -706,6 +706,10 @@ html,body{font-size:15px}
 .lista div{padding:11px 13px!important}.lista b,.lista strong{font-size:14.5px}.lista small,.lista span{font-size:12.5px}
 .chips button{font-size:13px!important;padding:7px 12px!important}.busca{border-radius:12px!important}
 .abas button{font-size:11.5px!important}
+/* fim da página sempre acima da barra de baixo (o botão Sair da conta ficava escondido atrás dela) */
+.vista:not(.novo){padding-bottom:calc(140px + env(safe-area-inset-bottom))!important}
+/* topo nunca embaixo do relógio e da bateria (iPhone) */
+.topo{padding-top:max(10px, calc(6px + env(safe-area-inset-top)))!important}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><script>try{var t=localStorage.getItem("campo_tema");if(!t)t="dark";document.documentElement.setAttribute("data-tema",t);}catch(e){document.documentElement.setAttribute("data-tema","light");}</script>
 </head>
@@ -744,7 +748,7 @@ html,body{font-size:15px}
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 32;
+  var APP_VERSAO = 33;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
