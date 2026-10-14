@@ -1953,6 +1953,10 @@ td,.row{font-size:13px}
 @media (max-width:900px){ #hist-list .row{grid-template-columns:1fr!important;gap:6px!important} #hist-list .row.head{display:none} }
 #cad-list .row{grid-template-columns:minmax(0,2.2fr) minmax(0,1.3fr) minmax(0,1fr) minmax(0,.7fr) 304px 36px!important;align-items:center;gap:16px!important;min-height:46px;padding-top:6px!important;padding-bottom:6px!important}
 @media (max-width:900px){ #cad-list .row{grid-template-columns:1fr!important;gap:6px!important} #cad-list .row.head{display:none} }
+.ia-alerta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:0 0 12px;padding:12px 14px;border:1px solid var(--amber);background:var(--amber-soft);border-radius:12px;font-size:13px}
+.ia-alerta b{color:var(--ink)}
+.ia-alerta span{color:var(--ink-2);flex:1 1 300px}
+.chk.ia{color:var(--amber);background:var(--amber-soft)}
 .cad-grupo{display:flex;align-items:baseline;gap:8px;padding:18px 16px 8px;border-bottom:1px solid var(--line);font-size:13px}
 .cad-grupo i{width:8px;height:8px;border-radius:50%;background:var(--cor-g);align-self:center;flex:none}
 .cad-grupo b{text-transform:uppercase;letter-spacing:.04em;font-size:12px}
@@ -2080,6 +2084,7 @@ td,.row{font-size:13px}
           <span class="tb-fim fb-count tnum" id="cad-count"></span>
         </div>
         <div class="sec-rot">Clientes em cadastro</div>
+        <div class="ia-alerta" id="cad-ia" hidden></div>
         <div class="card list" id="cad-list"></div>
       </section>
 
@@ -3534,8 +3539,8 @@ td,.row{font-size:13px}
   function chkCell(r){
     // com a lista do que falta (aplicativo ou "Conferir documentos"), o resto está na pasta; sem lista e sem conferência, fica "?"
     var f = faltasCad(r).map(function(x){ return x[1]; }), fd = faltaDocs(r), conf = docsConferidos(r) || fd.length > 0;
-    var cel = function(st, rot){ return '<span class="chk ' + st + '" title="' + esc(rot) + (st === 'ok' ? ': ok' : st === 'q' ? ': ninguém conferiu a pasta' : ': falta') + '">' + (st === 'ok' ? IC_OK : st === 'q' ? '?' : IC_NAO) + '</span>'; };
-    return '<div class="chk-g">' + CHK_DADOS.map(function(c){ return cel(f.indexOf(c[1]) >= 0 || (c[0] === 'CPF' && f.indexOf('CPF inválido') >= 0) ? 'no' : 'ok', c[1]); }).join('') + '<i></i>' +
+    var cel = function(st, rot){ return '<span class="chk ' + st + '" title="' + esc(rot) + (st === 'ok' ? ': ok' : st === 'q' ? ': ninguém conferiu a pasta' : st === 'ia' ? ': a IA não conseguiu ler no talão, preencha à mão' : ': falta') + '">' + (st === 'ok' ? IC_OK : st === 'q' ? '?' : st === 'ia' ? '!' : IC_NAO) + '</span>'; };
+    return '<div class="chk-g">' + CHK_DADOS.map(function(c){ var falta = f.indexOf(c[1]) >= 0 || (c[0] === 'CPF' && f.indexOf('CPF inválido') >= 0); return cel(!falta ? 'ok' : (c[0] === 'END' || c[0] === 'UC') && r.leituraIA ? 'ia' : 'no', c[1]); }).join('') + '<i></i>' +
       CHK_DOCS.map(function(c){ return cel(fd.indexOf(c[1]) >= 0 ? 'no' : conf ? 'ok' : 'q', c[2]); }).join('') + '</div>';
   }
   function situacaoCad(r){
@@ -3543,6 +3548,11 @@ td,.row{font-size:13px}
     if (faltasCad(r).some(function(x){ return x[0].slice(0, 2) === 'd-'; })) return ['incompleto', 'Dados incompletos', 'crit'];
     if (docsPendentes(r)) return ['documentos', 'Aguardando documentos', 'warn'];
     return ['pronto', 'Pronto para protocolar', 'ok'];
+  }
+  // o que a IA tentou e não conseguiu ler no talão (endereço / UC); vazio = nada a avisar
+  function iaNaoLeu(r){
+    if (!r.leituraIA) return [];
+    return [['endereco', 'endereço'], ['uc', 'UC']].filter(function(c){ return !String(r[c[0]] || '').trim(); }).map(function(c){ return c[1]; });
   }
   function renderCad(){
     var box = $('cad-list'); if (!box) return;
@@ -3564,16 +3574,21 @@ td,.row{font-size:13px}
     todos.forEach(function(r){ faltasCad(r).forEach(function(x){ porFalta[x[0]] = (porFalta[x[0]] || 0) + 1; rotFalta[x[0]] = x[1]; }); });
     var opt = function(o){ return '<option value="' + o[0] + '"' + (o[0] === cadSit ? ' selected' : '') + '>' + o[1] + '</option>'; };
     $('cad-sit').innerHTML = opt(['', 'Todas as situações · ' + todos.length]) +
-      '<optgroup label="Situação">' + [['pronto', 'Prontos para protocolar · ' + conta.pronto], ['conferir', 'Conferir dados · ' + conta.conferir], ['incompleto', 'Dados incompletos · ' + conta.incompleto], ['faltam', 'Faltam documentos · ' + nFalta], ['pendencias', 'Com alguma pendência']].map(opt).join('') + '</optgroup>' +
+      '<optgroup label="Situação">' + [['pronto', 'Prontos para protocolar · ' + conta.pronto], ['conferir', 'Conferir dados · ' + conta.conferir], ['incompleto', 'Dados incompletos · ' + conta.incompleto], ['faltam', 'Faltam documentos · ' + nFalta], ['ia', 'A IA não leu o talão · ' + todos.filter(function(r){ return iaNaoLeu(r).length; }).length], ['pendencias', 'Com alguma pendência']].map(opt).join('') + '</optgroup>' +
       (Object.keys(porFalta).length ? '<optgroup label="O que falta">' + Object.keys(porFalta).sort(function(a, b){ return porFalta[b] - porFalta[a]; }).map(function(k){ return opt(['f:' + k, 'Falta ' + rotFalta[k] + ' · ' + porFalta[k]]); }).join('') + '</optgroup>' : '');
     $('cad-sit').classList.toggle('ativo', !!cadSit);
     var lista = todos.filter(function(r){
       var ok = !cadSit || (cadSit.slice(0, 2) === 'f:' ? faltasCad(r).some(function(x){ return x[0] === cadSit.slice(2); }) :
-        cadSit === 'faltam' ? docsPendentes(r) : cadSit === 'pendencias' ? faltasCad(r).length > 0 : situacaoCad(r)[0] === cadSit);
+        cadSit === 'ia' ? iaNaoLeu(r).length > 0 : cadSit === 'faltam' ? docsPendentes(r) : cadSit === 'pendencias' ? faltasCad(r).length > 0 : situacaoCad(r)[0] === cadSit);
       return ok && buscaCliente(r, cadQ); })
       // mais recente primeiro (pelo dia do cadastro); no mesmo dia, em ordem alfabética
       .sort(function(a, b){ var da = String(a.dataCadastro || a.criadoEm || '').slice(0, 10), db = String(b.dataCadastro || b.criadoEm || '').slice(0, 10); return db.localeCompare(da) || String(a.nome || '').localeCompare(String(b.nome || ''), 'pt'); });
     $('cad-count').textContent = lista.length + (lista.length === 1 ? ' cliente' : ' clientes');
+    // alerta: a IA leu a pasta mas não conseguiu tirar endereço ou UC do talão
+    var semLeitura = todos.filter(function(r){ return iaNaoLeu(r).length; });
+    $('cad-ia').hidden = !semLeitura.length;
+    if (semLeitura.length) $('cad-ia').innerHTML = '<b>A IA não conseguiu ler o talão de ' + semLeitura.length + (semLeitura.length === 1 ? ' cliente' : ' clientes') + '.</b> <span>Preencha à mão o endereço ou a UC (lápis): ' + esc(semLeitura.slice(0, 4).map(function(r){ return r.nome + ' (' + iaNaoLeu(r).join(' e ') + ')'; }).join(' · ')) + (semLeitura.length > 4 ? ' …' : '') + '</span>' +
+      '<button type="button" class="btn" data-cad-ia="1">' + (cadSit === 'ia' ? 'Ver todos' : 'Ver só esses') + '</button>';
     var html = '<div class="row head"><div>Cliente</div><div>Prospectador</div><div>Contato</div><div>Cadastrado</div><div>' + chkHead() + '</div><div></div></div>';
     if (!lista.length) html += '<div class="empty">' + (todos.length ? 'Nenhum cliente neste filtro.' : 'Nenhum cliente em cadastro. Clique em <b>Novo cliente</b> para começar.') + '</div>';
     // a lista vem em blocos, na ordem do trabalho: quem já pode protocolar, quem precisa conferir, e o que ainda falta
@@ -3623,6 +3638,7 @@ td,.row{font-size:13px}
   $('cad-stats').addEventListener('click', filtroCartao);
   $('cad-stats').addEventListener('keydown', filtroCartao);
   $('cad-sit').addEventListener('change', function(){ cadSit = this.value; renderCad(); });
+  $('cad-ia').addEventListener('click', function(e){ if (!e.target.closest('[data-cad-ia]')) return; cadSit = cadSit === 'ia' ? '' : 'ia'; renderCad(); });
   $('cad-list').addEventListener('click', function(e){
     var b = e.target.closest('[data-act]');
     if (b && b.dataset.act === 'edit'){ var r = state.rows.filter(function(x){ return x.id === b.dataset.id; })[0]; if (r) openForm(r, false, true); return; }

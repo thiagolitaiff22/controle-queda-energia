@@ -554,7 +554,8 @@ function lerPendentes(){
     var f = it.next(), arq = arquivosDaPasta(f); if (!arq.length) continue;
     var ultimo = Math.max.apply(null, arq.map(function(a){ return a.getLastUpdated().getTime(); }));
     var k = 'lido_' + f.getId(); if (Number(props.getProperty(k) || 0) >= ultimo) continue;
-    try { var lido = lerTalaoDaPasta(arq); if (lido) rpc('campo_preencher_pasta', { p_segredo: seg, p_pasta: f.getId(), p_dados: lido }); } catch (x){ console.log(f.getName() + ': ' + x); }
+    // sempre registra a leitura (leituraIA), mesmo sem talão: o sistema avisa quando endereço ou UC ficaram sem preencher
+    try { rpc('campo_preencher_pasta', { p_segredo: seg, p_pasta: f.getId(), p_dados: lerTalaoDaPasta(arq) || {} }); } catch (x){ console.log(f.getName() + ': ' + x); }
     props.setProperty(k, String(ultimo)); lidas++;
   }
   return lidas;
