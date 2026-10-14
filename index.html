@@ -2003,11 +2003,13 @@ td,.row{font-size:13px}
 #app.collapsed .topnav .nav .tab{width:44px!important;height:42px!important;min-height:0!important;padding:0!important;margin:0 auto!important;border-radius:12px!important;display:grid!important;place-items:center!important;justify-content:center!important}
 #app.collapsed .topnav .nav .tab svg.i{width:20px!important;height:20px!important;margin:0!important}
 #app.collapsed .topnav .nav .tab[aria-selected="true"]{background:var(--primary)!important;color:#fff!important;box-shadow:0 4px 12px rgba(37,99,235,.3)}
-#app.collapsed .topnav .nav .tab[aria-selected="true"] .i{color:#fff!important}
+#app.collapsed .topnav .nav .tab[aria-selected="true"] .i{color:#fff!important;stroke:#fff!important}
 #app.collapsed .topnav .nav .tab:not([aria-selected="true"]):hover{background:var(--hover)!important}
 #app.collapsed .topnav .side-acts{flex-direction:column!important;align-items:center!important;gap:6px!important}
 #app.collapsed .topnav .side-acts button{width:38px!important;height:38px!important;border-radius:11px!important}
 #app .topnav .nav .tab svg.i{stroke-width:1.8}
+.pet-st.erro-t{color:var(--red)}.pet-st.aviso-t{color:var(--amber)}
+#cad-list .row{grid-template-columns:minmax(0,1.9fr) minmax(0,1fr) minmax(0,2.3fr) minmax(0,1.05fr) minmax(0,1.7fr) minmax(0,.75fr) minmax(0,.85fr) 32px!important}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -3625,6 +3627,13 @@ td,.row{font-size:13px}
     var v = String(r[campo] || '');
     return '<div><span class="lbl">' + rot + '</span><input class="cel-in' + (v.trim() ? '' : ' vazio') + '" data-cad-campo="' + campo + '" data-id="' + esc(r.id) + '" value="' + esc(v) + '" placeholder="' + (campo === 'periodo' ? 'ex.: JANEIRO DE 2026 ATÉ A PRESENTE DATA' : rot) + '" title="' + esc(v || rot) + '"' + (campo === 'periodo' ? ' list="dl-periodos"' : '') + (campo === 'uc' ? ' inputmode="numeric"' : '') + '></div>';
   }
+  // documentos em uma palavra (cabe na planilha); o que falta aparece ao passar o mouse
+  function docCurto(r){
+    var f = faltaDocs(r);
+    if (f.length) return '<span class="pet-st erro-t" title="Faltam: ' + esc(faltaTexto(r)) + '">Faltam ' + f.length + '</span>';
+    if (docsConferidos(r)) return '<span class="pet-st ok" style="cursor:default;text-decoration:none">Completos</span>';
+    return '<span class="pet-st aviso-t" title="Ninguém conferiu a pasta ainda">Conferir</span>';
+  }
   function petCell(r){
     if (petGerando[r.id]) return '<span class="pet-st gerando">Gerando…</span>';
     if (!r.pastaId) return '<span class="pet-st" title="Ligue a pasta do Drive (ícone + ao lado do nome)">Sem pasta</span>';
@@ -3691,7 +3700,7 @@ td,.row{font-size:13px}
           (r.pastaUrl ? pastaIco(r) : '<button type="button" class="pasta-falta" data-pasta-cad="' + esc(r.id) + '" title="Pasta não ligada ao cadastro: clique para procurar a pasta dela no Drive" aria-label="Ligar pasta de ' + esc(r.nome) + '"><svg class="i"><use href="#i-folder"/></svg>+</button>') + '</div><div class="addr">' + (r.cpf ? 'CPF ' + esc(r.cpf) : 'CPF não informado') + '</div></div>' +
         '<div><span class="lbl">Celular</span>' + telCell(r, true) + '</div>' +
         celCad(r, 'endereco', 'Endereço (rua, nº, bairro)') + celCad(r, 'uc', 'UC') + celCad(r, 'periodo', 'Período da ação') +
-        '<div><span class="lbl">Documentos</span>' + docsCell(r) + '</div>' +
+        '<div><span class="lbl">Documentos</span>' + docCurto(r) + '</div>' +
         '<div><span class="lbl">Petição</span>' + petCell(r) + '</div>' +
         '<div class="c-act"><button type="button" class="ico-btn" data-act="edit" data-id="' + esc(r.id) + '" title="Editar cadastro" aria-label="Editar ' + esc(r.nome) + '"><svg class="i"><use href="#i-pencil"/></svg></button></div>' +
       '</div>' + (cadAberto[r.id] ? fichaCliente(r, true) : '');
