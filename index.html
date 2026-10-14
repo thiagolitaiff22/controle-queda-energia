@@ -2035,6 +2035,9 @@ td,.row{font-size:13px}
 .eq-ped-acoes{align-items:center;flex-wrap:wrap}
 
 /* ---------- Queda de Energia: regras próprias ---------- */
+#cad-list .c-name,#hist-list .c-name{flex-direction:column!important;align-items:flex-start!important;justify-content:center;gap:2px}
+#cad-list .c-name .name{flex-wrap:nowrap!important;max-width:100%}
+#cad-list .c-name .addr,#hist-list .c-name .addr{display:block;white-space:nowrap}
 @media (prefers-color-scheme:light){ :root:not([data-theme="dark"]) .al-pills .al-verde{color:#047857} :root:not([data-theme="dark"]) .al-pills .al-amarelo{color:#b45309} :root:not([data-theme="dark"]) .al-pills .al-vermelho{color:#b91c1c} }
 @media (prefers-color-scheme:light){ :root:not([data-theme="dark"]) .al-pills .al-azul{color:#1d4ed8} }
 /* filtro de grupos redundante: o quadro Pauta do cartório já filtra */
@@ -3077,7 +3080,7 @@ td,.row{font-size:13px}
   function fichaCliente(r, compacto){
     var proc = String(r.processo || '').trim();
     var aud = r.audData ? fmtDate(r.audData) + (r.audHora ? ' às ' + r.audHora : '') + ' · ' + (r.online ? 'online' : 'presencial') : '';
-    var aviso = r.avisado ? 'Avisado' + (r.meioAviso ? ' por ' + (MEIOS[r.meioAviso] || r.meioAviso).toLowerCase() : '') + (r.avisadoEm ? ' em ' + fmtShort(String(r.avisadoEm).slice(0, 10)) : '') + (r.avisadoA ? ' · ' + soNome(r.avisadoA) : '') : (sit(r) === 'sem_contato' ? 'Sem contato' : '');
+    var aviso = r.avisado ? 'Avisado' + (r.meioAviso ? ' por ' + (r.meioAviso === 'whatsapp' ? 'WhatsApp' : (MEIOS[r.meioAviso] || r.meioAviso).toLowerCase()) : '') + (r.avisadoEm ? ' em ' + fmtShort(String(r.avisadoEm).slice(0, 10)) : '') + (r.avisadoA ? ' · ' + soNome(r.avisadoA) : '') : (sit(r) === 'sem_contato' ? 'Sem contato' : '');
     var via = clienteVia(r);
     var contato = (r.contato && fmtTel(r.contato)) || (via ? 'pelo número de ' + via.nome + ' (' + via.contato + ')' : '');
     var res = { procedente: 'Procedente', faltou: 'Faltou', conclusos: 'Conclusos', improcedente: 'Improcedente' }[resAud(r)] || '';
