@@ -449,7 +449,10 @@ function lerArquivos(arquivos){
   try { renomearArquivos(arquivos, o.tipos || []); } catch (x){ console.log('renomear: ' + x); }
   if (out.cpf && !cpfValido(out.cpf)) out.observacao = ('CPF lido (' + out.cpf + ') não confere: verifique no documento. ' + out.observacao).trim();
   // endereço: só o que está impresso no talão, logo abaixo do nome do cliente (leitura própria, cópia literal das linhas)
-  try { var tl = enderecoDoTalao(chave, soArquivos); out.endereco = tl.endereco; if (tl.uc) out.uc = tl.uc; } catch (x){ console.log('talão: ' + x); out.endereco = ''; }
+  try {
+    var tl = enderecoDoTalao(chave, soArquivos); out.endereco = tl.endereco; if (tl.uc) out.uc = tl.uc;
+    if (tl.fora) out.observacao = ('O talão não é de Alvarães (' + tl.fora + '): endereço não preenchido. ' + out.observacao).trim();
+  } catch (x){ console.log('talão: ' + x); out.endereco = ''; }
   out.uc = formatarUC(out.uc);
   return out;
 }
@@ -481,7 +484,13 @@ function enderecoDoTalao(chave, soArquivos){
   var rua = semAcento(linhas[1]).replace(/\s+ame\b.*$/, '').replace(/^(r|rua|tv|trav|travessa|av|avenida|est|estrada|ram|ramal|al|beco|bc|pc|praca|com)\.?\s+/, '').replace(/\s+(\d+|s\/?n)$/, '').trim();
   var palavras = rua.split(/\s+/).filter(function(p){ return p.length > 2; });
   var confere = bonito && palavras.length && palavras.every(function(p){ return semAcento(bonito).indexOf(p) >= 0; });
-  return { endereco: confere ? bonito : montado, uc: uc };
+  // ação de queda de energia: o endereço tem que ser de Alvarães (CEP 69475-000); outro município não é preenchido
+  var deAlvaraes = /alvaraes/.test(semAcento(linhas.slice(1).join(' '))) || /69\.?475-?\d{3}/.test(linhas.slice(1).join(' '));
+  if (!deAlvaraes) return { endereco: '', uc: uc, fora: linhas.slice(1).join(' / ') };
+  var end = confere ? bonito : montado;
+  if (!/alvar[aã]es/i.test(end)) end = end.replace(/,?\s*CEP\s/i, ', Alvarães/AM, CEP ');
+  if (!/alvar[aã]es/i.test(end)) end += ', Alvarães/AM';
+  return { endereco: end, uc: uc };
 }
 // monta "Rua X, 246, Bairro, Cidade/AM, CEP 69475-000" a partir das linhas do talão (sem o nome)
 function montarEndereco(linhas){
