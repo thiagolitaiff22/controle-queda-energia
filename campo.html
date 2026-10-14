@@ -750,7 +750,7 @@ html,body{font-size:15px}
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 35;
+  var APP_VERSAO = 36;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
@@ -991,7 +991,7 @@ html,body{font-size:15px}
     d = d.replace(/^0+/, '').slice(0, 11);
     var s = '+55 ';
     if (!d) return s;
-    s += '(' + d.slice(0, 2) + (d.length >= 2 ? ') ' : '');
+    s += '(' + d.slice(0, 2) + (d.length > 2 ? ') ' : '');   // só fecha o parêntese quando vem o número: assim dá para apagar o DDD
     if (d.length > 2) s += d.length > 6 ? d.slice(2, d.length - 4) + '-' + d.slice(d.length - 4) : d.slice(2);
     return s;
   }
