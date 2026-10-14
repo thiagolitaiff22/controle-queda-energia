@@ -1986,6 +1986,28 @@ td,.row{font-size:13px}
 #app .topnav .brand .logo{width:40px!important;height:40px!important;flex:none;border-radius:12px!important;background:linear-gradient(140deg,#1d4fd7,#0f2f7a)!important;display:grid!important;place-items:center!important;box-shadow:0 4px 12px rgba(29,79,215,.25)!important;overflow:hidden}
 #app .topnav .brand .logo img{height:24px!important;width:auto!important;max-width:30px!important;filter:none!important}
 #app.collapsed .topnav .brand .logo{width:36px!important;height:36px!important}
+/* Cadastro em planilha: cliente | celular | endereço | UC | período | documentos | petição */
+#cad-list .row{grid-template-columns:minmax(0,1.9fr) minmax(0,1fr) minmax(0,2.2fr) minmax(0,1.05fr) minmax(0,1.6fr) minmax(0,1.1fr) minmax(0,.95fr) 32px!important;gap:10px!important}
+.cel-in{width:100%;height:32px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);padding:0 8px;font:inherit;font-size:12.5px;min-width:0}
+.cel-in:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft)}
+.cel-in.vazio{border-color:var(--amber);background:var(--amber-soft)}
+.pet-st{display:inline-flex;align-items:center;font-size:12px;font-weight:600;color:var(--ink-3);white-space:nowrap;border:0;background:none;padding:0;font-family:inherit;cursor:default}
+.pet-st.ok{color:var(--green);text-decoration:none;cursor:pointer}.pet-st.ok:hover{text-decoration:underline}
+.pet-st.gerando{color:var(--blue)}.pet-st.erro{color:var(--red);cursor:pointer;text-decoration:underline}
+#cad-list .cad-sit{white-space:nowrap;font-size:11.5px}
+/* menu recolhido estreito, ícones em quadradinhos (o ativo em azul) */
+#app.collapsed{grid-template-columns:68px minmax(0,1fr)!important}
+#app.collapsed .topnav{padding:12px 10px 10px!important;align-items:center}
+#app.collapsed .topnav .brand{justify-content:center!important;padding:0 0 8px!important}
+#app.collapsed .topnav .nav{align-items:center!important;gap:4px!important}
+#app.collapsed .topnav .nav .tab{width:44px!important;height:42px!important;min-height:0!important;padding:0!important;margin:0 auto!important;border-radius:12px!important;display:grid!important;place-items:center!important;justify-content:center!important}
+#app.collapsed .topnav .nav .tab svg.i{width:20px!important;height:20px!important;margin:0!important}
+#app.collapsed .topnav .nav .tab[aria-selected="true"]{background:var(--primary)!important;color:#fff!important;box-shadow:0 4px 12px rgba(37,99,235,.3)}
+#app.collapsed .topnav .nav .tab[aria-selected="true"] .i{color:#fff!important}
+#app.collapsed .topnav .nav .tab:not([aria-selected="true"]):hover{background:var(--hover)!important}
+#app.collapsed .topnav .side-acts{flex-direction:column!important;align-items:center!important;gap:6px!important}
+#app.collapsed .topnav .side-acts button{width:38px!important;height:38px!important;border-radius:11px!important}
+#app .topnav .nav .tab svg.i{stroke-width:1.8}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -2015,6 +2037,10 @@ td,.row{font-size:13px}
   <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></symbol>
   <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
   <symbol id="i-eyeoff" viewBox="0 0 24 24"><path d="M10.6 5.1A10.5 10.5 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-2.9 3.9M6.6 6.6A17.4 17.4 0 0 0 2 12s3.6 7 10 7a9.8 9.8 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2M3 3l18 18"/></symbol>
+  <symbol id="i-clip" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6M9 16h4"/></symbol>
+  <symbol id="i-calcheck" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M9 16l2 2 4-4"/></symbol>
+  <symbol id="i-arch" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></symbol>
+  <symbol id="i-wallet" viewBox="0 0 24 24"><path d="M19 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
   <symbol id="i-chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
   <symbol id="i-filter" viewBox="0 0 24 24"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></symbol>
@@ -2053,11 +2079,11 @@ td,.row{font-size:13px}
   <header class="topnav">
     <div class="brand"><div class="logo"><img src="img/logo-rl-icone.png" alt="Rodrigues Litaiff"></div><div><b>Queda de Energia</b><span>Rodrigues Litaiff Advogados</span></div></div>
     <nav class="nav" role="tablist" aria-orientation="horizontal">
-      <div class="nav-lbl" aria-hidden="true">Processos</div><button class="tab" role="tab" id="tab-cad" aria-selected="false" type="button" title="Cadastro"><svg class="i"><use href="#i-plus"/></svg><span>Cadastro</span></button>
-      <button class="tab" role="tab" id="tab-clientes" aria-selected="true" type="button" title="Controle"><svg class="i"><use href="#i-users"/></svg><span>Controle</span></button>
+      <div class="nav-lbl" aria-hidden="true">Processos</div><button class="tab" role="tab" id="tab-cad" aria-selected="false" type="button" title="Cadastro"><svg class="i"><use href="#i-clip"/></svg><span>Cadastro</span></button>
+      <button class="tab" role="tab" id="tab-clientes" aria-selected="true" type="button" title="Controle"><svg class="i"><use href="#i-calcheck"/></svg><span>Controle</span></button>
       <button class="tab" role="tab" id="tab-ct" aria-selected="false" type="button" title="Contestações"><svg class="i"><use href="#i-scale"/></svg><span>Contestações</span></button>
-      <div class="nav-lbl" aria-hidden="true">Gestão</div><button class="tab admin-only" role="tab" id="tab-fin" aria-selected="false" type="button" title="Financeiro"><svg class="i"><use href="#i-cash"/></svg><span>Financeiro</span></button>
-      <button class="tab" role="tab" id="tab-ret" aria-selected="false" type="button" title="Arquivados"><svg class="i"><use href="#i-file"/></svg><span>Arquivados</span></button>
+      <div class="nav-lbl" aria-hidden="true">Gestão</div><button class="tab admin-only" role="tab" id="tab-fin" aria-selected="false" type="button" title="Financeiro"><svg class="i"><use href="#i-wallet"/></svg><span>Financeiro</span></button>
+      <button class="tab" role="tab" id="tab-ret" aria-selected="false" type="button" title="Arquivados"><svg class="i"><use href="#i-arch"/></svg><span>Arquivados</span></button>
       <button class="tab admin-only" role="tab" id="tab-equipe" aria-selected="false" type="button" title="Configurações"><svg class="i"><use href="#i-gear"/></svg><span>Configurações</span></button>
     </nav>
     <div class="side-acts"><button type="button" class="side-toggle" id="btn-side" title="Esconder o menu" aria-label="Esconder o menu" aria-expanded="true"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9.5 4v16"/></svg></button><button class="icon-btn theme-btn" id="btn-theme" type="button" aria-label="Modo escuro" title="Modo escuro"><svg class="i"><use id="theme-ico" href="#i-moon"/></svg></button></div>
@@ -2903,27 +2929,58 @@ td,.row{font-size:13px}
     return [['nome', 'nome'], ['cpf', 'CPF'], ['endereco', 'endereço'], ['uc', 'unidade consumidora'], ['periodo', 'período da ação']]
       .filter(function(c){ return !String(r[c[0]] || '').trim(); }).map(function(c){ return c[1]; });
   }
-  // "Gerar petição inicial": o script preenche o modelo do Drive (MODELOS) e salva o PDF na pasta do cliente
-  document.addEventListener('click', async function(e){
-    var b = e.target.closest('[data-act="peticao"]'); if (!b) return;
-    var r = state.rows.filter(function(x){ return x.id === b.dataset.id; })[0]; if (!r || !r.pastaId) return;
+  // petição inicial: o script preenche o modelo do Drive (MODELOS) e salva o PDF na pasta do cliente
+  // chave = os dados que vão na petição; mudou algum, a petição é refeita sozinha
+  function chavePeticao(r){ return [r.nome, r.cpf, r.endereco, r.uc, r.periodo].map(function(v){ return String(v || '').trim(); }).join('|'); }
+  var petGerando = {}, petFalhou = {};
+  async function gerarPeticao(r, auto){
+    if (!r || !r.pastaId || petGerando[r.id]) return;
+    var falta = faltaPeticao(r);
+    if (falta.length){ if (!auto) toast('Para gerar a petição, preencha: ' + falta.join(', ') + '.'); return; }
     // nome na petição: "Azamor Servalho da Cruz" (primeira letra maiúscula; da, de, do, dos, das, e em minúsculas)
     var nomeProprio = String(r.nome || '').trim().toLowerCase().split(/\s+/).map(function(p, i){
       return i > 0 && /^(da|de|do|das|dos|e)$/.test(p) ? p : p.replace(/(^|[-'])(\S)/g, function(m, a, c){ return a + c.toUpperCase(); });
     }).join(' ');
     var dados = { nome: nomeProprio, cpf: (r.cpf || '').trim(), endereco: (r.endereco || '').trim(), uc: (r.uc || '').trim(), periodo: (r.periodo || '').trim() };
-    var falta = faltaPeticao(r);
-    if (falta.length){ toast('Para gerar a petição, preencha no cadastro: ' + falta.join(', ') + '.'); return; }
-    var rot = b.textContent; b.disabled = true; b.textContent = 'Gerando petição…';
+    var chave = chavePeticao(r);
+    petGerando[r.id] = 1; renderCad();
     try {
       var url = await urlDoScript();
       var ses = await SB.auth.getSession(), jwt = ses && ses.data && ses.data.session ? ses.data.session.access_token : '';
       var d = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ acao: 'peticao', jwt: jwt, pastaId: r.pastaId, dados: dados }) }).then(function(x){ return x.json(); });
       if (!d || !d.ok) throw new Error(d && d.erro || 'falhou');
-      await patchRow(r.id, { peticaoUrl: d.url, peticaoEm: new Date().toISOString(), atualizadoEm: new Date().toISOString() });
-      toast('Petição inicial salva na pasta de ' + r.nome + (d.sexo ? ' (texto no ' + (d.sexo === 'F' ? 'feminino' : 'masculino') + ')' : '') + '.');
-    } catch(err){ toast('Não foi possível gerar a petição: ' + (err.message || err)); }
-    finally { b.disabled = false; b.textContent = rot; }
+      delete petFalhou[r.id];
+      await patchRow(r.id, { peticaoUrl: d.url, peticaoEm: new Date().toISOString(), peticaoChave: chave, atualizadoEm: new Date().toISOString() });
+      if (!auto) toast('Petição inicial salva na pasta de ' + r.nome + '.');
+    } catch(err){ petFalhou[r.id] = chave; if (!auto) toast('Não foi possível gerar a petição: ' + (err.message || err)); }
+    finally { delete petGerando[r.id]; renderCad(); }
+  }
+  // automático: cliente do Cadastro com nome, CPF, endereço, UC e período (e pasta) ganha a petição; se os dados mudam, refaz
+  var petFila = false;
+  function peticoesAutomaticas(){
+    if (petFila) return;
+    var r = state.rows.filter(noCadastro).filter(function(x){
+      return x.pastaId && !faltaPeticao(x).length && !petGerando[x.id] && petFalhou[x.id] !== chavePeticao(x) && (!x.peticaoUrl || x.peticaoChave !== chavePeticao(x));
+    })[0];
+    if (!r) return;
+    petFila = true;
+    gerarPeticao(r, true).then(function(){ petFila = false; setTimeout(peticoesAutomaticas, 300); });
+  }
+  document.addEventListener('click', function(e){
+    var b = e.target.closest('[data-act="peticao"]'); if (!b) return;
+    var r = state.rows.filter(function(x){ return x.id === b.dataset.id; })[0]; if (r){ delete petFalhou[r.id]; gerarPeticao(r, false); }
+  });
+  // planilha do Cadastro: endereço, UC e período editados na própria linha (salva ao sair do campo)
+  document.addEventListener('focusout', function(e){ if (e.target.classList && e.target.classList.contains('cel-in')) setTimeout(function(){ if (cadPendente) renderCad(); }, 0); });
+  document.addEventListener('change', async function(e){
+    var el = e.target.closest('[data-cad-campo]'); if (!el) return;
+    var r = state.rows.filter(function(x){ return x.id === el.dataset.id; })[0]; if (!r) return;
+    var campo = el.dataset.cadCampo, v = el.value.replace(/\s+/g, ' ').trim();
+    if (campo === 'periodo') v = v.toUpperCase();
+    if (v === String(r[campo] || '').trim()) return;
+    var p = { atualizadoEm: new Date().toISOString() }; p[campo] = v;
+    try { await patchRow(r.id, p); toast((campo === 'periodo' ? 'Período' : campo === 'uc' ? 'UC' : 'Endereço') + ' salvo: ' + r.nome); }
+    catch(err){ toast(errMsg(err)); }
   });
   // copiar o nome do cliente (para pesquisar no PROJUDI)
   document.addEventListener('click', async function(e){
@@ -3563,7 +3620,25 @@ td,.row{font-size:13px}
     if (!r.leituraIA) return [];
     return [['endereco', 'endereço'], ['uc', 'UC']].filter(function(c){ return !String(r[c[0]] || '').trim(); }).map(function(c){ return c[1]; });
   }
+  // célula editável da planilha do Cadastro (vazia fica destacada)
+  function celCad(r, campo, rot){
+    var v = String(r[campo] || '');
+    return '<div><span class="lbl">' + rot + '</span><input class="cel-in' + (v.trim() ? '' : ' vazio') + '" data-cad-campo="' + campo + '" data-id="' + esc(r.id) + '" value="' + esc(v) + '" placeholder="' + (campo === 'periodo' ? 'ex.: JANEIRO DE 2026 ATÉ A PRESENTE DATA' : rot) + '" title="' + esc(v || rot) + '"' + (campo === 'periodo' ? ' list="dl-periodos"' : '') + (campo === 'uc' ? ' inputmode="numeric"' : '') + '></div>';
+  }
+  function petCell(r){
+    if (petGerando[r.id]) return '<span class="pet-st gerando">Gerando…</span>';
+    if (!r.pastaId) return '<span class="pet-st" title="Ligue a pasta do Drive (ícone + ao lado do nome)">Sem pasta</span>';
+    var falta = faltaPeticao(r);
+    if (falta.length) return '<span class="pet-st" title="Falta: ' + esc(falta.join(', ')) + '">Falta ' + esc(falta[0]) + (falta.length > 1 ? ' +' + (falta.length - 1) : '') + '</span>';
+    if (petFalhou[r.id] === chavePeticao(r)) return '<button type="button" class="pet-st erro" data-act="peticao" data-id="' + esc(r.id) + '" title="Não deu certo: clique para tentar de novo">Tentar de novo</button>';
+    if (r.peticaoUrl && r.peticaoChave === chavePeticao(r)) return '<a class="pet-st ok" href="' + esc(r.peticaoUrl) + '" target="_blank" rel="noopener" title="Abrir a petição inicial (PDF)">Petição ✓</a>';
+    return '<span class="pet-st gerando">Na fila…</span>';
+  }
+  var cadPendente = false;
   function renderCad(){
+    var ae = document.activeElement;
+    if (ae && ae.classList && ae.classList.contains('cel-in') && $('cad-list') && $('cad-list').contains(ae)){ cadPendente = true; return; }
+    cadPendente = false;
     var box = $('cad-list'); if (!box) return;
     var todos = state.rows.filter(noCadastro);
     var conta = { conferir: 0, incompleto: 0, documentos: 0, pronto: 0 };
@@ -3598,7 +3673,7 @@ td,.row{font-size:13px}
     $('cad-ia').hidden = !semLeitura.length;
     if (semLeitura.length) $('cad-ia').innerHTML = '<b>A IA não conseguiu ler o talão de ' + semLeitura.length + (semLeitura.length === 1 ? ' cliente' : ' clientes') + '.</b> <span>Preencha à mão o endereço ou a UC (lápis): ' + esc(semLeitura.slice(0, 4).map(function(r){ return r.nome + ' (' + iaNaoLeu(r).join(' e ') + ')'; }).join(' · ')) + (semLeitura.length > 4 ? ' …' : '') + '</span>' +
       '<button type="button" class="btn" data-cad-ia="1">' + (cadSit === 'ia' ? 'Ver todos' : 'Ver só esses') + '</button>';
-    var html = '<div class="row head"><div>Cliente</div><div>Prospectador</div><div>Contato</div><div>Cadastrado</div><div>' + chkHead() + '</div><div></div></div>';
+    var html = '<div class="row head"><div>Cliente</div><div>Celular</div><div>Endereço</div><div>UC</div><div>Período</div><div>Documentos</div><div>Petição</div><div></div></div>';
     if (!lista.length) html += '<div class="empty">' + (todos.length ? 'Nenhum cliente neste filtro.' : 'Nenhum cliente em cadastro. Os cadastros chegam pelo aplicativo dos prospectadores.') + '</div>';
     // a lista vem em blocos, na ordem do trabalho: quem já pode protocolar, quem precisa conferir, e o que ainda falta
     var BLOCOS = [['pronto', 'Prontos para protocolar', 'pode protocolar', '--green'], ['conferir', 'Conferir dados', 'cadastrados pelo celular: confira com os documentos', '--amber'],
@@ -3614,14 +3689,18 @@ td,.row{font-size:13px}
         '<div class="c-name"><div class="name">' + (/^data:image\/(jpeg|png);base64,/.test(r.fotoCliente || '') ? '<img class="av-foto" src="' + r.fotoCliente + '" alt="">' : '') + '<button type="button" class="nome-abrir" data-act="abrir" data-id="' + esc(r.id) + '">' + esc(r.nome) + '</button>' +
           '<button type="button" class="nome-copia" data-copiar-nome="' + esc(r.nome) + '" title="Copiar o nome" aria-label="Copiar o nome de ' + esc(r.nome) + '"><svg class="i"><use href="#i-copy"/></svg></button>' +
           (r.pastaUrl ? pastaIco(r) : '<button type="button" class="pasta-falta" data-pasta-cad="' + esc(r.id) + '" title="Pasta não ligada ao cadastro: clique para procurar a pasta dela no Drive" aria-label="Ligar pasta de ' + esc(r.nome) + '"><svg class="i"><use href="#i-folder"/></svg>+</button>') + '</div><div class="addr">' + (r.cpf ? 'CPF ' + esc(r.cpf) : 'CPF não informado') + '</div></div>' +
-        '<div><span class="lbl">Prospectador</span><div class="val">' + esc(prospName(r.responsavelId) || '—') + '</div></div>' +
-        '<div><span class="lbl">Contato</span>' + telCell(r, true) + '</div>' +
-        '<div><span class="lbl">Cadastrado</span><div class="val">' + (r.dataCadastro || r.criadoEm ? String(r.dataCadastro || r.criadoEm).slice(0, 10).replace(/^\d\d(\d\d)-(\d\d)-(\d\d)$/, '$3/$2/$1') : '—') + '</div></div>' +
-        '<div><span class="lbl">Conferência</span>' + chkCell(r) + '</div>' +
+        '<div><span class="lbl">Celular</span>' + telCell(r, true) + '</div>' +
+        celCad(r, 'endereco', 'Endereço (rua, nº, bairro)') + celCad(r, 'uc', 'UC') + celCad(r, 'periodo', 'Período da ação') +
+        '<div><span class="lbl">Documentos</span>' + docsCell(r) + '</div>' +
+        '<div><span class="lbl">Petição</span>' + petCell(r) + '</div>' +
         '<div class="c-act"><button type="button" class="ico-btn" data-act="edit" data-id="' + esc(r.id) + '" title="Editar cadastro" aria-label="Editar ' + esc(r.nome) + '"><svg class="i"><use href="#i-pencil"/></svg></button></div>' +
       '</div>' + (cadAberto[r.id] ? fichaCliente(r, true) : '');
     }
     box.innerHTML = html;
+    var pers = {}; state.rows.forEach(function(x){ var p = String(x.periodo || '').trim(); if (p) pers[p] = (pers[p] || 0) + 1; });
+    var dl = $('dl-periodos'); if (!dl){ dl = document.createElement('datalist'); dl.id = 'dl-periodos'; document.body.appendChild(dl); }
+    dl.innerHTML = Object.keys(pers).sort(function(a, b){ return pers[b] - pers[a]; }).map(function(p){ return '<option value="' + esc(p) + '">'; }).join('');
+    setTimeout(peticoesAutomaticas, 500);
   }
   // "Documentos pendentes": ao passar o mouse mostra quais faltam (balão por cima da página, não é cortado pela tabela)
   function dicaDocs(alvo){
