@@ -1360,6 +1360,19 @@ section.vw-dash{gap:10px!important}
 #btn-novo{display:none!important}
 /* planilha enxuta: cliente | celular | período (obrigatório) | documentos | petição */
 #app #cad-list .row{grid-template-columns:minmax(260px,2.4fr) 140px minmax(260px,2fr) 110px minmax(150px,1.2fr) 30px!important;gap:14px!important}
+/* período: quadradinho sempre visível (é o campo que a equipe preenche) */
+#app #cad-list .cel-in{border:1px solid var(--line-2)!important;background:var(--panel)!important;margin-left:0!important;width:100%!important}
+#app #cad-list .cel-in:hover{border-color:var(--ink-3)!important}
+#app #cad-list .cel-in:focus{border-color:var(--blue)!important;box-shadow:0 0 0 3px var(--blue-soft)!important}
+#app #cad-list .cel-in.vazio{border-color:var(--amber)!important;background:var(--amber-soft)!important}
+/* botão da petição no formato dos outros botões (Pauta do PROJUDI, Mais filtros) */
+.pet-btn{height:32px!important;padding:0 11px!important;font-size:12.5px!important;text-decoration:none;white-space:nowrap}
+.pet-btn .i{width:15px;height:15px}
+.pet-btn.ok{color:var(--green)!important;border-color:color-mix(in srgb,var(--green) 45%,var(--line))!important}
+.pet-btn.erro{color:var(--red)!important}
+.pet-btn[disabled]{opacity:.75;cursor:default}
+.pet-gira{width:12px;height:12px;border-radius:50%;border:2px solid var(--line-2);border-top-color:var(--blue);animation:petgira .8s linear infinite}
+@keyframes petgira{to{transform:rotate(360deg)}}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -3028,13 +3041,13 @@ section.vw-dash{gap:10px!important}
     return '<span class="pet-st aviso-t" title="Ninguém conferiu a pasta ainda">Conferir</span>';
   }
   function petCell(r){
-    if (petGerando[r.id]) return '<span class="pet-st gerando">Gerando…</span>';
+    if (petGerando[r.id]) return '<button type="button" class="tb-btn pet-btn" disabled><span class="pet-gira"></span>Gerando…</button>';
     if (!r.pastaId) return '<span class="pet-st" title="Ligue a pasta do Drive (ícone + ao lado do nome)">Sem pasta</span>';
     var falta = faltaPeticao(r);
     if (falta.length) return '<span class="pet-st' + (falta[0] === 'período da ação' ? ' aviso-t' : ' erro-t') + '" title="Falta: ' + esc(falta.join(', ')) + '">Falta ' + esc(falta[0]) + (falta.length > 1 ? ' +' + (falta.length - 1) : '') + '</span>';
-    if (petFalhou[r.id] === chavePeticao(r)) return '<button type="button" class="pet-st erro" data-act="peticao" data-id="' + esc(r.id) + '" title="Não deu certo: clique para tentar de novo">Tentar de novo</button>';
-    if (r.peticaoUrl && r.peticaoChave === chavePeticao(r)) return '<a class="pet-st ok" href="' + esc(r.peticaoUrl) + '" target="_blank" rel="noopener" title="Abrir a petição inicial (PDF)">Petição ✓</a>';
-    return '<span class="pet-st gerando">Na fila…</span>';
+    if (petFalhou[r.id] === chavePeticao(r)) return '<button type="button" class="tb-btn pet-btn erro" data-act="peticao" data-id="' + esc(r.id) + '" title="Não deu certo: clique para tentar de novo"><svg class="i"><use href="#i-file"/></svg>Tentar de novo</button>';
+    if (r.peticaoUrl && r.peticaoChave === chavePeticao(r)) return '<a class="tb-btn pet-btn ok" href="' + esc(r.peticaoUrl) + '" target="_blank" rel="noopener" title="Abrir a petição inicial (PDF)"><svg class="i"><use href="#i-file"/></svg>Petição</a>';
+    return '<button type="button" class="tb-btn pet-btn" data-act="peticao" data-id="' + esc(r.id) + '" title="Gerar a petição inicial agora"><svg class="i"><use href="#i-file"/></svg>Gerar petição</button>';
   }
   var cadPendente = false;
   var formatosCorrigidos = false;
