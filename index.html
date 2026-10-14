@@ -1393,6 +1393,10 @@ section.vw-dash{gap:10px!important}
 .prot-card .prot-data{margin:12px 0 0;font-size:12.5px;color:var(--ink-3)}
 .prot-card .prot-erro{margin:10px 0 0;font-size:12.5px;color:var(--red)}
 .prot-card .prot-acoes{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+.cpf-copia{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;margin-left:5px;vertical-align:-4px;border:0;background:none;padding:0;color:var(--ink-3);cursor:pointer;border-radius:5px}
+.cpf-copia:hover{color:var(--ink);background:var(--hover)}
+.cpf-copia .i{width:13px;height:13px}
+.cpf-copia.ok{color:var(--green)}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -2409,6 +2413,12 @@ section.vw-dash{gap:10px!important}
     try { await patchRow(r.id, p); toast((campo === 'periodo' ? 'Período' : campo === 'uc' ? 'UC' : 'Endereço') + ' salvo: ' + r.nome); }
     catch(err){ toast(errMsg(err)); }
   });
+  // copiar o CPF do cliente
+  document.addEventListener('click', async function(e){
+    var b = e.target.closest('[data-copiar-cpf]'); if (!b) return;
+    try { await copiarTexto(b.dataset.copiarCpf); b.classList.add('ok'); setTimeout(function(){ b.classList.remove('ok'); }, 1500); toast('CPF copiado: ' + b.dataset.copiarCpf); }
+    catch(err){ toast('Não foi possível copiar. Selecione o CPF e use Ctrl+C.'); }
+  });
   // copiar o nome do cliente (para pesquisar no PROJUDI)
   document.addEventListener('click', async function(e){
     var b = e.target.closest('[data-copiar-nome]'); if (!b) return;
@@ -3185,7 +3195,7 @@ section.vw-dash{gap:10px!important}
       html += '<div class="row' + (cadAberto[r.id] ? ' aberto' : '') + '" data-linha="' + esc(r.id) + '">' +
         '<div class="c-name"><div class="name">' + (/^data:image\/(jpeg|png);base64,/.test(r.fotoCliente || '') ? '<img class="av-foto" src="' + r.fotoCliente + '" alt="">' : '<span class="av-ini" aria-hidden="true">' + esc(iniciais(r.nome)) + '</span>') + '<button type="button" class="nome-abrir" data-act="abrir" data-id="' + esc(r.id) + '" title="' + esc(r.nome) + '">' + esc(r.nome) + '</button>' +
           '<button type="button" class="nome-copia" data-copiar-nome="' + esc(r.nome) + '" title="Copiar o nome" aria-label="Copiar o nome de ' + esc(r.nome) + '"><svg class="i"><use href="#i-copy"/></svg></button>' +
-          (r.pastaUrl ? pastaIco(r) : '<button type="button" class="pasta-falta" data-pasta-cad="' + esc(r.id) + '" title="Pasta não ligada ao cadastro: clique para procurar a pasta dela no Drive" aria-label="Ligar pasta de ' + esc(r.nome) + '"><svg class="i"><use href="#i-folder"/></svg>+</button>') + '</div><div class="addr">' + (r.cpf ? 'CPF ' + esc(r.cpf) : 'CPF não informado') + '</div></div>' +
+          (r.pastaUrl ? pastaIco(r) : '<button type="button" class="pasta-falta" data-pasta-cad="' + esc(r.id) + '" title="Pasta não ligada ao cadastro: clique para procurar a pasta dela no Drive" aria-label="Ligar pasta de ' + esc(r.nome) + '"><svg class="i"><use href="#i-folder"/></svg>+</button>') + '</div><div class="addr">' + (r.cpf ? 'CPF ' + esc(r.cpf) + '<button type="button" class="cpf-copia" data-copiar-cpf="' + esc(r.cpf) + '" title="Copiar o CPF" aria-label="Copiar o CPF de ' + esc(r.nome) + '"><svg class="i"><use href="#i-copy"/></svg></button>' : 'CPF não informado') + '</div></div>' +
         '<div><span class="lbl">Celular</span>' + telCell(r, true) + '</div>' +
         '<div><span class="lbl">Prospectador</span><div class="val" title="' + esc(prospName(r.responsavelId) || '') + '">' + esc(primeiroUltimo(prospName(r.responsavelId)) || '—') + '</div></div>' +
         celCad(r, 'periodo', 'Período da ação') +   // endereço e UC: a IA preenche pelo talão; correção pelo lápis
