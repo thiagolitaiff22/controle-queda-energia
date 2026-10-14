@@ -684,6 +684,9 @@ html,body{overflow-x:hidden}
 .topo .logo,.topo .logo{width:40px!important;height:40px!important;border-radius:12px!important;background:linear-gradient(140deg,#1d4fd7,#0f2f7a)!important;display:grid!important;place-items:center!important;box-shadow:0 4px 12px rgba(29,79,215,.25)!important;overflow:hidden!important}
 .topo .logo img,html[data-tema="dark"] .topo .logo img{height:24px!important;width:auto!important;filter:none!important}
 html:not([data-tema="dark"]) .login-logo{filter:brightness(0) opacity(.85)}
+/* barra do Enviar cobre até o fim da tela (sem fresta mostrando os cartões atrás, entre o botão e a barra de baixo) */
+.barra{bottom:0!important;padding-bottom:calc(128px + env(safe-area-inset-bottom))!important}
+.abas{z-index:9!important}
 /* modo escuro: o azul-marinho de antes, com o fundo em degradê */
 html[data-tema="dark"],html[data-tema="dark"] body{background:linear-gradient(168deg,#0f2348 0%,#08142b 55%,#08142b 100%) fixed!important}
 </style>
@@ -724,7 +727,7 @@ html[data-tema="dark"],html[data-tema="dark"] body{background:linear-gradient(16
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 29;
+  var APP_VERSAO = 30;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
@@ -826,7 +829,7 @@ html[data-tema="dark"],html[data-tema="dark"] body{background:linear-gradient(16
   }
   function tratar(im, escanear){
     var iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height;
-    var max = escanear === 'folha' || escanear === 'original' ? 2600 : escanear ? 1800 : 1400, k = Math.min(1, max / Math.max(iw, ih));
+    var max = escanear === 'folha' || escanear === 'original' ? 2000 : escanear ? 1600 : 1200, k = Math.min(1, max / Math.max(iw, ih));
     var w = Math.round(iw * k), h = Math.round(ih * k);
     var c = document.createElement('canvas'); c.width = w; c.height = h;
     var x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(im, 0, 0, w, h);
@@ -1232,7 +1235,7 @@ html[data-tema="dark"],html[data-tema="dark"] body{background:linear-gradient(16
   function abrirCamera(d){
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return Promise.reject(new Error('sem câmera'));
     var tipo = MOLDURA[d.k] || 'folha', frente = false; // a foto do cliente também é com a câmera de trás (quem tira é o prospectador)
-    return navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: frente ? 'user' : 'environment' }, width: { ideal: 4096 }, height: { ideal: 3072 } } }).then(function(st){
+    return navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: frente ? 'user' : 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } } }).then(function(st){
       fluxo = st;
       var c = document.createElement('div'); c.className = 'cam';
       c.innerHTML = '<video playsinline autoplay muted' + (frente ? ' class="espelho"' : '') + '></video>' +
@@ -1263,8 +1266,8 @@ html[data-tema="dark"],html[data-tema="dark"] body{background:linear-gradient(16
         if (!vivo || !c.isConnected) return;
         var vw = v.videoWidth, vh = v.videoHeight;
         if (vw){
-          var kk = 480 / Math.max(vw, vh); peq.width = Math.round(vw * kk); peq.height = Math.round(vh * kk);
-          peq.getContext('2d').drawImage(v, 0, 0, peq.width, peq.height);
+          var kk = 360 / Math.max(vw, vh); peq.width = Math.round(vw * kk); peq.height = Math.round(vh * kk);
+          peq.getContext('2d', { willReadFrequently: true }).drawImage(v, 0, 0, peq.width, peq.height);
           var r = null; try { r = bordasPorLinhas(peq); } catch(e){}
           var W = c.clientWidth, H = c.clientHeight, k = Math.max(W / vw, H / vh), ox = (vw * k - W) / 2, oy = (vh * k - H) / 2;
           // só mostra a linha quando tem certeza e ela fica parada por 3 leituras seguidas (sem "pular")
@@ -1279,7 +1282,7 @@ html[data-tema="dark"],html[data-tema="dark"] body{background:linear-gradient(16
             c.classList.add('achou', 'certo');
           } else if (Date.now() - quandoQ > 700){ c.classList.remove('achou', 'certo'); suave = null; ultimoQ = null; }
         }
-        setTimeout(detectarVivo, 250);
+        setTimeout(detectarVivo, 350);
       }
       v.addEventListener('playing', detectarVivo, { once: true });
       function sair(){ vivo = false; window.removeEventListener('resize', posicionar); pararCamera(); c.remove(); }
@@ -1296,7 +1299,7 @@ html[data-tema="dark"],html[data-tema="dark"] body{background:linear-gradient(16
           // linha verde na tela: foto inteira (resolução cheia quando o celular deixa) recortada exatamente por ela
           var cheio = document.createElement('canvas'); cheio.width = vw; cheio.height = vh; cheio.getContext('2d').drawImage(v, 0, 0, vw, vh);
           vivo = false;
-          return fotoCheia(fluxo, vw, vh, [0, 0, vw, vh]).then(function(full){ sair(); return usarFoto(d, full || cheio, { cantosRel: bordas }); }).catch(function(){ sair(); falhaFoto(); });
+          sair(); return Promise.resolve().then(function(){ return usarFoto(d, cheio, { cantosRel: bordas }); }).catch(falhaFoto);
         }
         vivo = false;
         // foto do cliente: recorta a área da tela
@@ -1309,26 +1312,10 @@ html[data-tema="dark"],html[data-tema="dark"] body{background:linear-gradient(16
         var cx = cv.getContext('2d');
         if (frente){ cx.translate(cv.width, 0); cx.scale(-1, 1); }
         cx.drawImage(v, sx, sy, sw, sh, 0, 0, cv.width, cv.height);
-        // tenta a foto em resolução cheia (Android/Chrome); se não der, usa o quadro do vídeo
-        fotoCheia(fluxo, vw, vh, [sx, sy, sw, sh]).then(function(full){ sair(); return usarFoto(d, full || cv); }).catch(function(){ sair(); falhaFoto(); });
+        sair(); Promise.resolve().then(function(){ return usarFoto(d, cv); }).catch(falhaFoto);
       };
       return v.play().catch(function(){});
     });
-  }
-  // foto com a câmera em resolução máxima; recorta a mesma área que estava na tela
-  function fotoCheia(st, vw, vh, area){
-    var tr = st && st.getVideoTracks()[0];
-    if (!tr || !window.ImageCapture) return Promise.resolve(null);
-    var espera = new Promise(function(ok){ setTimeout(function(){ ok(null); }, 7000); });
-    var foto = new ImageCapture(tr).takePhoto().then(carregar).then(function(im){
-      var pw = im.naturalWidth, ph = im.naturalHeight;
-      if ((pw > ph) !== (vw > vh) || pw < vw) return null;        // foto girada ou menor: fica com o vídeo
-      var k = Math.min(pw / vw, ph / vh), ox = (pw - vw * k) / 2, oy = (ph - vh * k) / 2;
-      var c = document.createElement('canvas'); c.width = Math.round(area[2] * k); c.height = Math.round(area[3] * k);
-      c.getContext('2d').drawImage(im, ox + area[0] * k, oy + area[1] * k, area[2] * k, area[3] * k, 0, 0, c.width, c.height);
-      return c;
-    }).catch(function(){ return null; });
-    return Promise.race([foto, espera]);
   }
   // guarda a foto tratada e abre para conferir
   // documento: abre o recorte; foto do cliente vai direto
@@ -1467,7 +1454,7 @@ html[data-tema="dark"],html[data-tema="dark"] body{background:linear-gradient(16
   function endireitar(src, q){
     var dist = function(a, b){ return Math.hypot(a[0] - b[0], a[1] - b[1]); };
     var W = Math.max(dist(q[0], q[1]), dist(q[3], q[2])), H = Math.max(dist(q[0], q[3]), dist(q[1], q[2]));
-    var k = Math.min(1, 3300 / Math.max(W, H)); W = Math.max(20, Math.round(W * k)); H = Math.max(20, Math.round(H * k));
+    var k = Math.min(1, 2000 / Math.max(W, H)); W = Math.max(20, Math.round(W * k)); H = Math.max(20, Math.round(H * k));
     var x0 = q[0][0], y0 = q[0][1], x1 = q[1][0], y1 = q[1][1], x2 = q[2][0], y2 = q[2][1], x3 = q[3][0], y3 = q[3][1];
     var dx1 = x1 - x2, dx2 = x3 - x2, dx3 = x0 - x1 + x2 - x3, dy1 = y1 - y2, dy2 = y3 - y2, dy3 = y0 - y1 + y2 - y3;
     var den = dx1 * dy2 - dx2 * dy1 || 1e-9, G = (dx3 * dy2 - dx2 * dy3) / den, Hh = (dx1 * dy3 - dx3 * dy1) / den;
@@ -1490,8 +1477,8 @@ html[data-tema="dark"],html[data-tema="dark"] body{background:linear-gradient(16
   }
   function recortar(d, im, op){
     op = op || {};
-    // trabalha numa cópia de até 2400 px (rápido até em celular simples e com boa leitura)
-    var iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height, k = Math.min(1, 2400 / Math.max(iw, ih));
+    // trabalha numa cópia de até 2000 px (rápido até em celular simples e com boa leitura)
+    var iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height, k = Math.min(1, 2000 / Math.max(iw, ih));
     var src = document.createElement('canvas'); src.width = Math.round(iw * k); src.height = Math.round(ih * k);
     src.getContext('2d').drawImage(im, 0, 0, src.width, src.height);
     var W = src.width, H = src.height, m = Math.min(W, H) * 0.06;
