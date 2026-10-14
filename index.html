@@ -1406,6 +1406,23 @@ section.vw-dash{gap:10px!important}
 #app #cad-list .cpf-txt{font-size:12px;color:var(--ink-3)}
 #app #cad-list .c-name{grid-template-columns:34px minmax(0,max-content) 22px minmax(0,1fr)!important}
 #app #cad-list .c-name .pasta-falta{grid-column:3!important}
+/* Nova ação: um card por cliente que já passou pela audiência */
+#r-list{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;background:none!important;border:0!important;box-shadow:none!important;padding:0!important}
+#r-list .empty{grid-column:1 / -1}
+.na-card{display:flex;flex-direction:column;gap:10px;border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:14px 16px}
+.na-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.na-nome{display:flex;flex-direction:column;min-width:0}
+.na-nome b{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.na-nome span{font-size:12px;color:var(--ink-3)}
+.na-bloco{display:grid;grid-template-columns:1fr auto;align-items:baseline;gap:2px 8px;padding-top:8px;border-top:1px solid var(--line)}
+.na-rot{grid-column:1 / -1;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3)}
+.na-bloco b{font-size:14px}
+.na-sub{font-size:12px;color:var(--ink-3);text-align:right}
+.na-dest b{font-size:16px}
+.na-quando{font-size:12px;font-weight:600;color:var(--blue);text-align:right}
+.na-quando.ok{color:var(--green)}.na-quando.warn{color:var(--amber)}.na-quando.muted{color:var(--ink-3);font-weight:500}
+.na-acoes{display:flex;justify-content:space-between;align-items:center;gap:8px;padding-top:8px;border-top:1px solid var(--line)}
+.na-mais{grid-column:1 / -1;justify-self:center}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -1481,7 +1498,7 @@ section.vw-dash{gap:10px!important}
       <button class="tab" role="tab" id="tab-clientes" aria-selected="true" type="button" title="Controle"><svg class="i"><use href="#i-users"/></svg><span>Controle</span></button>
       <button class="tab" role="tab" id="tab-ct" aria-selected="false" type="button" title="Contestações"><svg class="i"><use href="#i-scale"/></svg><span>Contestações</span></button>
       <button class="tab admin-only" role="tab" id="tab-fin" aria-selected="false" type="button" title="Financeiro"><svg class="i"><use href="#i-cash"/></svg><span>Financeiro</span></button>
-      <button class="tab" role="tab" id="tab-ret" aria-selected="false" type="button" title="Arquivados"><svg class="i"><use href="#i-file"/></svg><span>Arquivados</span></button>
+      <button class="tab" role="tab" id="tab-ret" aria-selected="false" type="button" title="Nova ação"><svg class="i"><use href="#i-file"/></svg><span>Nova ação</span></button>
       <button class="tab admin-only" role="tab" id="tab-equipe" aria-selected="false" type="button" title="Configurações"><svg class="i"><use href="#i-gear"/></svg><span>Configurações</span></button>
     </nav>
     <div class="top-right">
@@ -1681,8 +1698,8 @@ section.vw-dash{gap:10px!important}
         <div class="fbar">
           <div class="search tb-busca"><svg class="i"><use href="#i-search"/></svg><input id="r-q" type="search" placeholder="Buscar cliente por nome ou CPF"></div>
           <select id="r-f" class="tb-sel" aria-label="Situação do retorno">
+            <option value="">Todos que já tiveram audiência</option>
             <option value="arquivado">Arquivados (pagos)</option>
-            <option value="">Todos com protocolo (retorno)</option>
             <option value="liberado">Já podem entrar de novo</option>
             <option value="30">Liberam nos próximos 30 dias</option>
             <option value="aguardando">Ainda aguardando</option>
@@ -2050,7 +2067,7 @@ section.vw-dash{gap:10px!important}
 <script>
 (function(){
   var state = { hora: '', rows: [], prosp: [], resp: '', db: null, filter: 'todos', aud: 'todas', tel: 'todos', meio: 'todos', dia: '', q: '', editing: null, limit: 100, view: 'c',
-    p: { res: '', rec: '', pag: '', conc: '', comp: '', q: '' }, r: { f: 'arquivado', q: '', mes: '' } };
+    p: { res: '', rec: '', pag: '', conc: '', comp: '', q: '' }, r: { f: '', q: '', mes: '' } };
   var $ = function(id){ return document.getElementById(id); };
   var memId = 0;
   var DOW = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
@@ -2933,7 +2950,7 @@ section.vw-dash{gap:10px!important}
   }
   function renderRet(){
     var f = state.r, hoje = iso(today());
-    var com = state.rows.filter(function(r){ return r.protocolo || r.arquivado; });
+    var com = state.rows.filter(function(r){ return r.arquivado || (r.audData && jaRealizada(r)); });   // só quem já passou pela audiência
     var arq = state.rows.filter(function(r){ return r.arquivado; });
     $('r-s4').textContent = arq.length;
     $('r-s4-c').textContent = arq.length ? 'pagos · ' + arq.filter(function(r){ return !r.contatadoRetorno; }).length + ' ainda não chamados' : 'nenhum processo pago ainda';
@@ -2955,20 +2972,27 @@ section.vw-dash{gap:10px!important}
     }).sort(function(a, b){ return retornoEm(a).localeCompare(retornoEm(b)); });
     $('r-title').textContent = 'Clientes · ' + list.length + (f.mes ? (f.mes === 'passado' ? ' · liberados em meses anteriores' : ' · liberam em ' + mesLabel(f.mes, true)) : '');
     $('r-count').textContent = list.length + (list.length === 1 ? ' cliente' : ' clientes') + (f.mes ? (f.mes === 'passado' ? ' · liberados antes' : ' · ' + mesLabel(f.mes, true)) : '');
-    var html = '<div class="row head" style="grid-template-columns:var(--rcols)"><div>Cliente</div><div>Contato</div><div>Protocolo</div><div>Pode entrar em</div><div>Situação</div><div></div></div>';
-    if (!list.length) html += '<div class="empty">' + (com.length ? 'Nenhum cliente neste filtro.' : 'Nenhum cliente tem data de protocolo cadastrada ainda. Preencha a data do protocolo no cadastro para calcular o retorno.') + '</div>';
-    list.forEach(function(r){
-      var ret = retornoEm(r), n = daysUntil(ret);
-      var st = (r.arquivado ? '<span class="pill ok">Arquivado · pago' + (r.arquivadoEm ? ' ' + fmtShort(r.arquivadoEm) : '') + '</span>' : '') + (r.contatadoRetorno ? '<span class="pill ok">Contatado</span>' : !ret ? '' : (n <= 0 ? '<span class="pill crit">Liberado ' + (n === 0 ? 'hoje' : 'há ' + (-n) + ' dias') + '</span>' : '<span class="pill ' + (n <= 30 ? 'warn' : 'muted') + '">em ' + n + ' dias</span>'));
-      html += '<div class="row" style="grid-template-columns:var(--rcols)">' + nameCell(r) +
-        '<div><span class="lbl">Contato</span><div class="val">' + esc(r.contato || '—') + '</div></div>' +
-        '<div><span class="lbl">Protocolo</span><div class="val">' + fmtDate(r.protocolo) + '</div></div>' +
-        '<div><span class="lbl">Pode entrar em</span><div class="val" style="font-weight:600">' + fmtDate(ret) + '</div></div>' +
-        '<div><span class="lbl">Situação</span><div class="cell-stack">' + st + (r.contatadoRetorno ? '' : termoMini(r)) +
-          '<button type="button" class="toggle" data-act="contato" data-id="' + esc(r.id) + '" aria-pressed="' + (r.contatadoRetorno ? 'true' : 'false') + '"><span class="dot"></span>' + (r.contatadoRetorno ? 'Contatado' : 'Marcar contatado') + '</button></div></div>' +
-        editCell(r) + '</div>';
+    // um card por cliente: última audiência, protocolo e quando pode entrar com a nova ação
+    var RES_N = { procedente: ['Procedente', 'ok'], faltou: ['Faltou', 'crit'], conclusos: ['Conclusos', 'warn'], improcedente: ['Improcedente', 'crit'] };
+    var html = '';
+    if (!list.length) html = '<div class="empty">' + (com.length ? 'Nenhum cliente neste filtro.' : 'Nenhum cliente passou pela audiência ainda.') + '</div>';
+    list.slice(0, state.r.lim || 60).forEach(function(r){
+      var ret = retornoEm(r), n = ret ? daysUntil(ret) : null, res = RES_N[resAud(r)];
+      var quando = !ret ? '<span class="na-quando muted">sem data de protocolo</span>' : r.contatadoRetorno ? '<span class="na-quando ok">Contatado</span>' :
+        n <= 0 ? '<span class="na-quando ok">Já pode entrar</span>' : '<span class="na-quando' + (n <= 30 ? ' warn' : '') + '">em ' + n + (n === 1 ? ' dia' : ' dias') + '</span>';
+      html += '<div class="na-card">' +
+        '<div class="na-top"><div class="na-nome"><b>' + esc(r.nome) + '</b><span>' + esc(r.cpf ? 'CPF ' + r.cpf : '') + '</span></div>' + (r.arquivado ? '<span class="pill ok">Pago</span>' : '') + '</div>' +
+        '<div class="na-bloco"><span class="na-rot">Última audiência</span><b>' + (r.audData ? fmtDate(r.audData) + (r.audHora ? ' · ' + esc(r.audHora) : '') : '—') + '</b>' +
+          '<span class="na-sub">' + (r.online ? 'online' : 'presencial') + (res ? ' · <span class="cad-sit ' + res[1] + '">' + res[0] + '</span>' : ' · sem resultado') + '</span></div>' +
+        '<div class="na-bloco"><span class="na-rot">Protocolo</span><b>' + (r.protocolo ? fmtDate(r.protocolo) : '—') + '</b><span class="na-sub tnum">' + esc(r.processo || '') + '</span></div>' +
+        '<div class="na-bloco na-dest"><span class="na-rot">Nova ação a partir de</span><b>' + (ret ? fmtDate(ret) : '—') + '</b>' + quando + '</div>' +
+        '<div class="na-acoes"><button type="button" class="toggle" data-act="contato" data-id="' + esc(r.id) + '" aria-pressed="' + (r.contatadoRetorno ? 'true' : 'false') + '"><span class="dot"></span>' + (r.contatadoRetorno ? 'Contatado' : 'Marcar contatado') + '</button>' +
+          '<button type="button" class="edit" data-act="edit" data-id="' + esc(r.id) + '">Editar</button></div>' +
+      '</div>';
     });
+    if (list.length > (state.r.lim || 60)) html += '<button type="button" class="tb-btn na-mais" id="na-mais">Mostrar mais (' + (list.length - (state.r.lim || 60)) + ')</button>';
     $('r-list').innerHTML = html;
+    var mais = $('na-mais'); if (mais) mais.onclick = function(){ state.r.lim = (state.r.lim || 60) + 60; renderRet(); };
   }
 
   function pautaProsp(p, fut){
@@ -4833,7 +4857,7 @@ section.vw-dash{gap:10px!important}
     l: ['Clientes', 'Todos os clientes e a etapa de cada processo'],
     p: ['Pós-audiência', 'Resultados, conclusos, embargos e pagamentos'],
     f: ['Financeiro', 'Depois da audiência: condenações, previsão de pagamento, honorários e repasse'],
-    r: ['Arquivados', 'Processos pagos e encerrados · e quando cada cliente pode entrar com uma nova ação'],
+    r: ['Nova ação', 'Clientes que já passaram pela audiência · última audiência, protocolo e quando podem entrar com a nova ação'],
     t: ['Contestações', 'Audiência, resultado, teses da Âmbar e pagamento'],
     e: ['Configurações', 'Equipe, integrações e prospectadores']
   };
