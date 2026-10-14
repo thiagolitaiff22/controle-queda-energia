@@ -2017,7 +2017,31 @@ td,.row{font-size:13px}
 #app .topnav .nav .tab svg.i{stroke-width:1.8}
 .pet-st.erro-t{color:var(--red)}.pet-st.aviso-t{color:var(--amber)}
 #cad-list .row{grid-template-columns:minmax(0,1.9fr) minmax(0,1fr) minmax(0,2.3fr) minmax(0,1.05fr) minmax(0,1.7fr) minmax(0,.75fr) minmax(0,.85fr) 32px!important}
+/* ---------- letra Inter (igual ao aplicativo) e planilha do Cadastro alinhada ---------- */
+:root{--font:"Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body,button,input,select,textarea{font-family:var(--font)}
+.tnum,#cad-list .addr,#cad-list .tel-edit,#cad-list .cel-in{font-variant-numeric:tabular-nums}
+#app #cad-list .row:not(.head){min-height:56px!important;padding-top:8px!important;padding-bottom:8px!important;align-items:center!important}
+#app #cad-list .row.head > div{font-size:11px;letter-spacing:.05em;font-weight:600;color:var(--ink-3)}
+#app #cad-list .c-name{display:grid!important;grid-template-columns:34px minmax(0,1fr);grid-template-rows:auto auto;column-gap:10px;row-gap:1px;align-items:center!important}
+#app #cad-list .c-name .name{display:contents!important}
+#app #cad-list .c-name .av-foto,#app #cad-list .c-name .av-ini{grid-row:1 / span 2;grid-column:1;width:34px!important;height:34px!important;border-radius:50%!important;object-fit:cover;margin:0!important}
+#app #cad-list .av-ini{display:grid;place-items:center;background:var(--brand-soft);color:var(--brand);font-size:12px;font-weight:700;letter-spacing:.02em;text-transform:uppercase}
+#app #cad-list .c-name .nome-abrir{grid-row:1;grid-column:2;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;font-size:13.5px;font-weight:600;text-align:left;max-width:100%;padding:0}
+#app #cad-list .c-name{position:relative;padding-right:54px}
+#app #cad-list .c-name .nome-copia,#app #cad-list .c-name .pasta-ico,#app #cad-list .c-name .pasta-falta{position:absolute!important;top:50%;transform:translateY(-50%);opacity:.55}
+#app #cad-list .row:hover .c-name .nome-copia,#app #cad-list .row:hover .c-name .pasta-ico{opacity:1}
+#app #cad-list .c-name .nome-copia{right:26px}
+#app #cad-list .c-name .pasta-ico,#app #cad-list .c-name .pasta-falta{right:0;opacity:1}
+/* células: sem moldura (texto alinhado com o título); moldura aparece ao passar o mouse ou ao editar */
+#app #cad-list .cel-in{height:34px;border:1px solid transparent;background:transparent;padding:0 8px;margin-left:-9px;width:calc(100% + 9px);font-size:13px;border-radius:8px}
+#app #cad-list .cel-in:hover{border-color:var(--line);background:var(--panel)}
+#app #cad-list .cel-in:focus{border-color:var(--blue);background:var(--panel)}
+#app #cad-list .cel-in.vazio{border-color:var(--amber);background:var(--amber-soft)}
+#app #cad-list .tel-edit,#app #cad-list .val{font-size:13px}
+#app #cad-list .pet-st{font-size:12.5px}
 </style>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
 </head>
@@ -3630,6 +3654,7 @@ td,.row{font-size:13px}
     return [['endereco', 'endereço'], ['uc', 'UC']].filter(function(c){ return !String(r[c[0]] || '').trim(); }).map(function(c){ return c[1]; });
   }
   // célula editável da planilha do Cadastro (vazia fica destacada)
+  function iniciais(n){ var p = String(n || '').trim().split(/\s+/).filter(function(x){ return !/^(da|de|do|das|dos|e)$/i.test(x); }); return ((p[0] || '')[0] || '') + ((p.length > 1 ? p[p.length - 1] : '')[0] || ''); }
   function celCad(r, campo, rot){
     var v = String(r[campo] || '');
     return '<div><span class="lbl">' + rot + '</span><input class="cel-in' + (v.trim() ? '' : ' vazio') + '" data-cad-campo="' + campo + '" data-id="' + esc(r.id) + '" value="' + esc(v) + '" placeholder="' + (campo === 'periodo' ? 'ex.: JANEIRO DE 2026 ATÉ A PRESENTE DATA' : rot) + '" title="' + esc(v || rot) + '"' + (campo === 'periodo' ? ' list="dl-periodos"' : '') + (campo === 'uc' ? ' inputmode="numeric"' : '') + '></div>';
@@ -3702,7 +3727,7 @@ td,.row{font-size:13px}
     });
     function linhaCad(r){
       html += '<div class="row' + (cadAberto[r.id] ? ' aberto' : '') + '" data-linha="' + esc(r.id) + '">' +
-        '<div class="c-name"><div class="name">' + (/^data:image\/(jpeg|png);base64,/.test(r.fotoCliente || '') ? '<img class="av-foto" src="' + r.fotoCliente + '" alt="">' : '') + '<button type="button" class="nome-abrir" data-act="abrir" data-id="' + esc(r.id) + '">' + esc(r.nome) + '</button>' +
+        '<div class="c-name"><div class="name">' + (/^data:image\/(jpeg|png);base64,/.test(r.fotoCliente || '') ? '<img class="av-foto" src="' + r.fotoCliente + '" alt="">' : '<span class="av-ini" aria-hidden="true">' + esc(iniciais(r.nome)) + '</span>') + '<button type="button" class="nome-abrir" data-act="abrir" data-id="' + esc(r.id) + '" title="' + esc(r.nome) + '">' + esc(r.nome) + '</button>' +
           '<button type="button" class="nome-copia" data-copiar-nome="' + esc(r.nome) + '" title="Copiar o nome" aria-label="Copiar o nome de ' + esc(r.nome) + '"><svg class="i"><use href="#i-copy"/></svg></button>' +
           (r.pastaUrl ? pastaIco(r) : '<button type="button" class="pasta-falta" data-pasta-cad="' + esc(r.id) + '" title="Pasta não ligada ao cadastro: clique para procurar a pasta dela no Drive" aria-label="Ligar pasta de ' + esc(r.nome) + '"><svg class="i"><use href="#i-folder"/></svg>+</button>') + '</div><div class="addr">' + (r.cpf ? 'CPF ' + esc(r.cpf) : 'CPF não informado') + '</div></div>' +
         '<div><span class="lbl">Celular</span>' + telCell(r, true) + '</div>' +
