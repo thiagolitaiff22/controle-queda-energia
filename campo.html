@@ -689,6 +689,23 @@ html:not([data-tema="dark"]) .login-logo{filter:brightness(0) opacity(.85)}
 .abas{z-index:9!important}
 /* modo escuro: o azul-marinho de antes, com o fundo em degradê */
 html[data-tema="dark"],html[data-tema="dark"] body{background:linear-gradient(168deg,#0f2348 0%,#08142b 55%,#08142b 100%) fixed!important}
+
+/* ---------- tamanho de aplicativo de celular: margens e letras mais justas (pedido em 13/10) ---------- */
+:root{--gx:max(14px,env(safe-area-inset-left));--gxr:max(14px,env(safe-area-inset-right))}
+.tela{padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right))}
+html,body{font-size:15px}
+.topo{padding-top:calc(8px + env(safe-area-inset-top))!important;padding-bottom:8px!important}
+.topo .quem b{font-size:15px!important}.topo .quem span{font-size:12px!important}
+.ola b{font-size:20px!important}.ola span{font-size:13px!important}
+.hero{padding:14px 16px!important;border-radius:18px!important}.hero .num{font-size:42px!important}.hero small,.hero .lin{font-size:13px!important}
+.kpis{gap:8px!important}.kpi{padding:11px 13px 10px!important;border-radius:14px!important}.kpi small{font-size:12.5px!important}.kpi b{font-size:24px!important;margin-top:4px!important}
+.rot{font-size:12.5px!important;margin:14px 0 8px!important}
+.dados{gap:8px!important;margin-bottom:12px!important}.fone{padding:9px 12px!important;border-radius:12px!important}.fone svg{width:22px!important;height:22px!important}.dados .fone input{font-size:16px!important}
+.grid{gap:8px!important}.doc{min-height:104px!important;padding:10px!important;border-radius:14px!important;gap:5px!important}.doc svg{width:28px!important;height:28px!important}.doc .t{font-size:13.5px!important}.doc .s{font-size:12px!important}
+.enviar{height:50px!important;font-size:16px!important;border-radius:14px!important}
+.lista div{padding:11px 13px!important}.lista b,.lista strong{font-size:14.5px}.lista small,.lista span{font-size:12.5px}
+.chips button{font-size:13px!important;padding:7px 12px!important}.busca{border-radius:12px!important}
+.abas button{font-size:11.5px!important}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><script>try{var t=localStorage.getItem("campo_tema");if(!t)t="dark";document.documentElement.setAttribute("data-tema",t);}catch(e){document.documentElement.setAttribute("data-tema","light");}</script>
 </head>
@@ -727,7 +744,7 @@ html[data-tema="dark"],html[data-tema="dark"] body{background:linear-gradient(16
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 31;
+  var APP_VERSAO = 32;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
