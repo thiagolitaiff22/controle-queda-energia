@@ -276,6 +276,10 @@ header.top h1{margin:4px 0 0;font-size:32px;line-height:1.1;font-weight:800;lett
 @media (max-width:900px){ .fb-painel{grid-template-columns:repeat(2,minmax(0,1fr))} .fb-fim{margin-left:0;width:100%} }
 .fb-groups{display:flex;flex-wrap:wrap;gap:12px 28px;align-items:center;border-top:1px solid var(--line);padding-top:12px}
 .fb-group{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;min-width:0}
+.ctl-modo{margin:2px 0 14px}
+.modo-oculto{display:none!important}
+#hist-list .row{grid-template-columns:minmax(0,2.3fr) minmax(0,1.5fr) minmax(0,1fr) minmax(0,1.2fr) minmax(0,1fr) 36px!important;gap:16px!important;min-height:46px;padding-top:6px!important;padding-bottom:6px!important}
+@media (max-width:900px){ #hist-list .row{grid-template-columns:1fr!important;gap:6px!important} #hist-list .row.head{display:none} }
 .fb-lbl{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:700}
 .seg{display:inline-flex;flex-wrap:wrap;gap:2px;padding:3px;background:var(--soft);border:1px solid var(--line);border-radius:10px;max-width:100%}
 .seg button{display:inline-flex;align-items:center;gap:6px;border:0;background:none;padding:5px 10px;border-radius:7px;font-size:13px;font-weight:600;color:var(--ink-2);white-space:nowrap}
@@ -1444,7 +1448,20 @@ section.vw-dash{gap:10px!important}
         <div hidden><span class="range tnum" id="range"></span><div class="pauta" id="pauta"></div></div>
 
 
-        <div class="fbar">
+        <div class="seg ctl-modo" id="ctl-modo" role="group" aria-label="Ver">
+          <button type="button" data-modo="andamento" aria-pressed="true">Em andamento <span class="n tnum" id="ctl-n-and"></span></button>
+          <button type="button" data-modo="hist" aria-pressed="false">Histórico de audiências <span class="n tnum" id="ctl-n-hist"></span></button>
+        </div>
+        <div id="hist-box" hidden>
+          <div class="fbar">
+            <div class="search tb-busca"><svg class="i"><use href="#i-search"/></svg><input id="hist-q" type="search" autocomplete="off" placeholder="Buscar cliente por nome, CPF ou processo"></div>
+            <select id="hist-ses" class="tb-sel" aria-label="Audiência"></select>
+            <span class="fb-fim tb-fim"><span class="fb-count tnum" id="hist-count"></span></span>
+          </div>
+          <div class="card list" id="hist-list"></div>
+          <p class="foot-note">Clientes que já tiveram a audiência, do mais recente para o mais antigo. O resultado é lançado em <b>Contestações</b>.</p>
+        </div>
+        <div class="fbar" id="ctl-fbar">
           <div class="search tb-busca"><svg class="i"><use href="#i-search"/></svg><input id="bc-q" type="search" autocomplete="off" placeholder="Buscar cliente por nome ou CPF"></div>
           <select id="cl-aud-sel" class="tb-sel" aria-label="Audiência"></select>
           <select id="fb-sit" class="tb-sel" aria-label="Situação do aviso"></select>
@@ -1474,9 +1491,9 @@ section.vw-dash{gap:10px!important}
         <div class="bc-res" id="bc-res" hidden></div>
         <div class="sec-title" id="list-title">Clientes</div>
         <div class="card list-sum" id="list-sum"></div>
-        <div class="sec-rot">Clientes</div>
+        <div class="sec-rot" id="list-rot">Clientes</div>
         <div class="card list" id="list"></div>
-        <p class="foot-note">Situação do aviso: <b>Avisado</b> quando o cliente confirmou; <b>Sem contato</b> quando não foi possível falar com ele. O <b>responsável</b> é o prospectador encarregado de avisar o cliente. Clique no botão da coluna Aviso para marcar ou desmarcar.</p>
+        <p class="foot-note" id="list-nota">Situação do aviso: <b>Avisado</b> quando o cliente confirmou; <b>Sem contato</b> quando não foi possível falar com ele. O <b>responsável</b> é o prospectador encarregado de avisar o cliente. Clique no botão da coluna Aviso para marcar ou desmarcar.</p>
       </section>
 
       <section id="view-pos" hidden style="display:flex;flex-direction:column;gap:18px">
@@ -2527,6 +2544,68 @@ section.vw-dash{gap:10px!important}
       $('list-sum').insertAdjacentHTML('beforeend', '<button type="button" class="btn wa-btn" id="btn-whats" title="Lembrete da audiência pelo WhatsApp (LiderHub, Pós-venda) para os clientes desta lista que têm telefone"><svg class="i"><use href="#i-bell"/></svg>Lembrete WhatsApp (' + wa.length + ')</button>');
     }
   }
+  /* Controle › Histórico de audiências: quem já teve a audiência sai do Controle, mas fica registrado aqui */
+  var ctlModo = 'andamento', histQ = '', histSes = '';
+  function naHistoria(r){ return !!String(r.processo || '').trim() && !!r.audData && jaRealizada(r); }
+  function renderModoCtl(){
+    var hist = state.rows.filter(naHistoria);
+    $('ctl-n-and').textContent = state.rows.filter(noControle).length;
+    $('ctl-n-hist').textContent = hist.length;
+    Array.prototype.forEach.call($('ctl-modo').querySelectorAll('[data-modo]'), function(b){ b.setAttribute('aria-pressed', String(b.dataset.modo === ctlModo)); });
+    var h = ctlModo === 'hist';
+    ['ctl-fbar', 'bc-res', 'list-title', 'list-sum', 'list-rot', 'list', 'list-nota'].forEach(function(id){ var el = $(id); if (el) el.classList.toggle('modo-oculto', h); });
+    if (h){ $('fb-painel').hidden = true; $('fb-mais').setAttribute('aria-expanded', 'false'); }
+    $('hist-box').hidden = !h;
+    if (h) renderHist(hist);
+  }
+  function renderHist(hist){
+    // sessões (dia + hora), da mais recente para a mais antiga
+    var ses = {};
+    hist.forEach(function(r){ var k = r.audData + ' ' + (r.audHora || ''); ses[k] = (ses[k] || 0) + 1; });
+    var chaves = Object.keys(ses).sort().reverse();
+    if (histSes && !ses[histSes]) histSes = '';
+    $('hist-ses').innerHTML = '<option value="">Todas as audiências · ' + hist.length + '</option>' + chaves.map(function(k){
+      var p = k.split(' ');
+      return '<option value="' + esc(k) + '"' + (k === histSes ? ' selected' : '') + '>' + fmtDate(p[0]) + ' · ' + DOW[parseDate(p[0]).getDay()] + (p[1] ? ' · ' + esc(p[1]) : '') + ' · ' + ses[k] + '</option>';
+    }).join('');
+    $('hist-ses').classList.toggle('ativo', !!histSes);
+    var q = histQ.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(), qd = histQ.replace(/\D/g, '');
+    var lista = hist.filter(function(r){
+      if (histSes && r.audData + ' ' + (r.audHora || '') !== histSes) return false;
+      if (!q) return true;
+      var nome = String(r.nome || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+      return nome.indexOf(q) >= 0 || (qd.length >= 3 && (String(r.cpf || '').replace(/\D/g, '').indexOf(qd) >= 0 || String(r.processo || '').replace(/\D/g, '').indexOf(qd) >= 0));
+    }).sort(function(a, b){ return (b.audData + (b.audHora || '')).localeCompare(a.audData + (a.audHora || '')) || String(a.nome || '').localeCompare(String(b.nome || ''), 'pt'); });
+    $('hist-count').textContent = lista.length + (lista.length === 1 ? ' cliente' : ' clientes');
+    var RES = { procedente: ['Procedente', 'ok'], faltou: ['Faltou', 'crit'], conclusos: ['Conclusos', 'warn'], improcedente: ['Improcedente', 'crit'] };
+    var html = '<div class="row head"><div>Cliente</div><div>Processo</div><div>Audiência</div><div>Aviso</div><div>Resultado</div><div></div></div>';
+    if (!lista.length) html += '<div class="empty">' + (hist.length ? 'Nenhum cliente nesta busca.' : 'Nenhuma audiência realizada ainda.') + '</div>';
+    var ultima = '';
+    lista.slice(0, 400).forEach(function(r){
+      var k = r.audData + ' ' + (r.audHora || '');
+      if (k !== ultima && !histSes){ ultima = k; html += '<div class="cad-grupo" style="--cor-g:var(--line-2)"><i></i><b>' + fmtDate(r.audData) + ' · ' + DOW[parseDate(r.audData).getDay()] + (r.audHora ? ' · ' + esc(r.audHora) : '') + '</b><span class="tnum">' + ses[k] + '</span></div>'; }
+      var res = RES[resAud(r)];
+      var aviso = r.avisado ? 'Avisado' + (r.meioAviso ? ' por ' + (MEIOS[r.meioAviso] || r.meioAviso).toLowerCase() : '') : sit(r) === 'sem_contato' ? 'Sem contato' : 'Não avisado';
+      html += '<div class="row">' +
+        '<div class="c-name"><div class="name">' + esc(r.nome) + pastaIco(r) + '</div><div class="addr">' + (r.cpf ? 'CPF ' + esc(r.cpf) : 'CPF não informado') + '</div></div>' +
+        '<div><span class="lbl">Processo</span><div class="val proc-l"><button type="button" class="copia" data-copiar="' + esc(r.processo) + '" title="Copiar o número do processo">' + esc(r.processo) + '<svg class="i"><use href="#i-copy"/></svg></button></div></div>' +
+        '<div><span class="lbl">Audiência</span><div class="val">' + fmtDate(r.audData) + (r.audHora ? ' · ' + esc(r.audHora) : '') + '<div class="mini">' + (r.online ? 'online' : 'presencial') + '</div></div></div>' +
+        '<div><span class="lbl">Aviso</span><div class="val">' + esc(aviso) + '</div></div>' +
+        '<div><span class="lbl">Resultado</span>' + (res ? '<span class="cad-sit ' + res[1] + '">' + res[0] + '</span>' : '<span class="muted-dash">Sem resultado lançado</span>') + '</div>' +
+        '<div class="c-act"><button type="button" class="ico-btn" data-act="edit" data-id="' + esc(r.id) + '" title="Editar cadastro" aria-label="Editar ' + esc(r.nome) + '"><svg class="i"><use href="#i-pencil"/></svg></button></div>' +
+      '</div>';
+    });
+    $('hist-list').innerHTML = html;
+  }
+  $('ctl-modo').addEventListener('click', function(e){ var b = e.target.closest('[data-modo]'); if (!b) return; ctlModo = b.dataset.modo; renderModoCtl(); });
+  $('hist-q').addEventListener('input', function(){ histQ = this.value.trim(); renderModoCtl(); });
+  $('hist-ses').addEventListener('change', function(){ histSes = this.value; renderModoCtl(); });
+  $('hist-list').addEventListener('click', async function(e){
+    var cp = e.target.closest('[data-copiar]');
+    if (cp){ try { await copiarTexto(cp.dataset.copiar); toast('Processo copiado: ' + cp.dataset.copiar); } catch(err){ toast('Não foi possível copiar.'); } return; }
+    var b = e.target.closest('[data-act="edit"]'); if (!b) return;
+    var r = state.rows.filter(function(x){ return x.id === b.dataset.id; })[0]; if (r) openForm(r);
+  });
   // clients changed just now stay on screen (top, tagged) until the filters change, so they don't vanish mid-work
   var fixos = {}, fixosChave = '';
   function renderList(){
@@ -2540,8 +2619,9 @@ section.vw-dash{gap:10px!important}
     renderSum(list);
     var html = '<div class="row head"><div>Cliente</div><div>Processo</div><div>Contato</div><div>Audiência</div><div>Aviso</div><div></div></div>';
     if (!list.length){
-      html += '<div class="empty">' + (state.rows.length ? 'Nenhum cliente neste filtro.' : 'Nenhum cliente cadastrado ainda. Clique em <b>Novo cliente</b> para começar.') + '</div>';
+      html += '<div class="empty">' + (state.rows.filter(noControle).length ? 'Nenhum cliente neste filtro.' : state.rows.length ? 'Nenhum processo aguardando audiência agora. Quem já teve a audiência está no <b>Histórico de audiências</b> (acima) e em <b>Contestações</b>.' : 'Nenhum cliente cadastrado ainda. Clique em <b>Novo cliente</b> para começar.') + '</div>';
     }
+    renderModoCtl();
     list.slice(0, state.limit).forEach(function(r){
       html += '<div class="row' + (clAberto[r.id] ? ' aberto' : '') + '" data-linha="' + esc(r.id) + '">' +
         '<div class="c-name"><div class="name' + (r.online ? ' online' : '') + '"' + (r.online ? ' title="Audiência online"' : '') + '><button type="button" class="nome-abrir" data-act="abrir" data-id="' + esc(r.id) + '" aria-expanded="' + !!clAberto[r.id] + '" title="Ver os dados do cliente">' + esc(r.nome) + '</button>' + pastaIco(r) + (r.cpf && !cpfValido(r.cpf) ? '<span class="cpf-ruim" title="CPF inválido: confira os dígitos">CPF inválido</span>' : '') + '</div>' +
