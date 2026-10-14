@@ -1951,14 +1951,14 @@ td,.row{font-size:13px}
 .modo-oculto{display:none!important}
 #hist-list .row{grid-template-columns:minmax(0,2.3fr) minmax(0,1.5fr) minmax(0,1fr) minmax(0,1.2fr) minmax(0,1fr) 36px!important;gap:16px!important;min-height:46px;padding-top:6px!important;padding-bottom:6px!important}
 @media (max-width:900px){ #hist-list .row{grid-template-columns:1fr!important;gap:6px!important} #hist-list .row.head{display:none} }
-#cad-list .row{grid-template-columns:minmax(0,2.2fr) minmax(0,1.3fr) minmax(0,1fr) minmax(0,.7fr) 334px 36px!important;align-items:center;gap:16px!important;min-height:46px;padding-top:6px!important;padding-bottom:6px!important}
+#cad-list .row{grid-template-columns:minmax(0,2.2fr) minmax(0,1.3fr) minmax(0,1fr) minmax(0,.7fr) 304px 36px!important;align-items:center;gap:16px!important;min-height:46px;padding-top:6px!important;padding-bottom:6px!important}
 @media (max-width:900px){ #cad-list .row{grid-template-columns:1fr!important;gap:6px!important} #cad-list .row.head{display:none} }
 .cad-grupo{display:flex;align-items:baseline;gap:8px;padding:18px 16px 8px;border-bottom:1px solid var(--line);font-size:13px}
 .cad-grupo i{width:8px;height:8px;border-radius:50%;background:var(--cor-g);align-self:center;flex:none}
 .cad-grupo b{text-transform:uppercase;letter-spacing:.04em;font-size:12px}
 .cad-grupo span{font-weight:700;color:var(--ink-2)}
 .cad-grupo em{font-style:normal;color:var(--ink-3);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.chk-g{display:grid;grid-template-columns:repeat(5,30px) 14px repeat(5,34px);align-items:center;justify-items:center}
+.chk-g{display:grid;grid-template-columns:repeat(4,30px) 14px repeat(5,34px);align-items:center;justify-items:center}
 .chk-g > i{align-self:stretch;width:1px;background:var(--line);justify-self:center}
 .chk-h{row-gap:2px;font-size:10px;letter-spacing:.03em;color:var(--ink-3)}
 .chk-h .chk-t{font-size:9.5px;font-weight:600;letter-spacing:.06em;color:var(--ink-2);justify-self:stretch;text-align:center;border-bottom:1px solid var(--line);padding-bottom:2px}
@@ -2368,7 +2368,7 @@ td,.row{font-size:13px}
       <div class="field full"><label for="f-nome">Nome completo</label><input id="f-nome" required autocomplete="off"></div>
       <div class="field full"><label>Pasta do cliente</label><div class="folder-box" id="f-pasta"></div></div>
       <div class="field"><label for="f-cpf">CPF</label><input id="f-cpf" inputmode="numeric" placeholder="000.000.000-00" class="tnum"><span class="hint" id="h-cpf"></span></div>
-      <div class="field"><label for="f-rg">RG</label><input id="f-rg" class="tnum" inputmode="numeric" placeholder="2960881-3"><span class="hint">Obrigatório para a petição. Sem RG? Repita o número do CPF.</span></div>
+      <div class="field"><label for="f-rg">RG</label><input id="f-rg" class="tnum" inputmode="numeric" placeholder="2960881-3"><span class="hint">Opcional. A petição usa o número do CPF ("portador do RG/CPF").</span></div>
       <div class="field full"><label for="f-end">Endereço</label><input id="f-end" placeholder="Rua, número, bairro, cidade/UF"></div>
       <div class="field full"><label for="f-contato">Contato (telefone / WhatsApp)</label><input id="f-contato" inputmode="tel" placeholder="(97) 00000-0000" class="tnum"></div>
       <div class="field full"><label for="f-resp">Prospectador</label><select id="f-resp"><option value="">Sem prospectador</option></select><span class="hint">Quem trouxe o cliente. É ele quem vê o cliente no aplicativo e cuida do aviso da audiência.</span></div>
@@ -2886,7 +2886,7 @@ td,.row{font-size:13px}
   });
   // o botão "Gerar petição inicial" só fica ativo com todos estes dados preenchidos
   function faltaPeticao(r){
-    return [['nome', 'nome'], ['rg', 'RG'], ['cpf', 'CPF'], ['endereco', 'endereço'], ['uc', 'unidade consumidora'], ['periodo', 'período da ação']]
+    return [['nome', 'nome'], ['cpf', 'CPF'], ['endereco', 'endereço'], ['uc', 'unidade consumidora'], ['periodo', 'período da ação']]
       .filter(function(c){ return !String(r[c[0]] || '').trim(); }).map(function(c){ return c[1]; });
   }
   // "Gerar petição inicial": o script preenche o modelo do Drive (MODELOS) e salva o PDF na pasta do cliente
@@ -2897,7 +2897,7 @@ td,.row{font-size:13px}
     var nomeProprio = String(r.nome || '').trim().toLowerCase().split(/\s+/).map(function(p, i){
       return i > 0 && /^(da|de|do|das|dos|e)$/.test(p) ? p : p.replace(/(^|[-'])(\S)/g, function(m, a, c){ return a + c.toUpperCase(); });
     }).join(' ');
-    var dados = { nome: nomeProprio, rg: (r.rg || '').trim(), cpf: (r.cpf || '').trim(), endereco: (r.endereco || '').trim(), uc: (r.uc || '').trim(), periodo: (r.periodo || '').trim() };
+    var dados = { nome: nomeProprio, cpf: (r.cpf || '').trim(), endereco: (r.endereco || '').trim(), uc: (r.uc || '').trim(), periodo: (r.periodo || '').trim() };
     var falta = faltaPeticao(r);
     if (falta.length){ toast('Para gerar a petição, preencha no cadastro: ' + falta.join(', ') + '.'); return; }
     var rot = b.textContent; b.disabled = true; b.textContent = 'Gerando petição…';
@@ -3507,7 +3507,6 @@ td,.row{font-size:13px}
   function faltasCad(r){
     var f = [], tem = function(k){ return !!String(r[k] || '').trim(); };
     if (!tem('cpf')) f.push(['d-cpf', 'nº do CPF']); else if (!cpfValido(r.cpf)) f.push(['d-cpfinv', 'CPF inválido']);
-    if (!tem('rg')) f.push(['d-rg', 'nº do RG']);
     if (!tem('endereco')) f.push(['d-end', 'endereço']);
     if (!tem('uc')) f.push(['d-uc', 'unidade consumidora']);
     if (!tem('periodo')) f.push(['d-per', 'período da ação']);
@@ -3525,11 +3524,11 @@ td,.row{font-size:13px}
     return k.length ? 'Falta: ' + k.slice(0, 3).map(function(t){ return t + ' (' + n[t] + ')'; }).join(' · ') : 'nada pendente';
   }
   // grade de conferência do Cadastro: um ✓ / ✗ por item, alinhado como planilha (? = documento ainda não conferido)
-  var CHK_DADOS = [['CPF', 'nº do CPF'], ['RG', 'nº do RG'], ['END', 'endereço'], ['UC', 'unidade consumidora'], ['PER', 'período da ação']];
+  var CHK_DADOS = [['CPF', 'nº do CPF'], ['END', 'endereço'], ['UC', 'unidade consumidora'], ['PER', 'período da ação']];
   var CHK_DOCS = [['PROC', 'procuracao', 'procuração'], ['RG', 'rg_frente', 'foto do RG'], ['CPF', 'cpf', 'foto do CPF'], ['TAL', 'luz', 'talão de luz'], ['FOTO', 'cliente', 'foto do cliente']];
   var IC_OK = '<svg class="i"><use href="#i-check"/></svg>', IC_NAO = '<svg viewBox="0 0 24 24" class="i"><path d="M7 7l10 10M17 7L7 17" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" fill="none"/></svg>';
   function chkHead(){
-    return '<div class="chk-g chk-h"><b class="chk-t" style="grid-column:1/6">Dados</b><b class="chk-t" style="grid-column:7/12">Documentos</b>' +
+    return '<div class="chk-g chk-h"><b class="chk-t" style="grid-column:1/5">Dados</b><b class="chk-t" style="grid-column:6/11">Documentos</b>' +
       CHK_DADOS.map(function(c){ return '<span>' + c[0] + '</span>'; }).join('') + '<i></i>' + CHK_DOCS.map(function(c){ return '<span>' + c[0] + '</span>'; }).join('') + '</div>';
   }
   function chkCell(r){

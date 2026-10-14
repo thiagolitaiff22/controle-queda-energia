@@ -353,7 +353,7 @@ function peticaoInicial(p){
   equipeLogada(p.jwt);
   var pasta; try { pasta = DriveApp.getFolderById(String(p.pastaId || '')); } catch (x){ throw new Error('Pasta do cliente não encontrada no Drive.'); }
   var d = p.dados || {}, xml = function(s){ return String(s == null ? '' : s).trim().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); };
-  var trocas = { 'Nome': d.nome, 'RG': d.rg, 'CPF': d.cpf, 'Endereço': d.endereco, 'Unidade Consumidora': d.uc, 'Período': d.periodo };
+  var trocas = { 'Nome': d.nome, 'CPF': d.cpf, 'Endereço': d.endereco, 'Unidade Consumidora': d.uc, 'Período': d.periodo };
   var vazios = Object.keys(trocas).filter(function(k){ return !String(trocas[k] || '').trim(); });
   if (vazios.length) throw new Error('Preencha no cadastro: ' + vazios.join(', ') + '.');
   var fem = sexoDoNome(d.nome) === 'F';
@@ -361,6 +361,8 @@ function peticaoInicial(p){
   partes = partes.map(function(b){
     if (!/^word\/(document|header\d*|footer\d*)\.xml$/.test(b.getName())) return b;
     var s = b.getDataAsString('UTF-8'), s0 = s;
+    // o RG não é mais cobrado: a qualificação fica "portador(a) do RG/CPF n. <número do CPF>"
+    s = s.split(' do RG n. &lt;&lt;RG&gt;&gt; e CPF n. &lt;&lt;CPF&gt;&gt;').join(' do RG/CPF n. &lt;&lt;CPF&gt;&gt;');
     Object.keys(trocas).forEach(function(k){
       var marca = '&lt;&lt;' + k + '&gt;&gt;';
       if (s.indexOf(marca) >= 0){ achou++; s = s.split(marca).join(xml(trocas[k])); }
