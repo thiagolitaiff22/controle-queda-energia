@@ -727,20 +727,22 @@ html[data-tema="dark"],html[data-tema="dark"] body{background:linear-gradient(16
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 30;
+  var APP_VERSAO = 31;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
     { k: 'rg_frente', arq: 'RG - frente', t: 'RG', s: 'frente e verso', lado: 'Frente', ic: 'i-id', req: true, fala: 'Tire a foto da frente do RG, o lado com a foto.' },
     { k: 'rg_verso', arq: 'RG - verso', t: 'RG', s: 'verso', lado: 'Verso', oculto: true, ic: 'i-idv', fala: 'Agora o verso do RG.' },
     { k: 'cpf', arq: 'CPF', t: 'CPF', s: 'cartão ou documento com o CPF', ic: 'i-id', req: true, fala: 'Tire a foto do CPF do cliente.' },
-    { k: 'luz', arq: 'Conta de luz', t: 'Talão de luz', s: 'conta de energia', ic: 'i-luz', req: true, fala: 'Tire a foto do talão de luz.' },
+    { k: 'luz', arq: 'Conta de luz', t: 'Talão de luz', s: 'com o gráfico e a UC', ic: 'i-luz', req: true, fala: 'Tire a foto do talão de luz. Na foto tem que aparecer o gráfico de consumo e o número da unidade consumidora, no canto de cima.' },
     { k: 'cliente', arq: 'Foto do cliente', t: 'Foto do cliente', s: 'rosto, na casa dele', ic: 'i-pessoa', req: true, fala: 'Tire uma foto do rosto do cliente, de frente.' },
     { k: 'arogo', arq: 'Documentos de quem assina a rogo', t: 'A rogo', s: 'RG e CPF de quem assina pelo cliente', ic: 'i-dedo', fala: 'Tire a foto do RG e do CPF da pessoa que assina pelo cliente.', multi: true },
     { k: 'outro', arq: 'Outro documento', t: 'Outros', s: 'outros documentos', ic: 'i-mais', fala: 'Foto de outro documento.', multi: true }
   ];
   // formato do enquadramento: cartão (RG/CPF, deitado), folha (A4, em pé) ou rosto (oval)
   var MOLDURA = { procuracao: 'folha', rg_frente: 'cartao', rg_verso: 'cartao', luz: 'folha', cpf: 'cartao', arogo: 'cartao', outro: 'folha', cliente: 'livre' };
+  // talão: a IA lê o endereço e a UC desta foto
+  var DICA_LUZ = 'Talão inteiro: tem que aparecer o gráfico de consumo e o número da UC no canto de cima';
   var DICA = { cartao: 'Coloque o documento dentro do quadro e segure firme', folha: 'Coloque a folha inteira dentro do quadro e segure firme', livre: 'Rosto do cliente dentro do círculo' };
   var $ = function(id){ return document.getElementById(id); };
   var esc = function(t){ return String(t == null ? '' : t).replace(/[&<>"']/g, function(c){ return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
@@ -1241,7 +1243,7 @@ html[data-tema="dark"],html[data-tema="dark"] body{background:linear-gradient(16
       c.innerHTML = '<video playsinline autoplay muted' + (frente ? ' class="espelho"' : '') + '></video>' +
         '<div class="moldura' + (tipo === 'livre' ? ' oval' : ' guia') + '"><i></i><i></i><i></i><i></i></div>' +
         (tipo !== 'livre' ? '<svg class="deteccao"><polygon></polygon></svg>' : '') +
-        '<div class="dica">' + esc(d.lado ? 'RG' : d.t + (d.s && d.k !== 'cliente' ? ' · ' + d.s : '')) + '<small>' + DICA[tipo] + '</small>' +
+        '<div class="dica">' + esc(d.lado ? 'RG' : d.t + (d.s && d.k !== 'cliente' ? ' · ' + d.s : '')) + '<small>' + (d.k === 'luz' ? DICA_LUZ : DICA[tipo]) + '</small>' +
           (d.lado ? '<div class="lados"><button type="button" data-lado="rg_frente">Frente</button><button type="button" data-lado="rg_verso">Verso</button></div>' : '') + '</div>' +
         '<button type="button" class="xis" aria-label="Fechar">×</button>' +
         '<div class="ctl"><button type="button" class="fechar">Voltar</button><button type="button" class="disparo" aria-label="Tirar foto"></button><button type="button" class="galeria">Galeria</button></div>';
