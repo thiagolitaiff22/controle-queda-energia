@@ -3033,7 +3033,7 @@ section.vw-dash{gap:10px!important}
   // célula editável da planilha do Cadastro (vazia fica destacada)
   function iniciais(n){ var p = String(n || '').trim().split(/\s+/).filter(function(x){ return !/^(da|de|do|das|dos|e)$/i.test(x); }); return ((p[0] || '')[0] || '') + ((p.length > 1 ? p[p.length - 1] : '')[0] || ''); }
   // "Marivalda Barco Rodrigues" -> "Marivalda Rodrigues"
-  function primeiroUltimo(n){ var p = String(n || '').trim().split(/s+/).filter(Boolean); return p.length > 1 ? p[0] + ' ' + p[p.length - 1] : p.join(''); }
+  function primeiroUltimo(n){ var p = String(n || '').trim().split(/\s+/).filter(Boolean); return p.length > 1 ? p[0] + ' ' + p[p.length - 1] : p.join(''); }
   function celCad(r, campo, rot){
     var v = String(r[campo] || '');
     return '<div><span class="lbl">' + rot + '</span><input class="cel-in' + (v.trim() ? '' : ' vazio') + ((campo === 'endereco' && endForaAlvaraes(r)) || (campo === 'uc' && v.trim() && !ucValida(v)) ? ' fora' : '') + '" data-cad-campo="' + campo + '" data-id="' + esc(r.id) + '" value="' + esc(v) + '" placeholder="' + (campo === 'periodo' ? 'ex.: JANEIRO DE 2026 ATÉ A PRESENTE DATA' : rot) + '" title="' + esc(v || rot) + '"' + (campo === 'periodo' ? ' list="dl-periodos"' : '') + (campo === 'uc' ? ' inputmode="numeric"' : '') + '></div>';
