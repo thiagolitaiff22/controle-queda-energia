@@ -1206,7 +1206,6 @@ section.vw-dash{gap:10px!important}
 @media all{ :root:not([data-theme="dark"]) .al-pills .al-azul{color:#1d4ed8} }
 
 /* sem quadro da pauta do cartório: as teses do INSS aparecem no gráfico e no filtro */
-#ct-cart{display:none!important}
 
 /* ---------- Cadastro ---------- */
 #view-cad{gap:0!important}
@@ -1290,19 +1289,7 @@ section.vw-dash{gap:10px!important}
 #form.novo .f-body > .field:has(#f-nome){display:flex!important;order:1}
 #form.novo .f-body > .field:has(#f-rg){display:flex!important;order:2}
 #form.novo .f-body > .field:has(#f-cpf){display:flex!important;order:3}
-#form.novo .f-body > .field:has(#f-nasc){display:flex!important;order:4}
-#form.novo .f-body > .field:has(#f-nit){display:flex!important;order:5}
-#form.novo .f-body > .field:has(#f-end){display:flex!important;order:6}
-#form.novo .f-body > .field:has(#f-contato){display:flex!important;order:7}
-#form.novo .f-body > .field:has(#f-tipo){display:flex!important;order:8}
-#form.novo .f-body > .field:has(#f-ativ){display:flex!important;order:9}
-#form.novo .f-body > .field:has(#f-fato){display:flex!important;order:10}
-#form.novo .f-body > .field:has(#f-crianca){display:flex!important;order:11}
-#form.novo .f-body > .field:has(#f-cnasc){display:flex!important;order:12}
-#form.novo .f-body > .field:has(#f-dpp):not([hidden]){display:flex!important;order:13}
-#form.novo .f-body > .field:has(#f-dtcad){display:flex!important;order:14}
 #form.novo.com-pasta .f-body > .field:has(#f-pasta){display:flex!important;order:1}
-#form.novo .f-body > .field:has(#f-resp){display:flex!important;order:15;grid-column:auto!important}
 #form.novo .field:has(#f-resp) .hint{display:none}
 .ficha-foto{display:flex;align-items:center;gap:12px;margin:8px 0 12px}
 .ficha-foto img{width:96px;height:96px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
@@ -1449,7 +1436,6 @@ td,.row{font-size:13px}
 .grp-head .tnum{font-weight:600;color:var(--ink-3)}
 .grp-head.crit{color:var(--red)}.grp-head.warn{color:var(--amber)}.grp-head.ok{color:var(--green)}
 /* Justiça: sem audiência (esconde os cartões que eram de audiência e de aviso) */
-#view-clientes .stats > .card:not([data-card="todos"]){display:none!important}
 /* ---------- tema escuro: dourado sobre marrom-carvão ---------- */
 :root[data-theme="dark"]{--bg:#14110d;--panel:#1b1712;--soft:#211c16;--hover:#262019;--active:#2c251c;--line:#2e2820;--line-2:#3b3328;--ink:#f6f0e6;--ink-2:#dcd2c0;--ink-3:#a8997f;--tile:#211c16;--g1:#c9a46a;--g2:#d4b483;--gsoft:rgba(212,180,131,.14);--gline:#2e2820;--sombra-leve:0 1px 2px rgba(0,0,0,.35);--sombra:0 1px 2px rgba(0,0,0,.35)}
 :root[data-theme="dark"] body{background:#14110d;color:var(--ink)}
@@ -1463,14 +1449,12 @@ td,.row{font-size:13px}
 :root[data-theme="dark"] .topnav .nav .tab[aria-selected="true"]::before{background:#d4b483!important}
 :root[data-theme="dark"] .vw-dash .stat-h svg.i{background:rgba(212,180,131,.14)!important;color:#d4b483!important;stroke:#d4b483}
 :root[data-theme="dark"] .topnav .brand .logo{background:#211c16;border-color:#2e2820}
-:root[data-theme="dark"] #ctr-list .row:hover,:root[data-theme="dark"] #nasc-list .row:hover,:root[data-theme="dark"] #cad-list .row:hover,:root[data-theme="dark"] #inss-list .row:hover{background:#262019}
 :root[data-theme="dark"] input:focus,:root[data-theme="dark"] select:focus,:root[data-theme="dark"] textarea:focus{border-color:#c9a46a!important;box-shadow:0 0 0 3px rgba(201,164,106,.2)!important}
 
 /* ajuste de colunas das listas novas */
 #ctr-list .row{grid-template-columns:minmax(0,1.9fr) minmax(0,1fr) minmax(0,.9fr) minmax(0,1.2fr) minmax(0,1.3fr) 36px!important;gap:12px!important}
 #nasc-list .row{grid-template-columns:minmax(0,1.9fr) minmax(0,1fr) minmax(0,.9fr) minmax(0,1fr) minmax(0,1.2fr) minmax(0,.9fr)!important;gap:12px!important}
 #ctr-list .cad-sit,#nasc-list .cad-sit{white-space:normal;line-height:1.25}
-#ctr-list .inss-sel,#nasc-list .inss-sel,#cad-list .inss-sel{max-width:100%;width:100%}
 #ctr-list .inss-acao,#nasc-list .inss-acao{margin-top:6px}
 #nasc-list .c-act{flex-wrap:wrap}
 #ctr-list .docs-pend,#nasc-list .docs-pend{position:relative;cursor:help}
@@ -1501,7 +1485,6 @@ td,.row{font-size:13px}
 }
 
 /* WhatsApp: o sistema não faz disparo; os painéis ficam fora da tela */
-[data-painel="liderhub"],[data-painel="regua"],[data-painel="lembrete"],#av-card{display:none!important}
 
 /* ---------- menu: espaçamento que acompanha a altura da janela (mais ar em telas altas, compacto em baixas) ---------- */
 @media (min-width:1000px){
@@ -1845,10 +1828,6 @@ td,.row{font-size:13px}
 #ctr-list .guia-sel.warn{color:var(--amber,#b45309)}
 
 /* ---------- o sistema não faz aviso: a equipe conversa com a cliente pelo WhatsApp ---------- */
-.field:has(#f-data),.field:has(#f-hora),.field:has(#f-online),.field:has(#f-situacao),.field:has(#f-aviso-resp),.field:has(#f-avisoem),.field:has(#f-meio),.field:has(#f-avisadoa),.field:has(#f-comp),#f-falta-wrap,.field:has(#fp-pal){display:none!important}
-#view-clientes #cl-aud-sel,#view-clientes #fb-sit,#view-clientes #btn-pj,#view-clientes #fb-mais,#view-clientes #fb-painel,#view-clientes #list-sum,#view-clientes #list-title,#view-clientes .sec-rot{display:none!important}
-#list .row{grid-template-columns:minmax(0,2.6fr) minmax(0,1.6fr) minmax(0,1.4fr) 36px!important}
-#list .row > :nth-child(4),#list .row > :nth-child(5){display:none!important}
 
 /* Contratos fechados: sem etapas internas (documentação ok vai direto para o INSS) */
 #ctr-list select[data-ctr],#ctr-list .inss-acao,#ctr-list .grp-head{display:none!important}
@@ -1859,7 +1838,6 @@ td,.row{font-size:13px}
 #prosp-list:empty{display:none}
 
 /* acesso do parceiro: só usuário e senha (sem link) */
-.field:has(#cp-link),#cp-novo,#cp-copiar,#cp-whats{display:none!important}
 
 #pros-box{margin-top:6px}
 #pros-box .sec-rot{margin:4px 0 10px}
@@ -1922,103 +1900,15 @@ td,.row{font-size:13px}
 .fp-flag .cid-flag,.fp-flag img{width:26px;height:18px;border-radius:3px;object-fit:cover;box-shadow:0 0 0 1px rgba(0,0,0,.12)}
 
 /* Cadastro pensado para o closer: contato grande e copiável */
-#cad-list .row{grid-template-columns:minmax(0,2fr) minmax(210px,1.5fr) minmax(0,.9fr) minmax(190px,1.3fr) minmax(0,1.3fr) 36px!important;align-items:center;gap:16px!important;min-height:78px;padding-top:12px!important;padding-bottom:12px!important}
-#cad-list .row.head{min-height:0;padding-top:8px!important;padding-bottom:8px!important}
-#cad-list .cad-contato{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
-#cad-list .tel-grande{font-size:16px;font-weight:700;letter-spacing:.2px}
-#cad-list .tel-acoes{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
-#cad-list .tel-btn{padding:5px 10px;font-size:12.5px;display:inline-flex;align-items:center;gap:5px;text-decoration:none}
-#cad-list .tel-btn .i{width:14px;height:14px}
-#cad-list .tel-btn.zap{background:#e9f7ee;border-color:#9bd3ad;color:#17653a}
-#cad-list .tel-btn.ok{background:#e9f7ee;border-color:#9bd3ad;color:#17653a}
-#cad-list .cad-atend{display:flex;flex-direction:column;gap:6px;align-items:stretch}
-#cad-list .cad-atend .inss-acao{justify-content:center}
-#cad-list .cad-docs{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
-:root[data-theme="dark"] #cad-list .tel-btn.zap,:root[data-theme="dark"] #cad-list .tel-btn.ok{background:rgba(70,160,100,.16);border-color:rgba(70,160,100,.5);color:#8fd6a9}
 
 /* Cadastro condensado */
-#cad-list .row{grid-template-columns:minmax(0,1.7fr) minmax(190px,1.25fr) minmax(130px,.85fr) minmax(250px,1.6fr) minmax(0,1fr) 30px!important;gap:12px!important;min-height:40px!important;padding-top:5px!important;padding-bottom:5px!important}
-#cad-list .row.head{padding-top:6px!important;padding-bottom:6px!important}
-#cad-list .c-name .name{font-size:13px}
-#cad-list .c-name .addr{font-size:11px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#cad-list .cad-contato{flex-direction:row!important;align-items:center;gap:6px!important;flex-wrap:nowrap}
-#cad-list .tel-grande{font-size:13.5px;font-weight:700;white-space:nowrap}
-#cad-list .tel-ic{width:26px;height:26px;border-radius:7px;border:1px solid var(--line);background:var(--panel,#fff);color:var(--ink-2,#5a4f3f);display:inline-flex;align-items:center;justify-content:center;padding:0;flex:none;cursor:pointer}
-#cad-list .tel-ic .i{width:14px;height:14px}
-#cad-list .tel-ic.ok{background:#e9f7ee;border-color:#9bd3ad;color:#17653a}
-#cad-list .tel-zap{font-size:11px;font-weight:700;padding:3px 8px;border-radius:7px;background:#e9f7ee;border:1px solid #9bd3ad;color:#17653a;text-decoration:none;white-space:nowrap}
-#cad-list .cad-parto{white-space:nowrap}
-#cad-list .cad-parto .val{font-size:12.5px}
-#cad-list .cad-atend{flex-direction:row!important;align-items:center!important;gap:6px!important}
-#cad-list .cad-atend select{min-width:0;flex:1;font-size:12px}
-#cad-list .cad-atend .inss-acao{white-space:nowrap;padding:4px 9px;font-size:12px;flex:none}
-#cad-list .cad-docs{flex-direction:row!important;align-items:center}
-:root[data-theme="dark"] #cad-list .tel-zap,:root[data-theme="dark"] #cad-list .tel-ic.ok{background:rgba(70,160,100,.16);border-color:rgba(70,160,100,.5);color:#8fd6a9}
-#cad-list .row{grid-template-columns:minmax(0,1.5fr) minmax(240px,1.3fr) minmax(150px,.9fr) minmax(230px,1.5fr) minmax(0,1fr) 30px!important}
-#cad-list .cad-parto{padding-left:4px}
-#cad-list .tel-zap{margin-left:2px}
 
 /* Cadastro limpo: nome, telefone, atendimento e um botão */
-#cad-list .row{grid-template-columns:minmax(0,1.6fr) minmax(190px,1fr) minmax(150px,.8fr) 150px 30px!important;gap:14px!important;min-height:58px!important;padding:8px 16px!important;border-top:1px solid var(--line)}
-#cad-list .row.head{min-height:0!important;padding:8px 16px!important;border-top:0}
-#cad-list .c-name{display:flex;align-items:center;gap:12px;min-width:0}
-#cad-list .cad-av{width:34px;height:34px;border-radius:50%;flex:none;display:grid;place-items:center;background:var(--gsoft,#f3e8d2);color:var(--gold-d,#8a6a3d);font-weight:700;font-size:14px}
-#cad-list .cad-nome{min-width:0}
-#cad-list .cad-nome .name{font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}
-#cad-list .cad-nome .addr{font-size:11.5px;color:var(--ink-3)}
-#cad-list .cad-ponto{width:8px;height:8px;border-radius:50%;background:#d9534f;flex:none;display:inline-block}
-#cad-list .cad-fechar .btn{width:100%;justify-content:center;white-space:nowrap}
-#cad-list .cad-atend{display:block}
-#cad-list .cad-atend select{width:100%}
 
 /* Cadastro: linha em flex, acompanha qualquer largura de janela */
-#cad-list .row.head{display:none!important}
-#cad-list .row.cad-closer{display:flex!important;flex-wrap:wrap;align-items:center;gap:10px 18px!important;padding:14px 20px!important;min-height:0!important;border-top:1px solid var(--line)}
-#cad-list .row.cad-closer:first-of-type{border-top:0}
-#cad-list .row.cad-closer .lbl{display:none}
-#cad-list .row.cad-closer .c-name{flex:1 1 240px;min-width:0}
-#cad-list .row.cad-closer .cad-contato{flex:0 1 auto;display:flex!important;flex-direction:row!important;align-items:center;gap:8px!important}
-#cad-list .row.cad-closer .cad-atend{flex:0 0 156px}
-#cad-list .row.cad-closer .cad-atend select{width:100%;height:34px;border-radius:999px;border:1px solid var(--line);background:var(--soft,#faf6ee);padding:0 12px;font-size:12.5px;font-weight:600}
-#cad-list .row.cad-closer .cad-fechar{flex:0 0 auto}
-#cad-list .row.cad-closer .cad-fechar .btn{width:auto;height:34px;padding:0 18px;border-radius:999px;font-size:12.5px}
-#cad-list .row.cad-closer .c-act{flex:0 0 auto;margin-left:auto}
-#cad-list .row.cad-closer .tel-grande{font-size:14.5px;letter-spacing:.2px}
-#cad-list .row.cad-closer .tel-ic{width:30px;height:30px;border-radius:50%}
-#cad-list .row.cad-closer .tel-zap{display:inline-flex;align-items:center;height:30px;padding:0 12px;border-radius:999px;font-size:12px}
-#cad-list .row.cad-closer .tel-add{height:30px;border-radius:999px}
-#cad-list .row.cad-closer .cad-av{width:38px;height:38px;font-size:15px}
-#cad-list .row.cad-closer .cad-nome .name{font-size:15px}
-#cad-list .row.cad-closer::before{content:none!important;display:none!important}
-#cad-list .row.cad-closer{box-shadow:none!important;padding-left:20px!important}
-#cad-list .row.cad-closer:hover{background:var(--hover)}
-#cad-list .cad-origem{display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px;color:var(--ink-3)}
-#cad-list .cad-origem b{color:var(--ink-2);font-weight:600}
-#cad-list .cad-bnd{display:inline-flex;flex:none}
-#cad-list .cad-bnd:empty{display:none}
-#cad-list .cad-bnd img,#cad-list .cad-bnd svg{width:20px;height:14px;border-radius:2px;object-fit:cover;box-shadow:0 0 0 1px rgba(0,0,0,.12)}
 
-#cad-list .cad-atraso{color:#c0392b;font-weight:600}
-#cad-list .row.cad-closer .cad-atend{flex:0 0 auto;display:flex;align-items:center;gap:6px}
-#cad-list .row.cad-closer .cad-atend select{width:150px}
-#cad-list .btn.tent{height:34px;padding:0 12px;border-radius:999px;font-size:12px;white-space:nowrap;background:var(--soft,#faf6ee)}
-#cad-list .cad-origem{flex-wrap:wrap;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;row-gap:2px}
-#cad-list .cad-origem .cad-atraso{white-space:nowrap}
 
 /* situação da ligação: pílula colorida; "não atendeu" como ação discreta */
-#cad-list .row.cad-closer .cad-atend{gap:10px!important}
-#cad-list .row.cad-closer .cad-atend select.lead-sel{width:auto;min-width:126px;height:30px;border-radius:999px;padding:0 28px 0 12px;font-size:12.5px;font-weight:700;border:0;background-color:#f3e8d2;color:#7a5a2b;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%237a5a2b%27 stroke-width=%272.5%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M6 9l6 6 6-6%27/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center;background-size:12px;cursor:pointer}
-#cad-list select.lead-contato{background-color:#e3eefc!important;color:#1f4f8f!important}
-#cad-list select.lead-retornar{background-color:#fdf0d5!important;color:#8a5a00!important}
-#cad-list select.lead-sem_resposta{background-color:#ececec!important;color:#555!important}
-#cad-list select.lead-perdido{background-color:#fbe3e1!important;color:#a02e24!important}
-#cad-list .btn.tent{height:auto;padding:2px 4px;border:0!important;background:none!important;box-shadow:none!important;color:var(--ink-3);font-size:12px;font-weight:600;text-decoration:underline;text-decoration-color:transparent;text-underline-offset:3px}
-#cad-list .btn.tent:hover{color:var(--ink);text-decoration-color:currentColor}
-:root[data-theme="dark"] #cad-list select.lead-sel{background-color:rgba(212,180,131,.16);color:#e8c98f}
-:root[data-theme="dark"] #cad-list select.lead-contato{background-color:rgba(80,140,230,.2)!important;color:#9cc2ff!important}
-:root[data-theme="dark"] #cad-list select.lead-retornar{background-color:rgba(230,170,60,.2)!important;color:#f0c46b!important}
-:root[data-theme="dark"] #cad-list select.lead-sem_resposta{background-color:rgba(255,255,255,.1)!important;color:#c9c9c9!important}
-:root[data-theme="dark"] #cad-list select.lead-perdido{background-color:rgba(230,90,80,.2)!important;color:#ff9b93!important}
 
 .eq-pedidos{margin:6px 0 14px;padding:14px 16px;border-radius:16px;background:var(--gsoft,#f8f1e4);border:1px solid var(--gline,var(--line))}
 .eq-pedidos .sec-rot{margin:0 0 10px;font-weight:700}
