@@ -464,10 +464,10 @@ function formatarUC(v){ var d = String(v || '').replace(/\D/g, ''); return d.len
 function enderecoDoTalao(chave, soArquivos){
   var pedido = soArquivos.concat([{ type: 'text', text:
     'Entre estes arquivos há uma conta de luz (talão) da Amazonas Energia. Procure SOMENTE nela. ' +
-    'O talão é sempre o mesmo modelo: no topo, à esquerda, o logotipo AMAZONAS ENERGIA e o endereço da empresa (ignore); no canto superior DIREITO, um quadro com o número da UNIDADE CONSUMIDORA (formato 000000000-00, acima do código de barras); ' +
+    'O talão é sempre o mesmo modelo: no topo, à esquerda, o logotipo AMAZONAS ENERGIA e o endereço da empresa (ignore); no canto superior DIREITO, um quadro verde escrito "Para contato com a Amazonas Energia, informe o NÚMERO DA UC" com o número da UNIDADE CONSUMIDORA logo abaixo (ex.: 607722002-38 ou 1605765002-46), acima do QR code; ' +
     'logo abaixo da faixa "CONTA MÊS" / "VENCIMENTO" / "CONSUMO" / "TOTAL A PAGAR", à ESQUERDA, fica o bloco do cliente: primeira linha é o NOME do cliente, e as linhas seguintes (2 a 4) são o endereço dele, terminando na linha que começa com "CEP" e o nome da cidade. ' +
     'Copie essas linhas EXATAMENTE como estão impressas, letra por letra, sem corrigir, sem completar e sem usar nenhum outro documento (procuração, RG, CNH) nem outro endereço do talão (o da empresa, no topo). ' +
-    'Responda só com um JSON: {"achou":true,"linhas":["NOME DO CLIENTE","linha 2","linha 3","CEP ..."],"endereco":"","uc":"000000000-00"}. Em "uc", copie o número do quadro do canto superior direito (vazio se ilegível). ' +
+    'Responda só com um JSON: {"achou":true,"linhas":["NOME DO CLIENTE","linha 2","linha 3","CEP ..."],"endereco":"","uc":"000000000-00","uc_duvida":false}. Em "uc", copie o número do quadro do canto superior direito, dígito por dígito. Se QUALQUER dígito da UC estiver cortado, apagado, borrado ou duvidoso, responda "uc_duvida": true (não adivinhe). ' +
     'Em "endereco", escreva o endereço dessas linhas (sem o nome) de forma legível: abra as abreviações (R = Rua, TV = Travessa, AV = Avenida, EST = Estrada, RAM = Ramal), ignore o "AME" e o número repetido depois dele, ponha acentos nos nomes conhecidos, e termine com Cidade/AM e o CEP. ' +
     'Ex.: linhas ["MARCELO RODRIGUES BEZERRA","R WENCESLAU FATIM 246 AME 246","SAO LAZARO","CEP 69.475-000 - ALVARAES"] → "Rua Wenceslau Fatim, 246, São Lázaro, Alvarães/AM, CEP 69475-000". ' +
     'Se não houver talão ou o bloco estiver ilegível, responda {"achou":false,"linhas":[],"endereco":"","uc":""}.' }]);
@@ -475,7 +475,7 @@ function enderecoDoTalao(chave, soArquivos){
   var m = txt.match(/\{[\s\S]*\}/); if (!m) return { endereco: '', uc: '' };
   var o = JSON.parse(m[0]);
   var linhas = (o.linhas || []).map(function(l){ return String(l || '').trim(); }).filter(String);
-  var uc = formatarUC(o.uc);
+  var uc = o.uc_duvida === true ? '' : formatarUC(o.uc);   // dígito duvidoso: não grava (alguém preenche olhando o talão)
   if (!o.achou || linhas.length < 2) return { endereco: '', uc: uc };
   var montado = montarEndereco(linhas.slice(1));
   var bonito = limpa(o.endereco);
@@ -487,9 +487,9 @@ function enderecoDoTalao(chave, soArquivos){
   // ação de queda de energia: o endereço tem que ser de Alvarães (CEP 69475-000); outro município não é preenchido
   var deAlvaraes = /alvaraes/.test(semAcento(linhas.slice(1).join(' '))) || /69\.?475-?\d{3}/.test(linhas.slice(1).join(' '));
   if (!deAlvaraes) return { endereco: '', uc: uc, fora: linhas.slice(1).join(' / ') };
-  var end = confere ? bonito : montado;
-  if (!/alvar[aã]es/i.test(end)) end = end.replace(/,?\s*CEP\s/i, ', Alvarães/AM, CEP ');
-  if (!/alvar[aã]es/i.test(end)) end += ', Alvarães/AM';
+  var end = (confere ? bonito : montado).replace(/\balvar[aã]?es\b(\s*\/\s*AM)?/ig, 'Alvarães/AM');
+  if (!/Alvarães/.test(end)) end = end.replace(/,?\s*CEP\s/i, ', Alvarães/AM, CEP ');
+  if (!/Alvarães/.test(end)) end += ', Alvarães/AM';
   return { endereco: end, uc: uc };
 }
 // monta "Rua X, 246, Bairro, Cidade/AM, CEP 69475-000" a partir das linhas do talão (sem o nome)
@@ -522,7 +522,28 @@ function lerPastaDoCadastro(p){
   equipeLogada(p.jwt);
   var pasta; try { pasta = DriveApp.getFolderById(String(p.pastaId || '')); } catch (x){ throw new Error('Pasta do cliente não encontrada no Drive.'); }
   var arq = arquivosDaPasta(pasta);
+  if (p.soTalao) return { ok: true, dados: lerTalaoDaPasta(arq) || {}, arquivos: arq.length };   // a mesma leitura do automático
   return { ok: true, dados: lerArquivos(arq), arquivos: arq.length };
+}
+/* automático e econômico: manda à IA só o arquivo do talão (uma consulta), para tirar endereço e UC.
+ * O aplicativo junta RG, CPF e talão em "DOCUMENTOS PESSOAIS"; arquivo com nome de talão/residência tem preferência. */
+function lerTalaoDaPasta(arquivos){
+  var chave = chaveClaude(); if (!chave) return null;
+  var nome = function(a){ return a.getName().toUpperCase(); };
+  var talao = arquivos.filter(function(a){ return /LUZ|ENERGIA|CONTA|FATURA|TAL[AÃ]O|RESID/.test(nome(a)); })[0] ||
+              arquivos.filter(function(a){ return /DOCUMENTOS PESSOAIS/.test(nome(a)); })[0];
+  if (!talao) return null;
+  // a foto do talão vai como imagem em alta resolução (o PDF do aplicativo é uma foto por página; o talão é a última)
+  var fotos = []; try { fotos = jpegsDe_(talao); } catch (x){}
+  var img = function(f){ return { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: Utilities.base64Encode(f.dados) } }; };
+  var tl = { endereco: '', uc: '' };
+  if (fotos.length){
+    tl = enderecoDoTalao(chave, [img(fotos[fotos.length - 1])]);
+    if (!tl.endereco && !tl.uc && fotos.length > 1) tl = enderecoDoTalao(chave, fotos.map(img));   // talão em outra página
+  } else if (talao.getMimeType() !== 'application/pdf'){
+    tl = enderecoDoTalao(chave, [{ type: 'image', source: { type: 'base64', media_type: talao.getMimeType(), data: Utilities.base64Encode(talao.getBlob().getBytes()) } }]);
+  }
+  return { endereco: tl.endereco || '', uc: tl.uc || '' };
 }
 // automático: pastas em PENDENTES DE PROTOCOLO com arquivo novo desde a última leitura (até 4 por vez)
 function lerPendentes(){
@@ -533,7 +554,7 @@ function lerPendentes(){
     var f = it.next(), arq = arquivosDaPasta(f); if (!arq.length) continue;
     var ultimo = Math.max.apply(null, arq.map(function(a){ return a.getLastUpdated().getTime(); }));
     var k = 'lido_' + f.getId(); if (Number(props.getProperty(k) || 0) >= ultimo) continue;
-    try { rpc('campo_preencher_pasta', { p_segredo: seg, p_pasta: f.getId(), p_dados: lerArquivos(arq) }); } catch (x){ console.log(f.getName() + ': ' + x); }
+    try { var lido = lerTalaoDaPasta(arq); if (lido) rpc('campo_preencher_pasta', { p_segredo: seg, p_pasta: f.getId(), p_dados: lido }); } catch (x){ console.log(f.getName() + ': ' + x); }
     props.setProperty(k, String(ultimo)); lidas++;
   }
   return lidas;
