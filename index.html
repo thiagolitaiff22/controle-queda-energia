@@ -3252,7 +3252,7 @@ section.vw-dash{gap:10px!important}
       if (cpf && !cpfValido(cpf)) return falha('Este CPF não existe. Confira os números.', $('nc-cpf'));
       if (tel && !/^\+55 \(\d{2}\) \d{4,5}-\d{4}$/.test(tel)) return falha('O telefone está incompleto. Use DDD e número.', $('nc-tel'));
       var dig = cpf.replace(/\D/g, ''), dup = dig ? state.rows.filter(function(x){ return String(x.cpf || '').replace(/\D/g, '') === dig; })[0] : null;
-      if (dup) return falha('Já existe um cliente com este CPF: ' + dup.nome + '.', $('nc-cpf'));
+      // mesmo CPF pode ter várias ações: não bloqueia, só avisa depois de salvar
       erro.hidden = true;
       var agora = new Date().toISOString();
       var data = {
@@ -3265,7 +3265,7 @@ section.vw-dash{gap:10px!important}
       $('nc-salvar').disabled = true;
       try {
         var id = await saveRow(null, data);
-        toast('Cliente cadastrado: ' + data.nome + '. Criando a pasta no Drive…');
+        toast('Cliente cadastrado: ' + data.nome + (dup ? ' (este CPF já tinha outra ação: ' + dup.nome + ')' : '') + '. Criando a pasta no Drive…');
         f.reset(); ncDlg.close();
         ensureFolder(id, data.nome).then(function(u){ if (u) toast('Pasta criada no Drive: ' + data.nome); }).catch(function(e2){ toast('Cliente salvo, mas a pasta não foi criada: ' + driveErr(e2)); });
       } catch(err){ falha(errMsg(err)); }
