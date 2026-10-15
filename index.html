@@ -1456,6 +1456,17 @@ section.vw-dash{gap:10px!important}
 #au-list .au-cli{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) 210px 110px!important}
 #au-list .au-tese{font-size:12px}
 @media (max-width:900px){ .au-t-row{grid-template-columns:1fr 1fr} }
+/* aba Novo cliente */
+.nc-form{max-width:760px;padding:22px 24px}
+.nc-nota{margin:0 0 18px;font-size:13px;color:var(--ink-3);line-height:1.5}
+.nc-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 16px}
+.nc-grid label{display:flex;flex-direction:column;gap:6px;font-size:12.5px;font-weight:600;color:var(--ink-2)}
+.nc-grid .nc-full{grid-column:1 / -1}
+.nc-grid input,.nc-grid select{height:40px;border:1px solid var(--line-2);border-radius:9px;background:var(--bg);color:var(--ink);padding:0 12px;font:inherit;font-size:14px;font-weight:400}
+.nc-grid input:focus,.nc-grid select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft)}
+.nc-erro{margin:14px 0 0;color:var(--red);font-size:13px}
+.nc-acoes{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+@media (max-width:700px){ .nc-grid{grid-template-columns:1fr} }
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -1528,6 +1539,7 @@ section.vw-dash{gap:10px!important}
     <div class="brand"><div class="logo"><svg class="i"><use href="#i-bolt"/></svg></div><div><b>Queda de Energia</b><span>Rodrigues Litaiff Advogados</span></div></div>
     <nav class="nav" role="tablist" aria-orientation="horizontal">
       <button class="tab" role="tab" id="tab-cad" aria-selected="false" type="button" title="Cadastro"><svg class="i"><use href="#i-plus"/></svg><span>Cadastro</span></button>
+      <button class="tab" role="tab" id="tab-novo" aria-selected="false" type="button" title="Novo cliente"><svg class="i"><use href="#i-users"/></svg><span>Novo cliente</span></button>
       <button class="tab" role="tab" id="tab-clientes" aria-selected="true" type="button" title="Controle"><svg class="i"><use href="#i-users"/></svg><span>Controle</span></button>
       <button class="tab" role="tab" id="tab-ct" aria-selected="false" type="button" title="Contestações"><svg class="i"><use href="#i-scale"/></svg><span>Contestações</span></button>
       <button class="tab" role="tab" id="tab-aud" aria-selected="false" type="button" title="Audiências"><svg class="i"><use href="#i-cal"/></svg><span>Audiências</span></button>
@@ -1728,6 +1740,23 @@ section.vw-dash{gap:10px!important}
         </div>
       </section>
 
+      <section id="view-novo" hidden>
+        <form class="card nc-form" id="nc-form" autocomplete="off" novalidate>
+          <p class="nc-nota">Cadastro direto no sistema, para quem já está com a documentação ok (sem fotos e sem anexos). A pasta no Drive é criada sozinha e a petição sai quando nome, CPF, endereço, UC e período estiverem preenchidos.</p>
+          <div class="nc-grid">
+            <label class="nc-full">Nome completo<input id="nc-nome" required placeholder="Nome do cliente"></label>
+            <label>CPF<input id="nc-cpf" inputmode="numeric" placeholder="000.000.000-00" class="tnum"></label>
+            <label>Telefone<input id="nc-tel" inputmode="tel" placeholder="+55 (97) 99999-9999" class="tnum"></label>
+            <label class="nc-full">Endereço<input id="nc-end" placeholder="Rua, número, bairro, Alvarães/AM, CEP 69475-000"></label>
+            <label>Unidade consumidora<input id="nc-uc" inputmode="numeric" placeholder="Número da UC" class="tnum"></label>
+            <label>Período da ação<input id="nc-per" list="dl-periodos" placeholder="ex.: JANEIRO DE 2026 ATÉ A PRESENTE DATA"></label>
+            <label>Prospectador<select id="nc-prosp"></select></label>
+            <label class="nc-full">Observações<input id="nc-obs" placeholder="Opcional"></label>
+          </div>
+          <p class="nc-erro" id="nc-erro" hidden></p>
+          <div class="nc-acoes"><button type="reset" class="tb-btn" id="nc-limpar">Limpar</button><button type="submit" class="btn primary" id="nc-salvar">Cadastrar cliente</button></div>
+        </form>
+      </section>
       <section id="view-aud" hidden style="display:flex;flex-direction:column;gap:18px">
         <div class="fbar">
           <div class="search tb-busca"><svg class="i"><use href="#i-search"/></svg><input id="au-q" type="search" placeholder="Buscar cliente por nome ou CPF"></div>
@@ -2399,7 +2428,6 @@ section.vw-dash{gap:10px!important}
     var f = [['nome', 'nome'], ['cpf', 'CPF'], ['endereco', 'endereço'], ['uc', 'unidade consumidora'], ['periodo', 'período da ação']]
       .filter(function(c){ return !String(r[c[0]] || '').trim(); }).map(function(c){ return c[1]; });
     if (endForaAlvaraes(r)) f.unshift('endereço de Alvarães');
-    if (String(r.uc || '').trim() && !ucValida(r.uc)) f.unshift('UC no formato 000000000-00');
     return f;
   }
   // relê só o talão (mesma leitura do automático) dos clientes com endereço fora de Alvarães
@@ -3179,9 +3207,57 @@ section.vw-dash{gap:10px!important}
     var b = e.target.closest('[data-protocolar]'); if (!b) return;
     var r = state.rows.filter(function(x){ return x.id === b.dataset.protocolar; })[0]; if (r) abrirProtocolo(r);
   });
+  /* aba Novo cliente: mesmo cadastro do aplicativo, sem fotos (documentação já ok) */
+  function ncMascaraCPF(v){ var d = String(v || '').replace(/\D/g, '').slice(0, 11); return d.length > 9 ? d.replace(/^(\d{3})(\d{3})(\d{3})(\d{1,2})$/, '$1.$2.$3-$4') : d.length > 6 ? d.replace(/^(\d{3})(\d{3})(\d{1,3})$/, '$1.$2.$3') : d.length > 3 ? d.replace(/^(\d{3})(\d{1,3})$/, '$1.$2') : d; }
+  function ncMascaraTel(v){
+    var d = String(v || '').replace(/\D/g, ''); if (d.indexOf('55') === 0 && d.length > 2) d = d.slice(2); else if (d === '55' || d === '5') d = '';
+    d = d.replace(/^0+/, '').slice(0, 11); if (!d) return '';
+    var s = '+55 (' + d.slice(0, 2) + (d.length > 2 ? ') ' : '');
+    if (d.length > 2) s += d.length > 6 ? d.slice(2, d.length - 4) + '-' + d.slice(d.length - 4) : d.slice(2);
+    return s;
+  }
+  function ncProspectadores(){
+    var sel = $('nc-prosp'); if (!sel) return; var v = sel.value;
+    sel.innerHTML = '<option value="">Sem prospectador</option>' + (state.prosp || []).slice().sort(function(a, b){ return String(a.nome || '').localeCompare(String(b.nome || ''), 'pt'); }).map(function(p){ return '<option value="' + esc(p.id) + '">' + esc(p.nome) + '</option>'; }).join('');
+    sel.value = v;
+  }
+  (function(){
+    var f = $('nc-form'); if (!f) return;
+    $('nc-cpf').addEventListener('input', function(){ this.value = ncMascaraCPF(this.value); });
+    $('nc-tel').addEventListener('input', function(){ this.value = ncMascaraTel(this.value); });
+    $('tab-novo').addEventListener('click', ncProspectadores);
+    f.addEventListener('reset', function(){ $('nc-erro').hidden = true; });
+    f.addEventListener('submit', async function(e){
+      e.preventDefault();
+      var erro = $('nc-erro'), falha = function(m, el){ erro.textContent = m; erro.hidden = false; if (el) el.focus(); };
+      var nome = $('nc-nome').value.replace(/\s+/g, ' ').trim(), cpf = $('nc-cpf').value.trim(), tel = $('nc-tel').value.trim();
+      if (!nome) return falha('Informe o nome completo do cliente.', $('nc-nome'));
+      if (cpf && !cpfValido(cpf)) return falha('Este CPF não existe. Confira os números.', $('nc-cpf'));
+      if (tel && !/^\+55 \(\d{2}\) \d{4,5}-\d{4}$/.test(tel)) return falha('O telefone está incompleto. Use DDD e número.', $('nc-tel'));
+      var dig = cpf.replace(/\D/g, ''), dup = dig ? state.rows.filter(function(x){ return String(x.cpf || '').replace(/\D/g, '') === dig; })[0] : null;
+      if (dup) return falha('Já existe um cliente com este CPF: ' + dup.nome + '.', $('nc-cpf'));
+      erro.hidden = true;
+      var agora = new Date().toISOString();
+      var data = {
+        nome: /[A-ZÀ-Ý]{2}/.test(nome) && nome === nome.toUpperCase() ? nomeProprio(nome) : nome,
+        cpf: cpf, contato: tel, endereco: normEnd($('nc-end').value), uc: normUC($('nc-uc').value), periodo: $('nc-per').value.replace(/\s+/g, ' ').trim().toUpperCase(),
+        responsavelId: $('nc-prosp').value || '', obs: $('nc-obs').value.trim(),
+        origem: 'sistema', docsCompletos: true, faltaDocs: [], conferirDados: false,
+        dataCadastro: iso(new Date()), criadoEm: agora, atualizadoEm: agora
+      };
+      $('nc-salvar').disabled = true;
+      try {
+        var id = await saveRow(null, data);
+        toast('Cliente cadastrado: ' + data.nome + '. Criando a pasta no Drive…');
+        f.reset();
+        ensureFolder(id, data.nome).then(function(u){ if (u) toast('Pasta criada no Drive: ' + data.nome); }).catch(function(e2){ toast('Cliente salvo, mas a pasta não foi criada: ' + driveErr(e2)); });
+      } catch(err){ falha(errMsg(err)); }
+      finally { $('nc-salvar').disabled = false; }
+    });
+  })();
   function celCad(r, campo, rot){
     var v = String(r[campo] || '');
-    return '<div><span class="lbl">' + rot + '</span><input class="cel-in' + (v.trim() ? '' : ' vazio') + ((campo === 'endereco' && endForaAlvaraes(r)) || (campo === 'uc' && v.trim() && !ucValida(v)) ? ' fora' : '') + '" data-cad-campo="' + campo + '" data-id="' + esc(r.id) + '" value="' + esc(v) + '" placeholder="' + (campo === 'periodo' ? 'ex.: JANEIRO DE 2026 ATÉ A PRESENTE DATA' : rot) + '" title="' + esc(v || rot) + '"' + (campo === 'periodo' ? ' list="dl-periodos"' : '') + (campo === 'uc' ? ' inputmode="numeric"' : '') + '></div>';
+    return '<div><span class="lbl">' + rot + '</span><input class="cel-in' + (v.trim() ? '' : ' vazio') + (campo === 'endereco' && endForaAlvaraes(r) ? ' fora' : '') + '" data-cad-campo="' + campo + '" data-id="' + esc(r.id) + '" value="' + esc(v) + '" placeholder="' + (campo === 'periodo' ? 'ex.: JANEIRO DE 2026 ATÉ A PRESENTE DATA' : rot) + '" title="' + esc(v || rot) + '"' + (campo === 'periodo' ? ' list="dl-periodos"' : '') + (campo === 'uc' ? ' inputmode="numeric"' : '') + '></div>';
   }
   // documentos em uma palavra (cabe na planilha); o que falta aparece ao passar o mouse
   function docCurto(r){
@@ -4930,9 +5006,10 @@ section.vw-dash{gap:10px!important}
     } catch(err){ toast(errMsg(err)); }
     finally { $('av-save').disabled = false; }
   });
-  var VIEWS = { d: ['tab-cad', 'view-cad'], c: ['tab-clientes', 'view-clientes'], f: ['tab-fin', 'view-fin'], r: ['tab-ret', 'view-ret'], t: ['tab-ct', 'view-ct'], h: ['tab-aud', 'view-aud'], e: ['tab-equipe', 'view-equipe'] };
+  var VIEWS = { d: ['tab-cad', 'view-cad'], n: ['tab-novo', 'view-novo'], c: ['tab-clientes', 'view-clientes'], f: ['tab-fin', 'view-fin'], r: ['tab-ret', 'view-ret'], t: ['tab-ct', 'view-ct'], h: ['tab-aud', 'view-aud'], e: ['tab-equipe', 'view-equipe'] };
   var TITULOS = {
     d: ['Cadastro', 'Clientes em cadastro, ainda sem protocolo · Ações contra a Âmbar Energia, Alvarães/AM'],
+    n: ['Novo cliente', 'Cadastro direto no sistema, sem fotos: só os dados do cliente'],
     c: ['Controle', 'Processos protocolados: avisos e audiências até a audiência acontecer'],
     a: ['Audiências', 'Pauta por dia, avisos e convites'],
     l: ['Clientes', 'Todos os clientes e a etapa de cada processo'],
