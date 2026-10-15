@@ -1470,6 +1470,10 @@ section.vw-dash{gap:10px!important}
 /* Novo cliente sai pelo botão do Cadastro (a aba não aparece no menu) */
 #tab-novo{display:none!important}
 .cad-novo{height:38px;white-space:nowrap}
+/* balão do Novo cliente */
+.nc-dlg{width:min(680px,94vw)}
+.nc-dlg .nc-form{max-width:none;padding:0;border:0;background:none;box-shadow:none}
+.nc-dlg .nc-nota{margin-bottom:14px}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -1580,7 +1584,7 @@ section.vw-dash{gap:10px!important}
         <div class="fbar">
           <div class="search tb-busca"><svg class="i"><use href="#i-search"/></svg><input id="cad-q" type="search" autocomplete="off" placeholder="Buscar cliente por nome ou CPF"></div>
           <select id="cad-sit" class="tb-sel" aria-label="Situação do cadastro"></select>
-          <button type="button" class="btn primary cad-novo" id="cad-novo"><svg class="i"><use href="#i-plus"/></svg>Novo cliente</button>
+          <button type="button" class="tb-btn cad-novo" id="cad-novo"><svg class="i"><use href="#i-plus"/></svg>Novo cliente</button>
           <span class="tb-fim fb-count tnum" id="cad-count"></span>
         </div>
         <div class="sec-rot">Clientes em cadastro</div>
@@ -1758,7 +1762,7 @@ section.vw-dash{gap:10px!important}
             <label class="nc-full">Observações<input id="nc-obs" placeholder="Opcional"></label>
           </div>
           <p class="nc-erro" id="nc-erro" hidden></p>
-          <div class="nc-acoes"><button type="button" class="tb-btn" id="nc-voltar">Voltar ao Cadastro</button><button type="reset" class="tb-btn" id="nc-limpar">Limpar</button><button type="submit" class="btn primary" id="nc-salvar">Cadastrar cliente</button></div>
+          <div class="nc-acoes"><button type="button" class="tb-btn" id="nc-voltar">Cancelar</button><button type="submit" class="btn primary" id="nc-salvar">Cadastrar cliente</button></div>
         </form>
       </section>
       <section id="view-aud" hidden style="display:flex;flex-direction:column;gap:18px">
@@ -3231,8 +3235,10 @@ section.vw-dash{gap:10px!important}
     $('nc-tel').addEventListener('input', function(){ this.value = ncMascaraTel(this.value); });
     $('tab-novo').addEventListener('click', ncProspectadores);
     // botão Novo cliente no Cadastro abre o formulário; Voltar (e depois de salvar) volta ao Cadastro
-    $('cad-novo').addEventListener('click', function(){ ncProspectadores(); showTab('n'); window.scrollTo(0, 0); setTimeout(function(){ $('nc-nome').focus(); }, 50); });
-    $('nc-voltar').addEventListener('click', function(){ showTab('d'); });
+    // o formulário abre num balão em cima do Cadastro (sem tela nova)
+    var ncDlg = document.createElement('dialog'); ncDlg.className = 'prot-card nc-dlg'; ncDlg.innerHTML = '<h3>Novo cliente</h3>'; ncDlg.appendChild(f); document.body.appendChild(ncDlg);
+    $('cad-novo').addEventListener('click', function(){ ncProspectadores(); f.reset(); ncDlg.showModal(); setTimeout(function(){ $('nc-nome').focus(); }, 50); });
+    $('nc-voltar').addEventListener('click', function(){ ncDlg.close(); });
     f.addEventListener('reset', function(){ $('nc-erro').hidden = true; });
     f.addEventListener('submit', async function(e){
       e.preventDefault();
@@ -3256,7 +3262,7 @@ section.vw-dash{gap:10px!important}
       try {
         var id = await saveRow(null, data);
         toast('Cliente cadastrado: ' + data.nome + '. Criando a pasta no Drive…');
-        f.reset(); showTab('d');
+        f.reset(); ncDlg.close();
         ensureFolder(id, data.nome).then(function(u){ if (u) toast('Pasta criada no Drive: ' + data.nome); }).catch(function(e2){ toast('Cliente salvo, mas a pasta não foi criada: ' + driveErr(e2)); });
       } catch(err){ falha(errMsg(err)); }
       finally { $('nc-salvar').disabled = false; }
