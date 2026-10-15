@@ -3267,7 +3267,10 @@ section.vw-dash{gap:10px!important}
         var id = await saveRow(null, data);
         toast('Cliente cadastrado: ' + data.nome + (dup ? ' (este CPF já tinha outra ação: ' + dup.nome + ')' : '') + '. Criando a pasta no Drive…');
         f.reset(); ncDlg.close();
-        ensureFolder(id, data.nome).then(function(u){ if (u) toast('Pasta criada no Drive: ' + data.nome); }).catch(function(e2){ toast('Cliente salvo, mas a pasta não foi criada: ' + driveErr(e2)); });
+        // mesma pessoa com outra ação: pasta própria ("NOME - 2ª AÇÃO"), para não misturar documentos nem trocar a petição da outra ação
+        var nAcoes = dig ? state.rows.filter(function(x){ return x.id !== id && String(x.cpf || '').replace(/D/g, '') === dig; }).length : 0;
+        var nomePasta = nAcoes ? data.nome + ' - ' + (nAcoes + 1) + 'ª AÇÃO' : data.nome;
+        ensureFolder(id, nomePasta).then(function(u){ if (u) toast('Pasta criada no Drive: ' + nomePasta); }).catch(function(e2){ toast('Cliente salvo, mas a pasta não foi criada: ' + driveErr(e2)); });
       } catch(err){ falha(errMsg(err)); }
       finally { $('nc-salvar').disabled = false; }
     });
