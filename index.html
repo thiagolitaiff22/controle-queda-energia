@@ -1494,6 +1494,12 @@ section.vw-dash{gap:10px!important}
 #r-list .toggle{border:0!important;background:none!important;padding:0!important;font-weight:600;color:var(--ink-2)}
 #r-list .toggle:hover{color:var(--ink)}
 #r-list .toggle[aria-pressed="true"]{color:var(--green)}
+/* Descartados (no fim do Cadastro) */
+.cad-desc{margin-top:14px;padding:0}
+.cad-desc summary{cursor:pointer;padding:12px 16px;font-size:13px;font-weight:600;color:var(--ink-2)}
+.cad-desc .desc-row{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1.2fr) auto;gap:12px;align-items:center;padding:9px 16px;border-top:1px solid var(--line);font-size:13px}
+#dlg-desc select,#dlg-desc input{height:40px;border:1px solid var(--line-2);border-radius:9px;background:var(--bg);color:var(--ink);padding:0 10px;font:inherit;font-size:14px;font-weight:400}
+#dlg-desc label{display:flex;flex-direction:column;gap:6px;font-size:12.5px;font-weight:600;color:var(--ink-2)}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -1610,6 +1616,7 @@ section.vw-dash{gap:10px!important}
         <div class="sec-rot">Clientes em cadastro</div>
         <div class="ia-alerta" id="cad-ia" hidden></div>
         <div class="card list" id="cad-list"></div>
+        <details class="card cad-desc" id="cad-desc" hidden><summary></summary><div id="cad-desc-list"></div></details>
       </section>
 
       <section id="view-clientes" class="vw-dash" style="display:flex;flex-direction:column;gap:18px">
@@ -2306,7 +2313,7 @@ section.vw-dash{gap:10px!important}
   // Controle: protocolado, não arquivado e com a audiência ainda por acontecer (depois vai para o Financeiro)
   function noControle(r){ return !!String(r.processo || '').trim() && !r.arquivado && !jaRealizada(r); }
   // Cadastro: ainda sem número de processo
-  function noCadastro(r){ return !String(r.processo || '').trim() && !r.arquivado; }
+  function noCadastro(r){ return !String(r.processo || '').trim() && !r.arquivado && !r.descartado; }   // descartado sai do Cadastro (fica na seção Descartados)
   function passEtapaCl(r, f){
     if (!noControle(r)) return false;
     if (!f) return true;
@@ -2640,7 +2647,7 @@ section.vw-dash{gap:10px!important}
       (fl.length ? '<div class="falta-docs"><b>Faltam documentos</b><span>O prospectador ainda precisa mandar: ' + esc(faltaTexto(r)) + '. Ele vê esta lista no aplicativo e completa por lá. Se chegou por outro meio, marque como recebido:</span><div>' +
         fl.map(function(k){ return '<button type="button" class="btn" data-act="recebido" data-id="' + esc(r.id) + '" data-doc="' + k + '"><svg class="i"><use href="#i-check"/></svg>Recebi ' + DOC_FALTA[k] + '</button>'; }).join('') + '</div></div>' :
         compacto && !docsConferidos(r) ? '<div class="falta-docs"><b>Documentação não conferida</b><span>Clique em Conferir documentos (a IA olha a pasta) ou abra a pasta no Drive e, se estiver tudo, marque:</span><div><button type="button" class="btn" data-act="docs-ok" data-id="' + esc(r.id) + '"><svg class="i"><use href="#i-check"/></svg>Documentação completa</button></div></div>' : '') +
-      '<div class="ficha-acoes"><button type="button" class="btn" data-act="edit" data-id="' + esc(r.id) + '"><svg class="i"><use href="#i-pencil"/></svg>Editar cadastro</button>' +
+      '<div class="ficha-acoes">' + (compacto ? '<button type="button" class="btn" data-descartar="' + esc(r.id) + '" title="Tirar do Cadastro (ex.: já tem processo com outro advogado)">Descartar</button>' : '') + '<button type="button" class="btn" data-act="edit" data-id="' + esc(r.id) + '"><svg class="i"><use href="#i-pencil"/></svg>Editar cadastro</button>' +
       (r.pastaUrl ? '<a class="btn" href="' + esc(r.pastaUrl) + '" target="_blank" rel="noopener"><svg class="i"><use href="#i-folder"/></svg>Pasta no Drive</a>' : '') +
       (compacto && r.pastaId ? '<button type="button" class="btn primary" data-act="docs-ia" data-id="' + esc(r.id) + '" title="A IA olha a pasta e diz quais documentos estão lá (não preenche nada)">Conferir documentos</button>' +
         (function(){ var fp = faltaPeticao(r);
@@ -3291,6 +3298,48 @@ section.vw-dash{gap:10px!important}
       finally { $('nc-salvar').disabled = false; }
     });
   })();
+  /* Descartar: motivo (padrão: já tem processo com outro advogado); o cliente sai do Cadastro e fica em "Descartados" */
+  var MOTIVOS_DESC = ['Já tem processo com outro advogado', 'Desistiu', 'Não é de Alvarães', 'Cadastro repetido', 'Outro motivo'];
+  function abrirDescarte(r){
+    var dl = $('dlg-desc');
+    if (!dl){
+      dl = document.createElement('dialog'); dl.id = 'dlg-desc'; dl.className = 'prot-card';
+      dl.innerHTML = '<h3>Descartar cliente</h3><p class="prot-nome"></p><label>Motivo<select id="desc-motivo">' + MOTIVOS_DESC.map(function(m){ return '<option>' + m + '</option>'; }).join('') + '</select></label>' +
+        '<label id="desc-outro-l" hidden style="margin-top:12px">Qual?<input id="desc-outro" placeholder="Escreva o motivo"></label>' +
+        '<p class="prot-data">O cliente sai do Cadastro e fica na lista "Descartados", no fim da página, de onde dá para reativar.</p>' +
+        '<div class="prot-acoes"><button type="button" class="tb-btn" id="desc-cancelar">Cancelar</button><button type="button" class="btn primary" id="desc-salvar">Descartar</button></div>';
+      document.body.appendChild(dl);
+      $('desc-motivo').addEventListener('change', function(){ $('desc-outro-l').hidden = this.value !== 'Outro motivo'; });
+      $('desc-cancelar').addEventListener('click', function(){ dl.close(); });
+      $('desc-salvar').addEventListener('click', async function(){
+        var rr = state.rows.filter(function(x){ return x.id === dl.dataset.id; })[0]; if (!rr) return dl.close();
+        var m = $('desc-motivo').value; if (m === 'Outro motivo') m = $('desc-outro').value.trim() || 'Outro motivo';
+        this.disabled = true;
+        try { await patchRow(rr.id, { descartado: true, descarteMotivo: m, descartadoEm: iso(new Date()), atualizadoEm: new Date().toISOString() }); dl.close(); toast(rr.nome + ' descartado: ' + m + '.'); }
+        catch(err){ toast(errMsg(err)); }
+        finally { this.disabled = false; }
+      });
+    }
+    dl.dataset.id = r.id;
+    dl.querySelector('.prot-nome').textContent = r.nome + (r.cpf ? ' · CPF ' + r.cpf : '');
+    $('desc-motivo').value = MOTIVOS_DESC[0]; $('desc-outro').value = ''; $('desc-outro-l').hidden = true;
+    dl.showModal();
+  }
+  document.addEventListener('click', function(e){
+    var b = e.target.closest('[data-descartar]'); if (b){ var r = state.rows.filter(function(x){ return x.id === b.dataset.descartar; })[0]; if (r) abrirDescarte(r); return; }
+    var v = e.target.closest('[data-reativar]'); if (!v) return;
+    var r2 = state.rows.filter(function(x){ return x.id === v.dataset.reativar; })[0]; if (!r2) return;
+    patchRow(r2.id, { descartado: false, descarteMotivo: '', descartadoEm: '', atualizadoEm: new Date().toISOString() }).then(function(){ toast(r2.nome + ' voltou para o Cadastro.'); }).catch(function(err){ toast(errMsg(err)); });
+  });
+  function renderDescartados(){
+    var box = $('cad-desc'); if (!box) return;
+    var l = state.rows.filter(function(r){ return r.descartado && !String(r.processo || '').trim(); }).sort(function(a, b){ return String(b.descartadoEm || '').localeCompare(String(a.descartadoEm || '')); });
+    box.hidden = !l.length;
+    box.querySelector('summary').textContent = 'Descartados · ' + l.length;
+    $('cad-desc-list').innerHTML = l.map(function(r){
+      return '<div class="desc-row"><span><b>' + esc(r.nome) + '</b><span class="small"> · ' + esc(r.cpf ? 'CPF ' + r.cpf : 'sem CPF') + '</span></span><span class="small">' + esc(r.descarteMotivo || '') + (r.descartadoEm ? ' · ' + fmtDate(r.descartadoEm) : '') + '</span><button type="button" class="tb-btn pet-btn" data-reativar="' + esc(r.id) + '">Reativar</button></div>';
+    }).join('');
+  }
   function celCad(r, campo, rot){
     var v = String(r[campo] || '');
     return '<div><span class="lbl">' + rot + '</span><input class="cel-in' + (v.trim() ? '' : ' vazio') + (campo === 'endereco' && endForaAlvaraes(r) ? ' fora' : '') + '" data-cad-campo="' + campo + '" data-id="' + esc(r.id) + '" value="' + esc(v) + '" placeholder="' + (campo === 'periodo' ? 'ex.: JANEIRO DE 2026 ATÉ A PRESENTE DATA' : rot) + '" title="' + esc(v || rot) + '"' + (campo === 'periodo' ? ' list="dl-periodos"' : '') + (campo === 'uc' ? ' inputmode="numeric"' : '') + '></div>';
@@ -3396,6 +3445,7 @@ section.vw-dash{gap:10px!important}
     var dl = $('dl-periodos'); if (!dl){ dl = document.createElement('datalist'); dl.id = 'dl-periodos'; document.body.appendChild(dl); }
     dl.innerHTML = Object.keys(pers).sort(function(a, b){ return pers[b] - pers[a]; }).map(function(p){ return '<option value="' + esc(p) + '">'; }).join('');
     if (state.rows.length) corrigirFormatos();
+    renderDescartados();
     setTimeout(peticoesAutomaticas, 500);
   }
   // "Documentos pendentes": ao passar o mouse mostra quais faltam (balão por cima da página, não é cortado pela tabela)
