@@ -712,6 +712,7 @@ html,body{font-size:15px}
 .topo{padding-top:max(10px, calc(6px + env(safe-area-inset-top)))!important}
 /* barra colorida embaixo dos cartões do painel: sem legenda, não dizia nada (retirada) */
 .funil{display:none!important}
+.cpf-aviso{margin:-2px 2px 2px;font-size:13px;font-weight:600;color:var(--red,#ef4444)}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><script>try{var t=localStorage.getItem("campo_tema");if(!t)t="dark";document.documentElement.setAttribute("data-tema",t);}catch(e){document.documentElement.setAttribute("data-tema","light");}</script>
 </head>
@@ -750,7 +751,7 @@ html,body{font-size:15px}
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 36;
+  var APP_VERSAO = 37;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
@@ -996,6 +997,22 @@ html,body{font-size:15px}
     return s;
   }
   function telCerto(v){ var d = String(v || '').replace(/\D/g, ''); return d.length === 12 || d.length === 13; }
+  // CPF já está na base do escritório? (o servidor só responde sim/não). Sem internet não dá para saber: deixa seguir.
+  var cpfConf = { v: '', dup: false };
+  function checarCpf(v){
+    var d = String(v || '').replace(/\D/g, '');
+    if (d.length !== 11 || navigator.onLine === false) return Promise.resolve(false);
+    if (cpfConf.v === d) return Promise.resolve(cpfConf.dup);
+    return fetch(CFG.url + '/rest/v1/rpc/campo_cpf_cadastrado', { method: 'POST', headers: { apikey: CFG.key, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_token: token, p_cpf: d }) })
+      .then(function(r){ return r.ok ? r.json() : false; }).catch(function(){ return false; })
+      .then(function(x){ cpfConf = { v: d, dup: x === true }; return cpfConf.dup; });
+  }
+  function avisoCpf(dup){
+    var l = $('l-cpf'); if (!l) return;
+    var a = $('cpf-aviso');
+    if (dup){ l.classList.add('falta'); if (!a){ a = document.createElement('div'); a.id = 'cpf-aviso'; a.className = 'cpf-aviso'; l.insertAdjacentElement('afterend', a); } a.textContent = 'Este cliente já está cadastrado no escritório. Não precisa cadastrar de novo.'; }
+    else if (a) a.remove();
+  }
   function cpfCerto(v){
     var d = String(v || '').replace(/\D/g, ''); if (d.length !== 11 || /^(\d)\1{10}$/.test(d)) return false;
     for (var t = 9; t < 11; t++){ var s = 0; for (var i = 0; i < t; i++) s += +d[i] * (t + 1 - i); if (((s * 10) % 11) % 10 !== +d[t]) return false; }
@@ -1037,7 +1054,7 @@ html,body{font-size:15px}
     CAMPOS_DADOS.forEach(function(c){
       var el = $(c.k);
       el.addEventListener('input', function(){
-        if (c.k === 'cpf') this.value = mascaraCPF(this.value);
+        if (c.k === 'cpf'){ this.value = mascaraCPF(this.value); var vv = this.value; avisoCpf(false); if (cpfCerto(vv)) checarCpf(vv).then(function(dup){ if ($('cpf') && $('cpf').value === vv) avisoCpf(dup); }); }
         lsSet('campo_' + c.k, this.value); $('l-' + c.k).classList.toggle('falta', !campoOk(c, this.value));
       });
       el.addEventListener('blur', function(){ this.value = this.value.replace(/\s+/g, ' ').trim(); lsSet('campo_' + c.k, this.value); });
@@ -1721,6 +1738,10 @@ html,body{font-size:15px}
       var msg = ruim.k === 'cpf' && String($('cpf').value).replace(/\D/g, '').length === 11 ? 'Este CPF não existe. Confira os números no documento.' : 'Digite ' + ruim.nome + ' do cliente.';
       falar(msg); alert(msg); $(ruim.k).focus(); return;
     }
+    // cliente já cadastrado no escritório: não deixa cadastrar de novo
+    var cpfD = String($('cpf').value).replace(/\D/g, '');
+    if (cpfConf.v !== cpfD && navigator.onLine !== false){ var bt = $('enviar'); if (bt) bt.disabled = true; return checarCpf(cpfD).then(function(){ if (bt) bt.disabled = false; enviar(); }); }
+    if (cpfConf.v === cpfD && cpfConf.dup){ avisoCpf(true); var m2 = 'Este cliente já está cadastrado no escritório (o CPF já existe na base). Não é preciso cadastrar de novo.'; falar(m2); alert(m2); return; }
     var falta = DOCS.filter(function(d){ return d.req && !fotos[d.k]; });
     if (falta.length){
       falar('Está faltando: ' + falta.map(function(d){ return d.t; }).join(', ') + '. Quer enviar assim mesmo?');
