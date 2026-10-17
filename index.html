@@ -1478,6 +1478,22 @@ section.vw-dash{gap:10px!important}
 #cad-novo{background:#ffffff!important;color:#111113!important;border:1px solid #d4d4d8!important;font-weight:600}
 #cad-novo:hover{background:#f4f4f5!important}
 #cad-novo .i{color:#111113}
+/* ---------- limpeza visual: sem "balões" (etiqueta vira bolinha colorida + texto) ---------- */
+.cad-sit{background:none!important;border:0!important;padding:0!important;border-radius:0!important;box-shadow:none!important;gap:6px;align-items:center;font-size:12px!important}
+.cad-sit::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
+.pill{background:none!important;border:0!important;padding:0!important;box-shadow:none!important;font-size:12px}
+/* Controle: "+ contato" só aparece ao passar o mouse na linha (a linha fica de uma altura só) */
+#list .mini-add{display:none}
+#list .row:hover .mini-add{display:block}
+/* Controle: o histórico agora está na aba Audiências */
+#ctl-modo{display:none!important}
+/* aviso do Controle mais leve */
+#list .st{border:0!important;background:none!important;padding:0!important;box-shadow:none!important;font-weight:600}
+#list .st:hover{text-decoration:underline;text-underline-offset:3px}
+/* Nova ação: "Marcar contatado" sem moldura */
+#r-list .toggle{border:0!important;background:none!important;padding:0!important;font-weight:600;color:var(--ink-2)}
+#r-list .toggle:hover{color:var(--ink)}
+#r-list .toggle[aria-pressed="true"]{color:var(--green)}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -2352,7 +2368,7 @@ section.vw-dash{gap:10px!important}
     var add = '<button type="button" class="tel-add" data-act="tel" data-id="' + esc(r.id) + '" title="Digite o telefone ou o nome de um cliente que avisa esta pessoa">+ contato</button>';
     var via = clienteVia(r);
     if (via) return '<button type="button" class="tel-edit val" style="font-size:12.5px" data-act="tel" data-id="' + esc(r.id) + '" title="Telefone: ' + esc(via.contato) + ' · clique para trocar">' + esc(via.nome) + '</button>';
-    if (!semProsp && pelaProsp(r)){ var pp = prospById(respAviso(r)) || {}; return '<div class="val" style="font-size:12.5px">' + esc(pp.nome || '') + (pp.regiao ? ' · ' + esc(pp.regiao) : '') + '</div><div class="mini">' + add + '</div>'; }
+    if (!semProsp && pelaProsp(r)){ var pp = prospById(respAviso(r)) || {}; return '<div class="val" style="font-size:12.5px" title="' + esc((pp.nome || '') + (pp.regiao ? ' · ' + pp.regiao : '')) + '">' + esc(primeiroUltimo(pp.nome || '')) + '</div><div class="mini mini-add">' + add + '</div>'; }
     if (!r.contato) return add;
     return '<button type="button" class="tel-edit val tnum" data-act="tel" data-id="' + esc(r.id) + '" title="Clique para corrigir">' + esc(fmtTel(r.contato)) + '</button>';
   }
