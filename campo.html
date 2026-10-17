@@ -713,6 +713,22 @@ html,body{font-size:15px}
 /* barra colorida embaixo dos cartões do painel: sem legenda, não dizia nada (retirada) */
 .funil{display:none!important}
 .cpf-aviso{margin:-2px 2px 2px;font-size:13px;font-weight:600;color:var(--red,#ef4444)}
+/* gestor: pagamentos */
+.abas.quatro{grid-template-columns:repeat(4,1fr)!important}
+.pag-resumo{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:2px 0 12px}
+.pag-resumo span{display:flex;flex-direction:column;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--card);font-size:13px;color:var(--ink2)}
+.pag-resumo b{font-size:20px;color:var(--ink);line-height:1.1}
+.pag-resumo small{font-size:11.5px;margin-top:2px}
+.pag-resumo .falta b{color:#f59e0b}
+html[data-tema="dark"] .pag-resumo span{background:#0f2348;border-color:#1e3a6e}
+.pag-l > div{cursor:default!important;gap:8px!important}
+.pag-l .nm{flex:1;min-width:0}
+.pg-b{flex:none;width:84px;border:1px solid var(--line2);background:none;border-radius:10px;padding:6px 4px;font:inherit;font-size:12px;font-weight:600;color:var(--ink);display:flex;flex-direction:column;align-items:center;line-height:1.2}
+.pg-b em{font-style:normal;font-size:10.5px;font-weight:500;color:var(--ink2);margin-top:1px}
+.pg-b.ok{background:#15803d;border-color:#15803d;color:#fff}
+.pg-b.ok em{color:#dcfce7}
+.pg-b.nao{opacity:.5}
+.pg-b:disabled{opacity:.4}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><script>try{var t=localStorage.getItem("campo_tema");if(!t)t="dark";document.documentElement.setAttribute("data-tema",t);}catch(e){document.documentElement.setAttribute("data-tema","light");}</script>
 </head>
@@ -751,7 +767,7 @@ html,body{font-size:15px}
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 39;
+  var APP_VERSAO = 40;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
@@ -945,7 +961,9 @@ html,body{font-size:15px}
         '<button type="button" data-aba="painel"><svg><use href="#i-painel"/></svg>Painel</button>' +
         '<button type="button" data-aba="novo"><svg><use href="#i-novo"/></svg>Novo cadastro<span class="bolha" id="bolha" hidden></span></button>' +
         '<button type="button" data-aba="clientes"><svg><use href="#i-grupo"/></svg>Clientes</button>' +
+        (quem && quem.gestor ? '<button type="button" data-aba="pag"><svg><use href="#i-ok"/></svg>Pagamentos</button>' : '') +
       '</nav>';
+    if (quem && quem.gestor) $('abas').classList.add('quatro');
     $('abas').addEventListener('click', function(e){ var b = e.target.closest('[data-aba]'); if (b) irPara(b.dataset.aba); });
     // modo claro / escuro (fica guardado no celular)
     $('tema').addEventListener('click', function(){
@@ -975,7 +993,57 @@ html,body{font-size:15px}
     sincronia();
     if (aba === 'painel') return vistaPainel();
     if (aba === 'clientes') return vistaClientes();
+    if (aba === 'pag' && quem && quem.gestor) return vistaPag();
     vistaNovo();
+  }
+  /* ---------- gestor: pagamentos das indicações (R$ 25 no protocolo e R$ 25 quando sai) ---------- */
+  var gest = null, gestProsp = lsGet('campo_gest_prosp') || '', gestFiltro = 'apagar';
+  try { gest = JSON.parse(lsGet('campo_gestor') || 'null'); } catch(e){}
+  function primeiroNome(n){ var p = String(n || '').replace(/^(dona|seu|sr\.?|sra\.?)\s+/i, '').split(/\s+/); return p[0] + (/^j[rú]/i.test(p[p.length - 1] || '') ? ' Jr.' : p.length > 1 ? ' ' + p[p.length - 1].charAt(0) + '.' : ''); }
+  function gestAPagar(c){ return !c.p1 || (c.saiu && !c.p2); }
+  function gestFalta(l){ return l.reduce(function(n, c){ return n + (c.p1 ? 0 : 1) + (c.saiu && !c.p2 ? 1 : 0); }, 0); }
+  function carregarGestor(){
+    if (navigator.onLine === false) return Promise.resolve(gest);
+    return rpc('campo_gestor_dados', { p_token: token }).then(function(d){ if (Array.isArray(d)){ gest = d; lsSet('campo_gestor', JSON.stringify(d)); } return gest; }).catch(function(){ return gest; });
+  }
+  function vistaPag(){
+    $('vista').innerHTML = '<div id="pag-v">' + (gest ? '' : '<div class="vazio">Carregando…</div>') + '</div>';
+    if (gest) desenharPagV();
+    carregarGestor().then(function(){ if (aba === 'pag' && $('pag-v')) desenharPagV(); });
+  }
+  function desenharPagV(){
+    var box = $('pag-v'); if (!box) return;
+    if (!gest) { box.innerHTML = '<div class="vazio">Sem internet: os pagamentos aparecem quando o celular tiver sinal.</div>'; return; }
+    var ps = gest.filter(function(p){ return p.itens && p.itens.length; });
+    if (!ps.some(function(p){ return p.id === gestProsp; })) gestProsp = ps.length ? ps[0].id : '';
+    var p = ps.filter(function(x){ return x.id === gestProsp; })[0], itens = p ? p.itens : [];
+    var l = itens.filter(function(c){ return gestFiltro === 'todas' || (gestFiltro === 'pagas' ? !gestAPagar(c) : gestAPagar(c)); });
+    var p1 = itens.filter(function(c){ return c.p1; }).length, sairam = itens.filter(function(c){ return c.saiu; }), p2 = sairam.filter(function(c){ return c.p2; }).length, falta = gestFalta(itens);
+    box.innerHTML =
+      '<div class="rot">Prospectador</div><div class="chips" id="pag-ps">' + ps.map(function(x){ var f = gestFalta(x.itens); return '<button type="button" data-ps="' + esc(x.id) + '" aria-pressed="' + (x.id === gestProsp) + '">' + esc(primeiroNome(x.nome)) + (f ? '<b>' + f + '</b>' : '') + '</button>'; }).join('') + '</div>' +
+      (p ? '<div class="pag-resumo"><span><b>' + p1 + '</b> de ' + itens.length + '<small>pagos no protocolo</small></span><span><b>' + p2 + '</b> de ' + sairam.length + '<small>pagos quando sai</small></span><span class="' + (falta ? 'falta' : '') + '"><b>' + falta + '</b><small>' + (falta === 1 ? 'parte a pagar' : 'partes a pagar') + '</small></span></div>' +
+        '<div class="chips" id="pag-f">' + [['apagar', 'A pagar'], ['pagas', 'Pagas'], ['todas', 'Todas']].map(function(f){ return '<button type="button" data-f="' + f[0] + '" aria-pressed="' + (gestFiltro === f[0]) + '">' + f[1] + '</button>'; }).join('') + '</div>' +
+        (l.length ? '<div class="lista pag-l">' + l.map(function(c){
+          return '<div><span class="nm"><b>' + esc(c.nome || '') + '</b><span>' + (c.protocolo ? 'protocolo ' + dataBR(c.protocolo) : esc(c.processo || '')) + '</span></span>' +
+            '<button type="button" class="pg-b' + (c.p1 ? ' ok' : '') + '" data-c="' + esc(c.id) + '" data-p="1">' + (c.p1 ? '✓ ' : '') + 'Protocolo' + (c.p1 ? '<em>' + dataBR(c.p1) + '</em>' : '<em>a pagar</em>') + '</button>' +
+            '<button type="button" class="pg-b' + (c.p2 ? ' ok' : c.saiu ? '' : ' nao') + '" data-c="' + esc(c.id) + '" data-p="2">' + (c.p2 ? '✓ ' : '') + 'Quando sai' + (c.p2 ? '<em>' + dataBR(c.p2) + '</em>' : c.saiu ? '<em>a pagar</em>' : '<em>não saiu</em>') + '</button></div>';
+        }).join('') + '</div>' : '<div class="vazio">' + (gestFiltro === 'apagar' ? 'Nada a pagar para ' + esc(primeiroNome(p.nome)) + '.' : 'Nenhuma indicação aqui.') + '</div>')
+      : '<div class="vazio">Nenhum processo protocolado ainda.</div>');
+    $('pag-ps').onclick = function(e){ var b = e.target.closest('[data-ps]'); if (!b) return; gestProsp = b.dataset.ps; lsSet('campo_gest_prosp', gestProsp); desenharPagV(); };
+    if ($('pag-f')) $('pag-f').onclick = function(e){ var b = e.target.closest('[data-f]'); if (!b) return; gestFiltro = b.dataset.f; desenharPagV(); };
+    box.onclick = function(e){
+      var b = e.target.closest('.pg-b'); if (!b) return;
+      var c = itens.filter(function(x){ return x.id === b.dataset.c; })[0]; if (!c) return;
+      var parte = +b.dataset.p, k = parte === 2 ? 'p2' : 'p1', pagar = !c[k];
+      if (parte === 2 && pagar && !c.saiu && !confirm('O processo de ' + c.nome + ' ainda não saiu. Marcar a parte de "quando sai" como paga mesmo assim?')) return;
+      if (!pagar && !confirm('Desmarcar o pagamento (' + (parte === 2 ? 'quando sai' : 'protocolo') + ') de ' + c.nome + '?')) return;
+      if (navigator.onLine === false) return alert('Sem internet agora. Precisa de sinal para marcar o pagamento.');
+      b.disabled = true;
+      rpc('campo_gestor_marcar', { p_token: token, p_cliente: c.id, p_parte: parte, p_pago: pagar }).then(function(d){
+        if (d && d.ok){ c[k] = d.em || null; lsSet('campo_gestor', JSON.stringify(gest)); desenharPagV(); return; }
+        alert((d && (d.erro || d.message)) || 'Não foi possível marcar.'); b.disabled = false;
+      }).catch(function(){ alert('Sem internet agora. Precisa de sinal para marcar o pagamento.'); b.disabled = false; });
+    };
   }
   // dados que o prospectador digita junto com o nome (endereço e UC a IA lê do talão de luz)
   var CAMPOS_DADOS = [
@@ -1238,7 +1306,7 @@ html,body{font-size:15px}
       if (Object.keys(fotos).length && !confirm('Há fotos de um cadastro em andamento. Sair mesmo assim? As fotos serão apagadas.')) return;
       if (!confirm('Sair desta conta? Para entrar de novo você vai precisar do seu CPF e da senha.')) return;
       fotos = {}; guardarRascunho();
-      ['campo_token', 'campo_quem', 'campo_painel', 'campo_nome', 'campo_fone', 'campo_cpf', 'campo_rg', 'campo_endereco', 'campo_aba', 'campo_trocar'].forEach(function(k){ lsSet(k, ''); });
+      ['campo_token', 'campo_quem', 'campo_painel', 'campo_nome', 'campo_fone', 'campo_cpf', 'campo_rg', 'campo_endereco', 'campo_aba', 'campo_trocar', 'campo_gestor', 'campo_gest_prosp'].forEach(function(k){ lsSet(k, ''); });
       token = ''; quem = null; painel = null; aba = 'painel';
       pedirLink();
     });

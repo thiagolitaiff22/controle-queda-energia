@@ -2023,6 +2023,7 @@ section.vw-dash{gap:10px!important}
       <div class="field"><label for="fp-tel">Telefone / WhatsApp</label><input id="fp-tel" inputmode="tel" placeholder="(97) 00000-0000" class="tnum"></div>
       <div class="field"><label for="fp-reg">Região</label><input id="fp-reg" placeholder="Ex.: Comunidade do Curumitá"></div>
       <div class="field full"><label for="fp-pal">Palavras do endereço</label><input id="fp-pal" placeholder="Ex.: curumitá, nogueira"><span class="hint">Clientes cujo endereço tiver uma dessas palavras ficam com este prospectador. Separe por vírgula.</span></div>
+      <div class="field full admin-only"><label style="display:flex;gap:8px;align-items:center;font-weight:600"><input type="checkbox" id="fp-gestor" style="width:16px;height:16px">Gestor: vê a aba Pagamentos no aplicativo e marca as indicações pagas</label></div>
     </div>
     <div class="f-foot">
       <button class="btn danger admin-only" type="button" id="fp-del" hidden>Excluir</button>
@@ -5232,6 +5233,7 @@ section.vw-dash{gap:10px!important}
     $('fp-nome').value = p ? p.nome || '' : '';
     $('fp-tel').value = p ? p.telefone || '' : '';
     $('fp-cpf').value = p ? p.cpf || '' : '';
+    $('fp-gestor').checked = !!(p && p.gestor);
     $('fp-reg').value = p ? p.regiao || '' : '';
     $('fp-pal').value = p ? (p.palavrasEndereco || []).join(', ') : '';
     $('fp-del').hidden = !p; pDelArmed = false; $('fp-del').classList.remove('armed'); $('fp-del').textContent = 'Excluir';
@@ -5253,6 +5255,7 @@ section.vw-dash{gap:10px!important}
       palavrasEndereco: $('fp-pal').value.split(',').map(function(s){ return s.trim(); }).filter(Boolean),
       ativo: true, criadoEm: prev.criadoEm || new Date().toISOString(), atualizadoEm: new Date().toISOString() };
     if (prev.valorIndicacao) data.valorIndicacao = prev.valorIndicacao;
+    if (isAdmin() ? $('fp-gestor').checked : prev.gestor) data.gestor = true;
     $('fp-save').disabled = true;
     try {
       if (state.db){ await (pEditing ? pcol().doc(pEditing) : pcol().doc()).set(data); }
