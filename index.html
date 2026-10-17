@@ -1509,12 +1509,15 @@ section.vw-dash{gap:10px!important}
 .prosp-ind{display:flex;flex-direction:column;gap:3px;font-size:12.5px;color:var(--ink-2);padding:8px 0 2px;border-top:1px solid var(--line)}
 .prosp-ind b{color:var(--ink);font-weight:600}
 .prosp-ind .ind-falta{color:var(--amber,#b45309);font-weight:600}
-.pag-dlg{width:min(760px,calc(100vw - 32px));max-height:86vh;padding:0;border:0;border-radius:16px;background:var(--card);color:var(--ink)}
+#app ~ dialog.pag-dlg,dialog.pag-dlg{width:min(760px,calc(100vw - 32px));max-height:86vh;padding:0;border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--ink);box-shadow:0 20px 50px rgba(0,0,0,.35)}
+.pag-dlg::backdrop{background:rgba(0,0,0,.45)}
+.pag-dlg .f-head{padding:16px 20px;display:flex;align-items:center;border-bottom:1px solid var(--line)}
+.pag-dlg h2{font-size:16px;margin:0}
 .pag-dlg .f{display:flex;flex-direction:column;max-height:86vh}
 .pag-bar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:10px 20px;border-bottom:1px solid var(--line)}
 .pag-bar .seg{display:flex;border:1px solid var(--line-2);border-radius:9px;overflow:hidden}
 .pag-bar .seg button{border:0;background:none;padding:7px 12px;font:inherit;font-size:13px;color:var(--ink-2);cursor:pointer}
-.pag-bar .seg button[aria-pressed="true"]{background:var(--ink);color:var(--card)}
+.pag-bar .seg button[aria-pressed="true"]{background:var(--ink);color:var(--panel);font-weight:600}
 .pag-bar #pag-todas{margin-left:auto}
 .pag-list{overflow:auto;padding:4px 0}
 .pag-row{display:grid;grid-template-columns:minmax(0,1fr) 120px 130px;gap:12px;align-items:center;padding:9px 20px;border-top:1px solid var(--line);font-size:13px}
