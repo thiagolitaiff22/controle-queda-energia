@@ -751,7 +751,7 @@ html,body{font-size:15px}
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 37;
+  var APP_VERSAO = 38;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
@@ -1005,12 +1005,12 @@ html,body{font-size:15px}
     if (cpfConf.v === d) return Promise.resolve(cpfConf.dup);
     return fetch(CFG.url + '/rest/v1/rpc/campo_cpf_cadastrado', { method: 'POST', headers: { apikey: CFG.key, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_token: token, p_cpf: d }) })
       .then(function(r){ return r.ok ? r.json() : false; }).catch(function(){ return false; })
-      .then(function(x){ cpfConf = { v: d, dup: x === true }; return cpfConf.dup; });
+      .then(function(x){ cpfConf = { v: d, dup: !!(x && x.bloqueado), libera: x && x.liberaEm ? String(x.liberaEm).slice(0, 10).split('-').reverse().join('/') : '' }; return cpfConf.dup; });
   }
   function avisoCpf(dup){
     var l = $('l-cpf'); if (!l) return;
     var a = $('cpf-aviso');
-    if (dup){ l.classList.add('falta'); if (!a){ a = document.createElement('div'); a.id = 'cpf-aviso'; a.className = 'cpf-aviso'; l.insertAdjacentElement('afterend', a); } a.textContent = 'Este cliente já está cadastrado no escritório. Não precisa cadastrar de novo.'; }
+    if (dup){ l.classList.add('falta'); if (!a){ a = document.createElement('div'); a.id = 'cpf-aviso'; a.className = 'cpf-aviso'; l.insertAdjacentElement('afterend', a); } a.textContent = 'Este cliente já é do escritório e ainda está no prazo' + (cpfConf.libera ? ': a nova ação só pode ser feita a partir de ' + cpfConf.libera : '') + '.'; }
     else if (a) a.remove();
   }
   function cpfCerto(v){
@@ -1741,7 +1741,7 @@ html,body{font-size:15px}
     // cliente já cadastrado no escritório: não deixa cadastrar de novo
     var cpfD = String($('cpf').value).replace(/\D/g, '');
     if (cpfConf.v !== cpfD && navigator.onLine !== false){ var bt = $('enviar'); if (bt) bt.disabled = true; return checarCpf(cpfD).then(function(){ if (bt) bt.disabled = false; enviar(); }); }
-    if (cpfConf.v === cpfD && cpfConf.dup){ avisoCpf(true); var m2 = 'Este cliente já está cadastrado no escritório (o CPF já existe na base). Não é preciso cadastrar de novo.'; falar(m2); alert(m2); return; }
+    if (cpfConf.v === cpfD && cpfConf.dup){ avisoCpf(true); var m2 = 'Este cliente já é do escritório e ainda está no prazo' + (cpfConf.libera ? '. A nova ação só pode ser feita a partir de ' + cpfConf.libera : '') + '. Não dá para cadastrar agora.'; falar(m2); alert(m2); return; }
     var falta = DOCS.filter(function(d){ return d.req && !fotos[d.k]; });
     if (falta.length){
       falar('Está faltando: ' + falta.map(function(d){ return d.t; }).join(', ') + '. Quer enviar assim mesmo?');
