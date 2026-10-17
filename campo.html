@@ -383,7 +383,7 @@ body{background:transparent!important}
 .login .fone svg{width:19px!important;height:19px!important;opacity:.9}
 .login .fone input{font-size:16px!important}
 .login .fone:focus-within{border-color:#2563eb!important;box-shadow:0 0 0 3px rgba(37,99,235,.18)!important}
-.login #ver-senha{font-size:12.5px!important}
+.login #ver-senha,.login .ver-senha{font-size:12.5px!important}
 .login .enviar{height:48px!important;margin-top:20px;font-size:16px!important;border-radius:12px!important;background:#2563eb!important;box-shadow:0 8px 20px rgba(37,99,235,.28)!important}
 .login-nota{text-align:center;margin:16px 0 0;font-size:12.5px;color:var(--ink2)}
 .login details{margin-top:10px!important;font-size:12.5px!important;text-align:center}
@@ -593,7 +593,7 @@ html[data-tema="dark"] .login .fone{background:#0f2348!important;border-color:#2
 .login .fone input{color:var(--ink)!important;font-size:16.5px!important}
 .login .fone svg{color:var(--g2,#1d4ed8)!important;opacity:1!important}
 html[data-tema="dark"] .login .fone svg{color:#60a5fa!important}
-html[data-tema="dark"] .login #ver-senha{color:#60a5fa!important}
+html[data-tema="dark"] .login #ver-senha,html[data-tema="dark"] .login .ver-senha{color:#60a5fa!important}
 .login .enviar{height:54px!important;margin-top:24px!important;font-size:17px!important;border-radius:14px!important}
 .login-nota{font-size:13.5px!important;color:var(--ink2)!important;margin:18px 0 0!important;line-height:1.45}
 .login details{font-size:14px!important;color:var(--ink2)!important;margin-top:14px!important}
@@ -751,7 +751,7 @@ html,body{font-size:15px}
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 38;
+  var APP_VERSAO = 39;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
@@ -1236,9 +1236,9 @@ html,body{font-size:15px}
       var n = l.filter(function(x){ return x.token === token; }).length;
       if (n) return alert('Ainda há ' + n + (n === 1 ? ' cadastro' : ' cadastros') + ' esperando internet neste celular. Espere enviar antes de sair.');
       if (Object.keys(fotos).length && !confirm('Há fotos de um cadastro em andamento. Sair mesmo assim? As fotos serão apagadas.')) return;
-      if (!confirm('Sair desta conta? Para entrar de novo você vai precisar do usuário e da senha.')) return;
+      if (!confirm('Sair desta conta? Para entrar de novo você vai precisar do seu CPF e da senha.')) return;
       fotos = {}; guardarRascunho();
-      ['campo_token', 'campo_quem', 'campo_painel', 'campo_nome', 'campo_fone', 'campo_cpf', 'campo_rg', 'campo_endereco', 'campo_aba'].forEach(function(k){ lsSet(k, ''); });
+      ['campo_token', 'campo_quem', 'campo_painel', 'campo_nome', 'campo_fone', 'campo_cpf', 'campo_rg', 'campo_endereco', 'campo_aba', 'campo_trocar'].forEach(function(k){ lsSet(k, ''); });
       token = ''; quem = null; painel = null; aba = 'painel';
       pedirLink();
     });
@@ -1984,26 +1984,39 @@ html,body{font-size:15px}
   }
 
   var APP = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
-  // entrada: usuário e senha que o escritório cadastrou (ou o link antigo, se a pessoa tiver)
+  // entrada: CPF do prospectador e senha (a primeira é 123456; depois a pessoa cria a sua, de 6 números)
+  var SENHA_INI = '123456';
+  function campoSenha(id, ph, ac){
+    return '<label class="fone" style="margin:0"><svg viewBox="0 0 24 24"><use href="#i-cadeado"/></svg><input id="' + id + '" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="' + ph + '" autocomplete="' + ac + '"><button type="button" class="ver-senha" data-ver="' + id + '" style="border:0;background:none;color:var(--ink2);font:inherit;font-size:14px">mostrar</button></label>';
+  }
+  function ligarSenhas(){
+    Array.prototype.forEach.call(document.querySelectorAll('.ver-senha'), function(b){ b.onclick = function(){ var e = $(b.dataset.ver); e.type = e.type === 'password' ? 'text' : 'password'; b.textContent = e.type === 'password' ? 'mostrar' : 'esconder'; }; });
+    Array.prototype.forEach.call(document.querySelectorAll('.login input[inputmode="numeric"]'), function(e){ e.addEventListener('input', function(){ var v = this.value.replace(/\D/g, '').slice(0, 6); if (v !== this.value) this.value = v; }); });
+  }
+  function rpc(nome, corpo){
+    return fetch(CFG.url + '/rest/v1/rpc/' + nome, { method: 'POST', headers: { apikey: CFG.key, 'Content-Type': 'application/json' }, body: JSON.stringify(corpo) }).then(function(r){ return r.json(); });
+  }
   function pedirLink(msg){
+    lsSet('campo_trocar', '');
     $('app').innerHTML = '<div class="login"><div class="entrar"><img class="login-logo" src="img/logo-rl-completa.png" alt="Rodrigues Litaiff Advogados Associados">' +
-      '<b class="login-t">Acesse sua conta</b><p class="login-s">' + esc(msg || 'Use o usuário e a senha que o escritório passou para você.') + '</p>' +
-      '<label class="login-rot" for="usuario">Usuário</label><label class="fone" style="margin:0 0 14px"><svg viewBox="0 0 24 24"><use href="#i-pessoa"/></svg><input id="usuario" placeholder="seu usuário" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false"></label>' +
-      '<label class="login-rot" for="senha">Senha</label><label class="fone" style="margin:0"><svg viewBox="0 0 24 24"><use href="#i-cadeado"/></svg><input id="senha" type="password" placeholder="sua senha" autocomplete="current-password"><button type="button" id="ver-senha" style="border:0;background:none;color:var(--ink2);font:inherit;font-size:14px">mostrar</button></label>' +
+      '<b class="login-t">Acesse sua conta</b><p class="login-s">' + esc(msg || 'Entre com o seu CPF. No primeiro acesso a senha é 123456.') + '</p>' +
+      '<label class="login-rot" for="usuario">CPF</label><label class="fone" style="margin:0 0 14px"><svg viewBox="0 0 24 24"><use href="#i-pessoa"/></svg><input id="usuario" inputmode="numeric" placeholder="000.000.000-00" autocomplete="username" maxlength="14"></label>' +
+      '<label class="login-rot" for="senha">Senha</label>' + campoSenha('senha', '6 números', 'current-password') +
       '<button class="enviar" id="entrar">Entrar</button>' +
       '<p class="login-nota">Precisa de internet só para entrar. Depois o aplicativo funciona sem sinal.</p>' +
       '<details style="margin-top:18px;font-size:14px;color:var(--ink2)"><summary>Tenho um link do escritório</summary><label class="fone" style="margin:10px 0 0"><input id="link" placeholder="Cole o link aqui" autocomplete="off" style="font-size:15px"></label><button class="enviar" id="entrar-link" style="margin-top:10px;height:48px;font-size:16px;background:var(--pri);color:var(--onpri)">Entrar com o link</button></details></div></div>';
-    $('ver-senha').onclick = function(){ var e = $('senha'); e.type = e.type === 'password' ? 'text' : 'password'; this.textContent = e.type === 'password' ? 'mostrar' : 'esconder'; };
+    ligarSenhas();
+    $('usuario').addEventListener('input', function(){ this.value = mascaraCPF(this.value); });
     $('senha').addEventListener('keydown', function(e){ if (e.key === 'Enter') $('entrar').click(); });
     $('entrar').onclick = function(){
-      var u = $('usuario').value.trim(), p = $('senha').value, b = this;
-      if (!u || !p) return alert('Digite o usuário e a senha.');
+      var u = $('usuario').value.replace(/\D/g, ''), p = $('senha').value, b = this;
+      if (u.length !== 11) return alert('Digite o seu CPF completo (11 números).');
+      if (!/^\d{6}$/.test(p)) return alert('A senha tem 6 números.');
       if (navigator.onLine === false) return alert('Sem internet agora. Para entrar a primeira vez precisa de sinal.');
       b.disabled = true; b.textContent = 'Entrando…';
-      fetch(CFG.url + '/rest/v1/rpc/campo_entrar', { method: 'POST', headers: { apikey: CFG.key, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_usuario: u, p_senha: p }) })
-        .then(function(r){ return r.json(); })
+      rpc('campo_entrar_cpf', { p_cpf: u, p_senha: p })
         .then(function(d){
-          if (d && d.token){ lsSet('campo_usuario', u); token = d.token; return iniciar(); }
+          if (d && d.token){ lsSet('campo_usuario', mascaraCPF(u)); token = d.token; lsSet('campo_token', token); if (d.trocar){ lsSet('campo_trocar', '1'); return criarSenha(); } return iniciar(); }
           alert((d && (d.erro || d.message)) || 'Não foi possível entrar.');
         })
         .catch(function(){ alert('Sem internet agora. Para entrar a primeira vez precisa de sinal.'); })
@@ -2014,10 +2027,38 @@ html,body{font-size:15px}
       if (!t) return alert('Link inválido. Copie o link inteiro que o escritório mandou.');
       token = t; iniciar();
     };
-    var uu = lsGet('campo_usuario'); if (uu) $('usuario').value = uu;
+    var uu = lsGet('campo_usuario'); if (uu && uu.replace(/\D/g, '').length === 11) $('usuario').value = mascaraCPF(uu);
+  }
+  // depois do primeiro acesso (senha 123456): a pessoa cria a própria senha de 6 números
+  function criarSenha(msg){
+    $('app').innerHTML = '<div class="login"><div class="entrar"><img class="login-logo" src="img/logo-rl-completa.png" alt="Rodrigues Litaiff Advogados Associados">' +
+      '<b class="login-t">Crie a sua senha</b><p class="login-s">' + esc(msg || 'Escolha 6 números que só você saiba. Vai usar essa senha para entrar no aplicativo.') + '</p>' +
+      '<label class="login-rot" for="nova">Nova senha</label>' + campoSenha('nova', '6 números', 'new-password') +
+      '<label class="login-rot" for="nova2" style="margin-top:14px">Repita a senha</label>' + campoSenha('nova2', '6 números', 'new-password') +
+      '<button class="enviar" id="salvar-senha">Salvar senha</button>' +
+      '<p class="login-nota"><a href="#" id="voltar-login" style="color:inherit">Voltar</a></p></div></div>';
+    ligarSenhas();
+    $('nova2').addEventListener('keydown', function(e){ if (e.key === 'Enter') $('salvar-senha').click(); });
+    $('voltar-login').onclick = function(e){ e.preventDefault(); lsSet('campo_token', ''); token = ''; pedirLink(); };
+    $('salvar-senha').onclick = function(){
+      var a = $('nova').value, c = $('nova2').value, b = this;
+      if (!/^\d{6}$/.test(a)) return alert('A senha precisa ter 6 números.');
+      if (a === SENHA_INI || /^(\d)\1{5}$/.test(a) || a === '654321') return alert('Essa senha é fácil demais. Escolha outros 6 números.');
+      if (a !== c) return alert('As duas senhas estão diferentes. Digite de novo.');
+      if (navigator.onLine === false) return alert('Sem internet agora. Precisa de sinal para salvar a senha.');
+      b.disabled = true; b.textContent = 'Salvando…';
+      rpc('campo_criar_senha', { p_token: token, p_senha: a })
+        .then(function(d){
+          if (d && d.ok){ lsSet('campo_trocar', ''); alert('Senha criada. Nas próximas vezes, entre com o seu CPF e essa senha.'); return iniciar(); }
+          alert((d && (d.erro || d.message)) || 'Não foi possível salvar a senha.');
+        })
+        .catch(function(){ alert('Sem internet agora. Precisa de sinal para salvar a senha.'); })
+        .then(function(){ if (document.body.contains(b)){ b.disabled = false; b.textContent = 'Salvar senha'; } });
+    };
   }
   function iniciar(){
     if (!token) return pedirLink();
+    if (lsGet('campo_trocar') === '1') return criarSenha();
     lsSet('campo_token', token);
     if (location.hash) history.replaceState(null, '', location.pathname);
     try { quem = JSON.parse(lsGet('campo_quem') || 'null'); } catch(e){}
@@ -2027,7 +2068,7 @@ html,body{font-size:15px}
         .then(function(r){ return r.json(); }).then(function(d){ if (d && d.prospId){ quem = d; lsSet('campo_quem', JSON.stringify(d)); return quem; } if (d === null){ lsSet('campo_quem', ''); return null; } return quem; })
         .catch(function(){ semRede = true; return quem; });
     }).then(function(q){
-      if (!q && !semRede){ lsSet('campo_token', ''); token = ''; return pedirLink('Seu acesso mudou. Entre de novo com o usuário e a senha.'); }
+      if (!q && !semRede){ lsSet('campo_token', ''); token = ''; return pedirLink('Seu acesso mudou. Entre de novo com o seu CPF e a senha.'); }
       if (!q) quem = { nome: 'Prospectador', cadastros: [] };   // primeira vez sem internet: cadastra e envia depois
       telaInicial();
       carregarPainel();
