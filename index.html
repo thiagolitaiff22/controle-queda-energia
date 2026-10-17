@@ -1500,6 +1500,11 @@ section.vw-dash{gap:10px!important}
 .cad-desc .desc-row{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1.2fr) auto;gap:12px;align-items:center;padding:9px 16px;border-top:1px solid var(--line);font-size:13px}
 #dlg-desc select,#dlg-desc input{height:40px;border:1px solid var(--line-2);border-radius:9px;background:var(--bg);color:var(--ink);padding:0 10px;font:inherit;font-size:14px;font-weight:400}
 #dlg-desc label{display:flex;flex-direction:column;gap:6px;font-size:12.5px;font-weight:600;color:var(--ink-2)}
+/* Descartar na linha do Cadastro: discreto, fica vermelho ao passar o mouse */
+#app #cad-list .row{grid-template-columns:minmax(260px,2.3fr) 130px minmax(240px,2fr) 100px minmax(130px,1fr) 136px 104px!important}
+#cad-list .c-act{display:flex;align-items:center;justify-content:flex-end;gap:6px}
+.desc-btn{border:0;background:none;padding:2px 4px;font:inherit;font-size:12px;color:var(--ink-3);cursor:pointer;border-radius:5px}
+.desc-btn:hover{color:var(--red);background:var(--red-soft)}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -3437,7 +3442,7 @@ section.vw-dash{gap:10px!important}
         '<div><span class="lbl">Petição</span>' + petCell(r) + '</div>' +
         // botão Protocolado só para quem está pronto para protocolar
         '<div><span class="lbl">Protocolo</span>' + (situacaoCad(r)[0] === 'pronto' ? '<button type="button" class="tb-btn pet-btn prot-btn" data-protocolar="' + esc(r.id) + '" title="Já protocolou no PROJUDI? Registre o número do processo"><svg class="i"><use href="#i-check"/></svg>Protocolado</button>' : '<span class="pet-st" title="Aparece quando o cliente estiver pronto para protocolar">—</span>') + '</div>' +
-        '<div class="c-act"><button type="button" class="ico-btn" data-act="edit" data-id="' + esc(r.id) + '" title="Editar cadastro" aria-label="Editar ' + esc(r.nome) + '"><svg class="i"><use href="#i-pencil"/></svg></button></div>' +
+        '<div class="c-act"><button type="button" class="desc-btn" data-descartar="' + esc(r.id) + '" title="Descartar (ex.: já tem processo com outro advogado)">Descartar</button><button type="button" class="ico-btn" data-act="edit" data-id="' + esc(r.id) + '" title="Editar cadastro" aria-label="Editar ' + esc(r.nome) + '"><svg class="i"><use href="#i-pencil"/></svg></button></div>' +
       '</div>' + (cadAberto[r.id] ? fichaCliente(r, true) : '');
     }
     box.innerHTML = html;
