@@ -3093,10 +3093,8 @@ section.vw-dash{gap:10px!important}
     var cols = (passados ? col('passado', 'antes', passados, state.r.mes === 'passado') : '') + meses.map(function(m){ return col(m, mesLabel(m), porMes[m] || 0, state.r.mes === m); }).join('');
     var prox = Object.keys(porMes).filter(function(m){ return m >= iso(t).slice(0, 7); }).sort()[0];
     box.innerHTML =
-      '<div class="t-head"><div><b>Termômetro de retorno</b><div class="small">' + tot + ' cliente(s) aguardando a nova ação' + (prox ? ' · próxima liberação em ' + mesLabel(prox, true) + ' (' + porMes[prox] + ')' : '') + '</div></div>' +
+      '<div class="t-head"><div><b>Quantos liberam em cada mês</b><div class="small">clique no mês para ver os clientes' + (prox ? ' · próxima liberação em ' + mesLabel(prox, true) + ' (' + porMes[prox] + ')' : '') + '</div></div>' +
         (state.r.mes ? '<button type="button" class="fb-clear" id="t-clear">Ver todos os meses</button>' : '') + '</div>' +
-      barra + leg +
-      '<div class="t-sub">Quantos liberam em cada mês <span class="small">· clique no mês para ver os clientes</span></div>' +
       '<div class="tcols">' + cols + '</div>';
   }
   function renderRet(){
