@@ -2246,7 +2246,8 @@ section.vw-dash{gap:10px!important}
   function opts(map, blank){ return '<option value="">' + blank + '</option>' + Object.keys(map).map(function(k){ return '<option value="' + k + '">' + map[k][0] + '</option>'; }).join(''); }
   function tag(map, k){ return k && map[k] ? '<span class="pill ' + map[k][1] + '">' + map[k][0] + '</span>' : '<span class="small">—</span>'; }
   function addMonths(s, m){ var d = parseDate(s); if (!d) return ''; var day = d.getDate(); d.setDate(1); d.setMonth(d.getMonth() + m); var last = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate(); d.setDate(Math.min(day, last)); return iso(d); }
-  function retornoEm(r){ return r.protocolo ? addMonths(r.protocolo, RETORNO_MESES) : ''; }
+  // faltou na audiência: já pode entrar com a nova ação desde o dia da audiência; os demais, 5 meses depois do protocolo
+  function retornoEm(r){ if (faltou(r) && r.audData) return String(r.audData).slice(0, 10); return r.protocolo ? addMonths(r.protocolo, RETORNO_MESES) : ''; }
   function brl(n){ return 'R$ ' + (Number(n) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 }); }
   function parseBRL(s){ s = String(s || '').replace(/[^\d,.-]/g, ''); if (!s) return null; if (s.indexOf(',') >= 0) s = s.replace(/\./g, '').replace(',', '.'); var n = parseFloat(s); return isNaN(n) ? null : n; }
   function faltou(r){ return r.comparecimento === 'faltou' || r.resultado === 'ausente'; }
