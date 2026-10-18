@@ -813,6 +813,26 @@ html[data-tema="dark"] .pp{background:#0f2348;border-color:#1e3a6e}
 html:not([data-tema="dark"]) .pp-s.ap{color:#b91c1c;background:#fee2e2}
 html:not([data-tema="dark"]) .pp-s.ok{color:#15803d;background:#dcfce7}
 .pp-seta{flex:none;font-size:18px;color:var(--ink2);margin-left:-2px}
+/* estilo Banking UI Kit (Figma): cartão azul em degradê + lista única com divisórias */
+.gp-faixa{display:block!important;border:0!important;border-radius:20px!important;padding:16px 16px 14px!important;background:linear-gradient(135deg,#2f6bff 0%,#1d4ed8 45%,#0f2f7a 100%)!important;box-shadow:0 12px 28px rgba(29,78,216,.35)!important;position:relative;overflow:hidden}
+.gp-faixa::after{content:"";position:absolute;right:-40px;top:-40px;width:150px;height:150px;border-radius:50%;background:rgba(255,255,255,.08)}
+.gp-faixa-t{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;position:relative;z-index:1}
+.gp-faixa-t span{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.75)}
+.gp-faixa-t img{height:18px;opacity:.9}
+.gp-faixa-n{display:grid;grid-template-columns:repeat(3,1fr);position:relative;z-index:1}
+.gp-faixa-n button{border:0!important;background:none!important;color:#fff!important;padding:0!important;align-items:flex-start!important}
+.gp-faixa-n button + button{border-left:1px solid rgba(255,255,255,.2)!important;padding-left:12px!important}
+.gp-faixa-n b{font-size:22px!important;color:#fff!important}
+.gp-faixa-n span{font-size:11.5px!important;color:rgba(255,255,255,.75)!important}
+.pp-cards{gap:0!important;border:1px solid var(--line);border-radius:18px;background:var(--card);overflow:hidden}
+html[data-tema="dark"] .pp-cards{background:#0f1d3d;border-color:#1c3263}
+.pp{border:0!important;border-radius:0!important;background:none!important;padding:12px 14px!important}
+.pp + .pp{border-top:1px solid var(--line)!important}
+html[data-tema="dark"] .pp + .pp{border-top-color:#1c3263!important}
+.pp-av{background:rgba(47,107,255,.14)!important;color:#2f6bff!important;width:38px!important;height:38px!important;font-size:13px!important}
+html[data-tema="dark"] .pp-av{background:rgba(96,165,250,.14)!important;color:#93c5fd!important}
+.pp-s{background:none!important;padding:0!important;font-size:13px!important}
+.gp-sec{margin-top:22px!important}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><script>try{var t=localStorage.getItem("campo_tema");if(!t)t="dark";document.documentElement.setAttribute("data-tema",t);}catch(e){document.documentElement.setAttribute("data-tema","light");}</script>
 </head>
@@ -851,7 +871,7 @@ html:not([data-tema="dark"]) .pp-s.ok{color:#15803d;background:#dcfce7}
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 46;
+  var APP_VERSAO = 47;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
@@ -1392,11 +1412,11 @@ html:not([data-tema="dark"]) .pp-s.ok{color:#15803d;background:#dcfce7}
       var aPagar = gp.prospectadores.reduce(function(s, p){ return s + (p.aPagar || 0); }, 0);
       box.innerHTML =
         '<div class="gp-ola"><b>Olá' + (primeiro ? ', ' + esc(primeiro.charAt(0) + primeiro.slice(1).toLowerCase()) : '') + '</b><span>' + (function(t){ return t.charAt(0).toUpperCase() + t.slice(1); })(h.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })) + '</span></div>' +
-        '<div class="gp-faixa">' +
+        '<div class="gp-faixa"><div class="gp-faixa-t"><span>Escritório</span><img src="img/logo-rl-icone.png" alt=""></div><div class="gp-faixa-n">' +
           '<button type="button" data-gir="preparo"><b>' + gp.emCadastro + '</b><span>Cadastro</span></button>' +
           '<button type="button" data-gir="protocolado"><b>' + gp.aguardando + '</b><span>Aguardando</span></button>' +
           '<button type="button" data-gir="todos"><b>' + gp.renovar + '</b><span>Renovar</span></button>' +
-        '</div>' +
+        '</div></div>' +
         '<div class="gp-sec">Prospectadores</div>' + listaProspsPag();
     }
     desenhar();
