@@ -1545,7 +1545,7 @@ section.vw-dash{gap:10px!important}
 #app .topnav .rl-logo img{height:21px;width:auto;display:block}
 .ret-row .tmini{margin:5px 0 3px}
 /* Nova ação: 6 cartões que filtram + não quis renovar */
-.vw-dash .r-stats.r-six{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
+.vw-dash .r-stats.r-six{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
 @media (max-width:1250px){ .vw-dash .r-stats.r-six{grid-template-columns:repeat(3,minmax(0,1fr))} }
 @media (max-width:640px){ .vw-dash .r-stats.r-six{grid-template-columns:repeat(2,minmax(0,1fr))} }
 .r-card{text-align:left;font:inherit;color:inherit;cursor:pointer}
@@ -1872,7 +1872,6 @@ section.vw-dash{gap:10px!important}
           <span class="tb-fim" id="r-count"></span>
         </div>
         <div class="stats r-stats r-six">
-          <button type="button" class="card stat r-card" data-rf="mes" title="Mostrar só estes clientes"><div class="stat-h"><svg class="i"><use href="#i-cal"/></svg>Renovar este mês<span class="help" title="Clientes que completam os 5 meses neste mês (sem contar quem não quis ou já renovou).">?</span></div><div class="stat-v tnum" id="r-s0">0</div><div class="stat-c" id="r-s0-c">completam 5 meses</div></button>
           <button type="button" class="card stat r-card" data-rf="liberado" title="Mostrar só estes clientes"><div class="stat-h"><svg class="i"><use href="#i-check"/></svg>Podem entrar de novo<span class="help" title="Já passaram 5 meses desde o protocolo e ainda não foram contatados.">?</span></div><div class="stat-v tnum" id="r-s1">0</div><div class="stat-c" id="r-s1-c">aguardando nosso contato</div></button>
           <button type="button" class="card stat r-card" data-rf="30" title="Mostrar só estes clientes"><div class="stat-h"><svg class="i"><use href="#i-clock"/></svg>Próximos 30 dias<span class="help" title="Clientes que completam 5 meses do protocolo nos próximos 30 dias.">?</span></div><div class="stat-v tnum" id="r-s2">0</div><div class="stat-c" id="r-s2-c">liberam para nova ação</div></button>
           <button type="button" class="card stat r-card" data-rf="contatado" title="Mostrar só estes clientes"><div class="stat-h"><svg class="i"><use href="#i-users"/></svg>Já contatados<span class="help" title="Clientes marcados como contatados para a nova ação (sem contar quem não quis).">?</span></div><div class="stat-v tnum" id="r-s3">0</div><div class="stat-c" id="r-s3-c">para a nova ação</div></button>
@@ -3129,7 +3128,6 @@ section.vw-dash{gap:10px!important}
     var em30 = com.filter(function(r){ var n = daysUntil(retornoEm(r)); return n > 0 && n <= 30 && !r.contatadoRetorno && !fora(r); });
     var cont = com.filter(function(r){ return r.contatadoRetorno && !r.naoRenovou; });
     var ren = com.filter(renovou), naoq = com.filter(function(r){ return r.naoRenovou; });
-    $('r-s0').textContent = noMes.length; $('r-s0-c').textContent = 'em ' + mesLabel(mesAtual, true);
     $('r-s1').textContent = lib.length; $('r-s2').textContent = em30.length; $('r-s3').textContent = cont.length;
     var procurados = ren.length + naoq.length;
     $('r-s5').textContent = ren.length; $('r-s5-c').textContent = procurados ? Math.round(ren.length / procurados * 100) + '% dos que responderam' : 'entraram com nova ação';
