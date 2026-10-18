@@ -3142,6 +3142,7 @@ section.vw-dash{gap:10px!important}
       if (f.f === 'contatado' && !(r.contatadoRetorno && !r.naoRenovou)) return false;
       if (f.f === 'mes' && !(retornoEm(r).slice(0, 7) === hoje.slice(0, 7) && !r.naoRenovou && !renovou(r))) return false;
       if (f.f === 'renovou' && !renovou(r)) return false;
+      if (!f.f && !f.mes && renovou(r)) return false;   // a ação antiga de quem já renovou só aparece em Renovaram
       if (f.f === 'naoquis' && !r.naoRenovou) return false;
       if (f.f === 'arquivado' && !r.arquivado) return false;
       if (f.mes && (f.mes === 'passado' ? retornoEm(r).slice(0, 7) >= iso(today()).slice(0, 7) : retornoEm(r).slice(0, 7) !== f.mes)) return false;
@@ -3161,7 +3162,7 @@ section.vw-dash{gap:10px!important}
         '<div class="c-name"><div class="name">' + esc(r.nome) + (r.arquivado ? ' <span class="pill ok">Pago</span>' : '') + '</div><div class="addr">' + esc(r.cpf ? 'CPF ' + r.cpf : '') + '</div></div>' +
         '<div><span class="lbl">Última audiência</span><div class="val">' + (r.audData ? fmtDate(r.audData) + (r.audHora ? ' · ' + esc(r.audHora) : '') : '—') + '</div><div class="addr">' + (res ? '<span class="cad-sit ' + res[1] + '">' + res[0] + '</span>' : 'sem resultado') + '</div></div>' +
         '<div><span class="lbl">Protocolo</span><div class="val">' + (r.protocolo ? fmtDate(r.protocolo) : '—') + '</div><div class="addr tnum">' + esc(r.processo || '') + '</div></div>' +
-        '<div><span class="lbl">Nova ação a partir de</span><div class="val" style="font-weight:600">' + (ret ? fmtDate(ret) : '—') + '</div>' + (ret && !r.contatadoRetorno ? termoMini(r) : '') + quando + '</div>' +
+        '<div><span class="lbl">Nova ação a partir de</span><div class="val" style="font-weight:600">' + (ret ? fmtDate(ret) : '—') + '</div>' + (ret && !r.contatadoRetorno && !r.naoRenovou && !jaRen ? termoMini(r) : '') + quando + '</div>' +
         '<div class="ret-cont"><span class="lbl">Contato</span>' + (jaRen ? '<span class="small">entrou com nova ação</span>' : r.naoRenovou ? '<span class="small">não quis' + (r.naoRenovouEm ? ' · ' + fmtDate(r.naoRenovouEm) : '') + '</span><button type="button" class="linkbtn" data-act="naoquis" data-id="' + esc(r.id) + '">desfazer</button>' :
           '<button type="button" class="toggle" data-act="contato" data-id="' + esc(r.id) + '" aria-pressed="' + (r.contatadoRetorno ? 'true' : 'false') + '"><span class="dot"></span>' + (r.contatadoRetorno ? 'Contatado' : 'Marcar contatado') + '</button><button type="button" class="linkbtn nq-btn" data-act="naoquis" data-id="' + esc(r.id) + '">Não quis renovar</button>') + '</div>' +
         '<div class="c-act"><button type="button" class="ico-btn" data-act="edit" data-id="' + esc(r.id) + '" title="Editar cadastro" aria-label="Editar ' + esc(r.nome) + '"><svg class="i"><use href="#i-pencil"/></svg></button></div>' +
