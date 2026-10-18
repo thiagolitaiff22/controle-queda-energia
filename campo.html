@@ -747,6 +747,33 @@ html[data-tema="dark"] .gp-pagar{background:#0f2348;border-color:#1e3a6e}
 .gp-rec summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--ink2);padding:6px 2px;list-style:none}
 .gp-rec summary::before{content:"▸ "}
 .gp-rec[open] summary::before{content:"▾ "}
+/* gestor: pagamentos por prospectador */
+.pag-ps > div{cursor:pointer!important}
+.pag-ps em{font-style:normal;font-size:13px;font-weight:700;white-space:nowrap;margin-left:auto}
+.pag-ps em.ap,.pag-cab i.ap{color:#f87171;font-style:normal}
+.pag-ps em.ok,.pag-cab i.ok{color:#4ade80;font-style:normal}
+.pag-ps .seta{font-style:normal;font-size:20px;color:var(--ink2);margin-left:6px}
+.pag-volta{border:0;background:none;color:#60a5fa;font:inherit;font-size:14px;font-weight:600;padding:2px 0 8px}
+.pag-cab{display:flex;flex-direction:column;gap:2px;margin:0 0 12px}
+.pag-cab b{font-size:19px}
+.pag-cab span{font-size:13.5px;color:var(--ink2)}
+.pg-b{width:96px!important}
+/* gestor: padrão único de texto — seção 12 · nome 15 · detalhe 13 · número 26 */
+#gp-v .rot,#pag-v .rot{font-size:12px!important;font-weight:700!important;letter-spacing:.06em!important;text-transform:uppercase!important;color:var(--ink2)!important;margin:22px 2px 8px!important}
+#gp-v .ola{margin-bottom:4px}
+#gp-v .ola b{font-size:22px!important}
+#gp-v .ola span{font-size:13px!important}
+#gp-v .lista > div,#pag-v .lista > div{padding:13px 14px!important;gap:10px!important}
+#gp-v .nm b,#pag-v .nm b,#gp-v .auds .info b{font-size:15px!important;font-weight:600!important;line-height:1.3!important}
+#gp-v .nm span,#pag-v .nm span,#gp-v .auds .info span{font-size:13px!important;font-weight:400!important;color:var(--ink2)!important;line-height:1.35!important}
+#gp-v .pag-ps em,#pag-v .pag-ps em{font-size:13px!important}
+#gp-v .kpis.gp-tres .kpi{padding:12px!important;min-height:0!important}
+#gp-v .kpis.gp-tres .kpi small{font-size:12px!important;font-weight:600!important;color:var(--ink2)!important;line-height:1.3!important;min-height:31px}
+#gp-v .kpis.gp-tres .kpi b{font-size:26px!important;margin-top:4px}
+#pag-v .pag-cab b{font-size:20px!important;font-weight:700!important}
+#pag-v .pag-cab span{font-size:13px!important}
+#pag-v .chips button{font-size:13px!important}
+#pag-v .pg-b{font-size:12.5px!important}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><script>try{var t=localStorage.getItem("campo_tema");if(!t)t="dark";document.documentElement.setAttribute("data-tema",t);}catch(e){document.documentElement.setAttribute("data-tema","light");}</script>
 </head>
@@ -785,7 +812,7 @@ html[data-tema="dark"] .gp-pagar{background:#0f2348;border-color:#1e3a6e}
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 43;
+  var APP_VERSAO = 44;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
@@ -1015,9 +1042,25 @@ html[data-tema="dark"] .gp-pagar{background:#0f2348;border-color:#1e3a6e}
     vistaNovo();
   }
   /* ---------- gestor: pagamentos das indicações (R$ 25 no protocolo e R$ 25 quando sai) ---------- */
-  var gest = null, gestProsp = lsGet('campo_gest_prosp') || '', gestFiltro = 'apagar';
+  var gest = null, gestProsp = '', gestFiltro = 'apagar';
   try { gest = JSON.parse(lsGet('campo_gestor') || 'null'); } catch(e){}
   function primeiroNome(n){ var p = String(n || '').replace(/^(dona|seu|sr\.?|sra\.?)\s+/i, '').split(/\s+/); return p[0] + (/^j[rú]/i.test(p[p.length - 1] || '') ? ' Jr.' : p.length > 1 ? ' ' + p[p.length - 1].charAt(0) + '.' : ''); }
+  function listaProspsPag(){
+    var ps = (gest || []).filter(function(p){ return p.itens && p.itens.length; }).map(function(p){
+      var ap = p.itens.filter(gestAPagar).length, ult = p.itens.reduce(function(m, c){ return String(c.protocolo || '') > m ? String(c.protocolo) : m; }, '');
+      return { p: p, ap: ap, ult: ult };
+    }).sort(function(x, y){ return y.ap - x.ap || y.ult.localeCompare(x.ult); });
+    if (!ps.length) return '<div class="vazio">' + (gest ? 'Nenhuma indicação protocolada ainda.' : navigator.onLine === false ? 'Sem internet agora.' : 'Carregando…') + '</div>';
+    return '<div class="lista gp-l pag-ps">' + ps.map(function(x){
+      return '<div data-pagp="' + esc(x.p.id) + '"><span class="nm"><b>' + esc(x.p.nome) + '</b><span>' + x.p.itens.length + (x.p.itens.length === 1 ? ' indicação' : ' indicações') + (x.ult ? ' · última em ' + dataBR(x.ult) : '') + '</span></span>' +
+        '<em class="' + (x.ap ? 'ap' : 'ok') + '">' + (x.ap ? x.ap + ' a pagar' : 'em dia') + '</em><i class="seta">›</i></div>';
+    }).join('') + '</div>';
+  }
+  document.addEventListener('click', function(e){
+    var r = e.target.closest('[data-pagp]'); if (!r) return;
+    gestProsp = r.dataset.pagp; lsSet('campo_gest_prosp', gestProsp); gestFiltro = 'apagar';
+    if (aba === 'pag') { desenharPagV(); window.scrollTo(0, 0); } else irPara('pag');
+  });
   function gestAPagar(c){ return !c.p1 || (c.saiu && !c.p2); }
   function gestFalta(l){ return l.reduce(function(n, c){ return n + (c.p1 ? 0 : 1) + (c.saiu && !c.p2 ? 1 : 0); }, 0); }
   function carregarGestor(){
@@ -1033,21 +1076,23 @@ html[data-tema="dark"] .gp-pagar{background:#0f2348;border-color:#1e3a6e}
     var box = $('pag-v'); if (!box) return;
     if (!gest) { box.innerHTML = '<div class="vazio">Sem internet: os pagamentos aparecem quando o celular tiver sinal.</div>'; return; }
     var ps = gest.filter(function(p){ return p.itens && p.itens.length; });
-    if (!ps.some(function(p){ return p.id === gestProsp; })) gestProsp = ps.length ? ps[0].id : '';
-    var p = ps.filter(function(x){ return x.id === gestProsp; })[0], itens = p ? p.itens : [];
-    var l = itens.filter(function(c){ return gestFiltro === 'todas' || (gestFiltro === 'pagas' ? !gestAPagar(c) : gestAPagar(c)); });
-    var p1 = itens.filter(function(c){ return c.p1; }).length, sairam = itens.filter(function(c){ return c.saiu; }), p2 = sairam.filter(function(c){ return c.p2; }).length, falta = gestFalta(itens);
+    var p = ps.filter(function(x){ return x.id === gestProsp; })[0];
+    if (!p){ gestProsp = ''; box.innerHTML = '<div class="rot" style="margin-top:0">Prospectadores · toque no nome para pagar</div>' + listaProspsPag(); return; }
+    var itens = p.itens;
+    var l = itens.filter(function(c){ return gestFiltro === 'todas' || (gestFiltro === 'pagas' ? !gestAPagar(c) : gestAPagar(c)); })
+      .sort(function(x, y){ return String(y.protocolo || '').localeCompare(String(x.protocolo || '')); });   // o que chegou agora primeiro
+    var nAP = itens.filter(gestAPagar).length;
     box.innerHTML =
-      '<div class="rot">Prospectador</div><div class="chips" id="pag-ps">' + ps.map(function(x){ var f = gestFalta(x.itens); return '<button type="button" data-ps="' + esc(x.id) + '" aria-pressed="' + (x.id === gestProsp) + '">' + esc(primeiroNome(x.nome)) + (f ? '<b>' + f + '</b>' : '') + '</button>'; }).join('') + '</div>' +
-      (p ? '<div class="pag-resumo"><span><b>' + p1 + '</b> de ' + itens.length + '<small>pagos no protocolo</small></span><span><b>' + p2 + '</b> de ' + sairam.length + '<small>pagos quando sai</small></span><span class="' + (falta ? 'falta' : '') + '"><b>' + falta + '</b><small>' + (falta === 1 ? 'parte a pagar' : 'partes a pagar') + '</small></span></div>' +
-        '<div class="chips" id="pag-f">' + [['apagar', 'A pagar'], ['pagas', 'Pagas'], ['todas', 'Todas']].map(function(f){ return '<button type="button" data-f="' + f[0] + '" aria-pressed="' + (gestFiltro === f[0]) + '">' + f[1] + '</button>'; }).join('') + '</div>' +
-        (l.length ? '<div class="lista pag-l">' + l.map(function(c){
-          return '<div><span class="nm"><b>' + esc(c.nome || '') + '</b><span>' + (c.protocolo ? 'protocolo ' + dataBR(c.protocolo) : esc(c.processo || '')) + '</span></span>' +
-            '<button type="button" class="pg-b' + (c.p1 ? ' ok' : '') + '" data-c="' + esc(c.id) + '" data-p="1">' + (c.p1 ? '✓ ' : '') + 'Protocolo' + (c.p1 ? '<em>' + dataBR(c.p1) + '</em>' : '<em>a pagar</em>') + '</button>' +
-            '<button type="button" class="pg-b' + (c.p2 ? ' ok' : c.saiu ? '' : ' nao') + '" data-c="' + esc(c.id) + '" data-p="2">' + (c.p2 ? '✓ ' : '') + 'Quando sai' + (c.p2 ? '<em>' + dataBR(c.p2) + '</em>' : c.saiu ? '<em>a pagar</em>' : '<em>não saiu</em>') + '</button></div>';
-        }).join('') + '</div>' : '<div class="vazio">' + (gestFiltro === 'apagar' ? 'Nada a pagar para ' + esc(primeiroNome(p.nome)) + '.' : 'Nenhuma indicação aqui.') + '</div>')
-      : '<div class="vazio">Nenhum processo protocolado ainda.</div>');
-    $('pag-ps').onclick = function(e){ var b = e.target.closest('[data-ps]'); if (!b) return; gestProsp = b.dataset.ps; lsSet('campo_gest_prosp', gestProsp); desenharPagV(); };
+      '<button type="button" class="pag-volta" id="pag-volta">‹ Prospectadores</button>' +
+      '<div class="pag-cab"><b>' + esc(p.nome) + '</b><span>' + itens.length + (itens.length === 1 ? ' indicação' : ' indicações') + ' · <i class="' + (nAP ? 'ap' : 'ok') + '">' + (nAP ? nAP + ' a pagar' : 'tudo pago') + '</i></span></div>' +
+      '<div class="chips" id="pag-f">' + [['apagar', 'A pagar'], ['pagas', 'Pagas'], ['todas', 'Todas']].map(function(f){ return '<button type="button" data-f="' + f[0] + '" aria-pressed="' + (gestFiltro === f[0]) + '">' + f[1] + '</button>'; }).join('') + '</div>' +
+      (l.length ? '<div class="lista pag-l">' + l.map(function(c){
+        var dois = c.saiu || c.p2;   // 2ª parte só aparece quando o processo sai (cliente recebeu)
+        return '<div><span class="nm"><b>' + esc(c.nome || '') + '</b><span>' + (c.protocolo ? 'protocolo ' + dataBR(c.protocolo) : esc(c.processo || '')) + '</span></span>' +
+          '<button type="button" class="pg-b' + (c.p1 ? ' ok' : '') + '" data-c="' + esc(c.id) + '" data-p="1">' + (c.p1 ? '✓ Pago<em>' + dataBR(c.p1) + '</em>' : 'Marcar pago') + '</button>' +
+          (dois ? '<button type="button" class="pg-b' + (c.p2 ? ' ok' : '') + '" data-c="' + esc(c.id) + '" data-p="2">' + (c.p2 ? '✓ 2ª parte<em>' + dataBR(c.p2) + '</em>' : '2ª parte<em>saiu: a pagar</em>') + '</button>' : '') + '</div>';
+      }).join('') + '</div>' : '<div class="vazio">' + (gestFiltro === 'apagar' ? 'Nada a pagar para ' + esc(primeiroNome(p.nome)) + '.' : 'Nenhuma indicação aqui.') + '</div>');
+    $('pag-volta').onclick = function(){ gestProsp = ''; lsSet('campo_gest_prosp', ''); gestFiltro = 'apagar'; desenharPagV(); window.scrollTo(0, 0); };
     if ($('pag-f')) $('pag-f').onclick = function(e){ var b = e.target.closest('[data-f]'); if (!b) return; gestFiltro = b.dataset.f; desenharPagV(); };
     box.onclick = function(e){
       var b = e.target.closest('.pg-b'); if (!b) return;
@@ -1245,31 +1290,26 @@ html[data-tema="dark"] .gp-pagar{background:#0f2348;border-color:#1e3a6e}
       var aPagar = gp.prospectadores.reduce(function(s, p){ return s + (p.aPagar || 0); }, 0);
       box.innerHTML =
         '<div class="ola"><b>Olá' + (primeiro ? ', ' + esc(primeiro.charAt(0) + primeiro.slice(1).toLowerCase()) : '') + '!</b><span>' + h.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' }) + (at ? ' · atualizado às ' + at.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '') + '</span></div>' +
-        '<div class="kpis gp-tres">' +
+        '<div class="rot">Prospectadores · toque no nome para pagar</div>' + listaProspsPag() +
+        '<div class="rot">Escritório</div><div class="kpis gp-tres">' +
           kpi('No cadastro', gp.emCadastro, 'var(--line2)', 'preparo') +
           kpi('Aguardando audiência', gp.aguardando, 'var(--warn)', 'protocolado') +
           kpi('Podem renovar', gp.renovar, 'var(--ok)', 'todos') +
         '</div>' +
-        (aPagar ? '<button type="button" class="gp-pagar" data-gir="pag"><b>' + aPagar + '</b><span>' + (aPagar === 1 ? 'parte de indicação a pagar' : 'partes de indicação a pagar') + '</span><em>Pagamentos ›</em></button>' : '') +
         '<div class="rot">Próximas audiências' + (gp.proximas.length ? ' · ' + gp.proximas.length : '') + '</div>' +
         (gp.proximas.length ? '<div class="auds">' + gp.proximas.map(function(c){
           var p = String(c.data).split('-');
           return '<div data-cli="' + esc(c.id) + '"><div class="dia"><b>' + p[2] + '</b><span>' + MES[+p[1] - 1] + '</span></div><div class="info"><b>' + esc(String(c.nome || '').toUpperCase()) + '</b><span>' + quando(c.data) + (c.hora ? ' · ' + esc(c.hora) : '') + (c.prosp ? ' · ' + esc(primeiroNome(c.prosp)) : '') + '</span></div></div>';
-        }).join('') + '</div>' : '<div class="vazio">Nenhuma audiência marcada agora.</div>') +
-        '<div class="rot">Prospectadores</div><div class="lista gp-l">' + gp.prospectadores.filter(function(p){ return p.indicados; }).sort(function(x, y){ return y.indicados - x.indicados; }).map(function(p){
-          return '<div data-gp="' + esc(p.id) + '"><span class="nm"><b>' + esc(p.nome) + '</b><span>' + p.indicados + (p.indicados === 1 ? ' indicado' : ' indicados') + '</span></span>' + (p.aPagar ? '<em class="gp-ap">' + p.aPagar + ' a pagar</em>' : '') + '</div>';
-        }).join('') + '</div>' +
-        (gp.recentes.length ? '<details class="gp-rec"><summary>Últimos cadastros</summary><div class="lista gp-l">' + gp.recentes.map(function(c){
-          return '<div data-cli="' + esc(c.id) + '"><span class="nm"><b>' + esc(String(c.nome || '').toUpperCase()) + '</b><span>' + (c.em ? dataBR(c.em) : '') + (c.prosp ? ' · ' + esc(primeiroNome(c.prosp)) : '') + (c.prot ? ' · protocolado' : ' · no cadastro') + '</span></span></div>';
-        }).join('') + '</div></details>' : '');
+        }).join('') + '</div>' : '<div class="vazio">Nenhuma audiência marcada agora.</div>');
     }
     desenhar();
     $('vista').onclick = function(e){
       var k = e.target.closest('[data-gir]'); if (k){ if (k.dataset.gir === 'pag') return irPara('pag'); filtroCli = k.dataset.gir; buscaCli = ''; return irPara('clientes'); }
-      var g = e.target.closest('[data-gp]'); if (g){ var pp = (gp.prospectadores || []).filter(function(x){ return x.id === g.dataset.gp; })[0]; if (pp){ filtroCli = 'todos'; buscaCli = ''; buscaProsp = pp.nome; return irPara('clientes'); } }
+      var g = e.target.closest('[data-gp]'); if (g && false){ var pp = (gp.prospectadores || []).filter(function(x){ return x.id === g.dataset.gp; })[0]; if (pp){ filtroCli = 'todos'; buscaCli = ''; buscaProsp = pp.nome; return irPara('clientes'); } }
       var c = e.target.closest('[data-cli]'); if (c) fichaCli(c.dataset.cli);
     };
     carregarGPainel().then(function(){ if (aba === 'painel') desenhar(); });
+    carregarGestor().then(function(){ if (aba === 'painel') desenhar(); });
   }
   function vistaPainel(){
     if (quem && quem.gestor) return vistaEscritorio();
