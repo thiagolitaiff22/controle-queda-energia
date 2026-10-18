@@ -132,6 +132,9 @@ function arquivo(p, quem){
 function subpasta(pasta, nome){ var it = pasta.getFoldersByName(nome); return it.hasNext() ? it.next() : pasta.createFolder(nome); }
 
 function fechar(p, quem){
+  // reenvio do mesmo cadastro (o aplicativo não recebeu a resposta): não cria outra pasta nem outro cliente
+  var props = PropertiesService.getScriptProperties(), feito = props.getProperty('feito_' + p.envio);
+  if (feito) return { ok: true, id: feito, nome: '', repetido: true };
   var digitado = nomeDigitado(p);
   var pasta = pastaDoEnvio(p.envio, quem, digitado);
   // o envio só registra o cliente (rápido); a IA lê os documentos depois, na leitura automática (a cada 10 minutos)
@@ -155,7 +158,8 @@ function fechar(p, quem){
     p_dados: { nome: dados.nome, cpf: dados.cpf, rg: dados.rg, nascimento: dados.nascimento, endereco: dados.endereco,
       contato: p.contato || '', atribuirA: String(p.atribuirA || '').slice(0, 80), pastaUrl: pasta.getUrl(), pastaId: pasta.getId(), docs: p.docs || [], faltam: p.faltam || [], local: p.local || null, foto: /^data:image\/jpeg;base64,/.test(p.foto || '') ? p.foto : '', leitura: nota.join('\n') }
   });
-  PropertiesService.getScriptProperties().deleteProperty('pasta_' + p.envio);
+  // guarda que este envio já virou cliente (e mantém a pasta dele): qualquer reenvio usa a mesma pasta e não duplica
+  props.setProperty('feito_' + p.envio, String(id || ('campo-' + p.envio)));
   return { ok: true, id: id, nome: dados.nome || '' };
 }
 
