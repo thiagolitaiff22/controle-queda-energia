@@ -937,6 +937,9 @@ html[data-tema="dark"] .ag-ses-cab b{color:#93c5fd}
 .ag-st{flex:none;font-style:normal;font-size:12px;font-weight:700;white-space:nowrap}
 .ag-st.ok{color:#22c55e}.ag-st.warn{color:#f59e0b}.ag-st.red{color:#f87171}.ag-st.purple{color:#a78bfa}.ag-st.gray{color:var(--ink2)}
 #ag-v .gp-faixa{margin-top:4px}
+
+.pp-s.novo{color:#93c5fd!important}
+html:not([data-tema="dark"]) .pp-s.novo{color:#1d4ed8!important}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><script>try{var t=localStorage.getItem("campo_tema");if(!t)t="dark";document.documentElement.setAttribute("data-tema",t);}catch(e){document.documentElement.setAttribute("data-tema","light");}</script>
 </head>
@@ -975,7 +978,7 @@ html[data-tema="dark"] .ag-ses-cab b{color:#93c5fd}
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 52;
+  var APP_VERSAO = 53;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
@@ -1328,16 +1331,20 @@ html[data-tema="dark"] .ag-ses-cab b{color:#93c5fd}
     };
   }
   function listaProspsPag(){
-    var ps = (gest || []).filter(function(p){ return p.itens && p.itens.length; }).map(function(p){
+    // todos da equipe (Equipe/BI), com as indicações protocoladas de cada um (Pagamentos)
+    var porId = {}; (gest || []).forEach(function(p){ porId[p.id] = p; });
+    var base = (equipe && equipe.length ? equipe : (gp && gp.prospectadores) || gest || []).map(function(p){ var g = porId[p.id]; return { id: p.id, nome: p.nome, avulso: p.avulso, itens: (g && g.itens) || [] }; });
+    (gest || []).forEach(function(p){ if (!base.some(function(b){ return b.id === p.id; }) && p.itens && p.itens.length) base.push({ id: p.id, nome: p.nome, itens: p.itens }); });
+    var ps = base.map(function(p){
       var ap = p.itens.filter(gestAPagar).length, ult = p.itens.reduce(function(m, c){ return String(c.protocolo || '') > m ? String(c.protocolo) : m; }, '');
       return { p: p, ap: ap, ult: ult };
-    }).sort(function(x, y){ return y.ap - x.ap || y.ult.localeCompare(x.ult); });
-    if (!ps.length) return '<div class="vazio">' + (gest ? 'Nenhuma indicação protocolada ainda.' : navigator.onLine === false ? 'Sem internet agora.' : 'Carregando…') + '</div>';
+    }).sort(function(x, y){ return y.ap - x.ap || y.ult.localeCompare(x.ult) || String(x.p.nome).localeCompare(String(y.p.nome)); });
+    if (!ps.length) return '<div class="vazio">' + (navigator.onLine === false ? 'Sem internet agora.' : 'Carregando…') + '</div>';
     var ini = function(n){ var p = String(n || '').replace(/^(dr\.?|dra\.?|dona|seu)\s+/i, '').trim().split(/\s+/); return ((p[0] || '').charAt(0) + (p.length > 1 ? p[p.length - 1].charAt(0) : '')).toUpperCase(); };
     return '<div class="pp-cards">' + ps.map(function(x){
       return '<button type="button" class="pp" data-pagp="' + esc(x.p.id) + '"><span class="pp-av">' + esc(ini(x.p.nome)) + '</span>' +
-        '<span class="pp-t"><b>' + esc(x.p.nome) + '</b><span>' + x.p.itens.length + (x.p.itens.length === 1 ? ' indicação' : ' indicações') + (x.ult ? ' · última ' + dataBR(x.ult).slice(0, 5) : '') + '</span></span>' +
-        '<span class="pp-s ' + (x.ap ? 'ap' : 'ok') + '">' + (x.ap ? x.ap + ' a pagar' : 'em dia') + '</span><span class="pp-seta">›</span></button>';
+        '<span class="pp-t"><b>' + esc(x.p.nome) + '</b><span>' + (x.p.itens.length ? x.p.itens.length + (x.p.itens.length === 1 ? ' indicação' : ' indicações') + (x.ult ? ' · última ' + dataBR(x.ult).slice(0, 5) : '') : 'ainda sem indicação protocolada') + (x.p.avulso ? ' · só indicou' : '') + '</span></span>' +
+        '<span class="pp-s ' + (x.ap ? 'ap' : x.p.itens.length ? 'ok' : 'novo') + '">' + (x.ap ? x.ap + ' a pagar' : x.p.itens.length ? 'em dia' : 'novo') + '</span><span class="pp-seta">›</span></button>';
     }).join('') + '</div>';
   }
   document.addEventListener('click', function(e){
@@ -1355,12 +1362,14 @@ html[data-tema="dark"] .ag-ses-cab b{color:#93c5fd}
     $('vista').innerHTML = '<div id="pag-v">' + (gest ? '' : '<div class="vazio">Carregando…</div>') + '</div>';
     if (gest) desenharPagV();
     carregarGestor().then(function(){ if (aba === 'pag' && $('pag-v')) desenharPagV(); });
+    carregarEquipe().then(function(){ if (aba === 'pag' && $('pag-v')) desenharPagV(); });
   }
   function desenharPagV(){
     var box = $('pag-v'); if (!box) return;
     if (!gest) { box.innerHTML = '<div class="vazio">Sem internet: os pagamentos aparecem quando o celular tiver sinal.</div>'; return; }
     var ps = gest.filter(function(p){ return p.itens && p.itens.length; });
     var p = ps.filter(function(x){ return x.id === gestProsp; })[0];
+    if (!p && gestProsp){ var eq = (equipe || []).filter(function(x){ return x.id === gestProsp; })[0]; if (eq) p = { id: eq.id, nome: eq.nome, itens: [] }; }
     if (!p){ gestProsp = ''; box.innerHTML = '<div class="rot" style="margin-top:0">Prospectadores · toque no nome para pagar</div>' + listaProspsPag(); return; }
     var itens = p.itens;
     var l = itens.filter(function(c){ return gestFiltro === 'todas' || (gestFiltro === 'pagas' ? !gestAPagar(c) : gestAPagar(c)); })
@@ -1593,6 +1602,7 @@ html[data-tema="dark"] .ag-ses-cab b{color:#93c5fd}
     };
     carregarGPainel().then(function(){ if (aba === 'painel') desenhar(); });
     carregarGestor().then(function(){ if (aba === 'painel') desenhar(); });
+    carregarEquipe().then(function(){ if (aba === 'painel') desenhar(); });
   }
   function vistaPainel(){
     if (quem && quem.gestor) return vistaEscritorio();
