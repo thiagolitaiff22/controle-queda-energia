@@ -833,6 +833,63 @@ html[data-tema="dark"] .pp + .pp{border-top-color:#1c3263!important}
 html[data-tema="dark"] .pp-av{background:rgba(96,165,250,.14)!important;color:#93c5fd!important}
 .pp-s{background:none!important;padding:0!important;font-size:13px!important}
 .gp-sec{margin-top:22px!important}
+
+/* ===== Tema "Banking UI Kit" (Figma) — vale para o aplicativo inteiro ===== */
+html[data-tema="dark"]{--bg:#0a0f1c;--card:#141b2d;--soft:#1b2338;--ink:#ffffff;--ink2:#8d97ae;--line:#1f2940;--line2:#2a3550;--pri:#2f6bff;--onpri:#fff;--blue:#2f6bff;--kit:#2f6bff;--kit2:#1d4ed8}
+html:not([data-tema="dark"]){--bg:#f3f5fa;--card:#ffffff;--soft:#eef1f7;--ink:#0f1729;--ink2:#6b7590;--line:#e6eaf2;--line2:#d9dfeb;--pri:#2f6bff;--onpri:#fff;--blue:#2f6bff;--kit:#2f6bff;--kit2:#1d4ed8}
+html[data-tema],html[data-tema] body{background:var(--bg)!important;color:var(--ink)!important;font-family:"Inter","SF Pro Text",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif!important;letter-spacing:-.005em}
+html[data-tema] body::before,html[data-tema] body::after{display:none!important}
+/* cabeçalho */
+html[data-tema] body .topo{background:var(--bg)!important;border:0!important;box-shadow:none!important}
+html[data-tema] body .topo .quem b{font-size:15px!important;font-weight:700!important;color:var(--ink)!important}
+html[data-tema] body .topo .quem span{font-size:12px!important;color:var(--ink2)!important}
+html[data-tema] body .topo .logo{background:linear-gradient(140deg,var(--kit),var(--kit2))!important;border-radius:12px!important;box-shadow:0 6px 16px rgba(47,107,255,.35)!important}
+html[data-tema] body .sinc,html[data-tema] body .tema{background:var(--card)!important;border:1px solid var(--line)!important;box-shadow:none!important;color:var(--ink)!important}
+/* títulos de seção */
+html[data-tema] body .rot,html[data-tema] body .gp-sec{font-size:12px!important;font-weight:700!important;letter-spacing:.06em!important;text-transform:uppercase!important;color:var(--ink2)!important}
+/* cartões, listas e blocos: planos, cantos de 18px, divisórias finas */
+html[data-tema] body .lista,html[data-tema] body .auds,html[data-tema] body .kpi,html[data-tema] body .vazio,html[data-tema] body .busca,html[data-tema] body .pag-resumo span,html[data-tema] body .gp-pagar,html[data-tema] body .aviso-fila,html[data-tema] body .doc,html[data-tema] body .folha > div,html[data-tema] body .tela > div{background:var(--card)!important;border:1px solid var(--line)!important;box-shadow:none!important;border-radius:18px!important;color:var(--ink)!important}
+html[data-tema] body .lista > div,html[data-tema] body .auds > div{border-top:1px solid var(--line)!important;background:none!important}
+html[data-tema] body .lista > div:first-child,html[data-tema] body .auds > div:first-child{border-top:0!important}
+html[data-tema] body .lista .nm b,html[data-tema] body .auds .info b{font-size:14.5px!important;font-weight:600!important;color:var(--ink)!important}
+html[data-tema] body .lista .nm span,html[data-tema] body .auds .info span{font-size:12.5px!important;color:var(--ink2)!important}
+html[data-tema] body .lista small{background:var(--soft)!important;color:var(--ink)!important}
+/* números */
+html[data-tema] body .kpi small{font-size:12px!important;font-weight:600!important;color:var(--ink2)!important}
+html[data-tema] body .kpi b{font-size:24px!important;font-weight:700!important;color:var(--ink)!important}
+/* cartão de destaque (painel do prospectador e do gestor): degradê azul, igual ao cartão do modelo */
+html[data-tema] body .hero,html[data-tema] body .gp-faixa{background:linear-gradient(135deg,#2f6bff 0%,#1d4ed8 48%,#0f2f7a 100%)!important;border:0!important;border-radius:22px!important;box-shadow:0 14px 30px rgba(29,78,216,.35)!important;color:#fff!important}
+html[data-tema] body .hero small,html[data-tema] body .hero .lin span{color:rgba(255,255,255,.78)!important}
+html[data-tema] body .hero .num,html[data-tema] body .hero b{color:#fff!important}
+/* campos */
+html[data-tema] body .fone,html[data-tema] body .login .fone{background:var(--card)!important;border:1px solid var(--line2)!important;border-radius:14px!important;box-shadow:none!important}
+html[data-tema] body .fone:focus-within{border-color:var(--kit)!important;box-shadow:0 0 0 3px rgba(47,107,255,.2)!important}
+html[data-tema] body .fone input,html[data-tema] body .fone select{color:var(--ink)!important}
+html[data-tema] body .fone svg{color:var(--kit)!important}
+/* botões principais */
+html[data-tema] body .enviar,html[data-tema] body .login .enviar{background:linear-gradient(135deg,#2f6bff,#1d4ed8)!important;color:#fff!important;border:0!important;border-radius:16px!important;box-shadow:0 10px 22px rgba(47,107,255,.3)!important;font-weight:700!important}
+html[data-tema] body .enviar:disabled{opacity:.45!important;box-shadow:none!important}
+/* filtros */
+html[data-tema] body .chips button{background:var(--card)!important;border:1px solid var(--line)!important;color:var(--ink2)!important;border-radius:999px!important;font-weight:600!important}
+html[data-tema] body .chips button[aria-pressed="true"]{background:var(--kit)!important;border-color:var(--kit)!important;color:#fff!important}
+html[data-tema] body .chips button b{background:rgba(127,140,170,.18)!important;color:inherit!important}
+/* documentos do novo cadastro */
+html[data-tema] body .doc{border-style:dashed!important}
+html[data-tema] body .doc.feito{border-style:solid!important;border-color:rgba(47,107,255,.5)!important}
+html[data-tema] body .doc svg{color:var(--kit)!important}
+/* barra de baixo */
+html[data-tema] body .abas{background:var(--card)!important;border:1px solid var(--line)!important;box-shadow:0 10px 30px rgba(0,0,0,.25)!important}
+html[data-tema] body .abas button{color:var(--ink2)!important}
+html[data-tema] body .abas button[aria-current="true"]{color:var(--kit)!important}
+html[data-tema] body .abas button[data-aba="novo"]{color:var(--ink)!important}
+html[data-tema] body .abas button[data-aba="novo"] svg{background:linear-gradient(135deg,#2f6bff,#1d4ed8)!important;color:#fff!important;box-shadow:0 10px 22px rgba(47,107,255,.45),0 0 0 6px var(--bg)!important}
+/* botões de pagamento e de sair */
+html[data-tema] body .pg-b{border-color:var(--line2)!important;border-radius:12px!important}
+html[data-tema] body .pg-b.ok{background:#16a34a!important;border-color:#16a34a!important}
+html[data-tema] body .sair{background:var(--card)!important;border:1px solid var(--line)!important;color:var(--ink)!important;border-radius:16px!important}
+html[data-tema] body .pp-cards{background:var(--card)!important;border-color:var(--line)!important}
+html[data-tema] body .pp + .pp{border-top-color:var(--line)!important}
+html[data-tema] body .eq-novo{border-color:var(--line2)!important;color:var(--kit)!important}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><script>try{var t=localStorage.getItem("campo_tema");if(!t)t="dark";document.documentElement.setAttribute("data-tema",t);}catch(e){document.documentElement.setAttribute("data-tema","light");}</script>
 </head>
@@ -871,7 +928,7 @@ html[data-tema="dark"] .pp-av{background:rgba(96,165,250,.14)!important;color:#9
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 47;
+  var APP_VERSAO = 48;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
