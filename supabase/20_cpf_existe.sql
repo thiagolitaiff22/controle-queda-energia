@@ -1,5 +1,5 @@
 -- Aplicativo do prospectador: antes de cadastrar, confere se o CPF já é cliente do escritório AINDA NO PRAZO.
--- Bloqueia quando o cliente está no Cadastro (sem protocolo) ou quando ainda não passaram 6 meses do protocolo
+-- Bloqueia quando o cliente está no Cadastro (sem protocolo) ou quando ainda não passaram 5 meses do protocolo
 -- (mesma regra da aba Nova ação). Descartados não bloqueiam. Passado o prazo, a nova ação pode ser cadastrada.
 -- Devolve só { bloqueado, liberaEm } (o prospectador não vê nome nem dados de outros clientes).
 -- Rodar uma vez no Supabase: SQL Editor › colar este arquivo › Run.
@@ -13,8 +13,8 @@ begin
   select bool_or(case
            when coalesce(c.data ->> 'processo', '') = '' then true                                   -- ainda no Cadastro
            when coalesce(c.data ->> 'protocolo', '') !~ '^\d{4}-\d{2}-\d{2}' then true                -- processo sem data de protocolo
-           else (left(c.data ->> 'protocolo', 10))::date + interval '6 months' > current_date end),
-         max(case when coalesce(c.data ->> 'protocolo', '') ~ '^\d{4}-\d{2}-\d{2}' then ((left(c.data ->> 'protocolo', 10))::date + interval '6 months')::date end)
+           else (left(c.data ->> 'protocolo', 10))::date + interval '5 months' > current_date end),
+         max(case when coalesce(c.data ->> 'protocolo', '') ~ '^\d{4}-\d{2}-\d{2}' then ((left(c.data ->> 'protocolo', 10))::date + interval '5 months')::date end)
     into bloqueia, libera
   from public.clientes c
   where regexp_replace(coalesce(c.data ->> 'cpf', ''), '\D', '', 'g') = d

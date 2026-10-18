@@ -1543,6 +1543,7 @@ section.vw-dash{gap:10px!important}
 /* barra de cima: neutra como antes, só a logo RL do aplicativo */
 #app .topnav .rl-logo{width:36px;height:36px;border-radius:11px;background:linear-gradient(140deg,#1d4fd7,#0f2f7a);display:grid;place-items:center;box-shadow:0 2px 8px rgba(15,47,122,.25);overflow:hidden}
 #app .topnav .rl-logo img{height:21px;width:auto;display:block}
+.ret-row .tmini{margin:5px 0 3px}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -1847,7 +1848,7 @@ section.vw-dash{gap:10px!important}
         <div class="fbar">
           <div class="search tb-busca"><svg class="i"><use href="#i-search"/></svg><input id="r-q" type="search" placeholder="Buscar cliente por nome ou CPF"></div>
           <select id="r-f" class="tb-sel" aria-label="Situação do retorno">
-            <option value="">Todos que já tiveram audiência</option>
+            <option value="">Todos os clientes</option>
             <option value="arquivado">Arquivados (pagos)</option>
             <option value="liberado">Já podem entrar de novo</option>
             <option value="30">Liberam nos próximos 30 dias</option>
@@ -1857,8 +1858,8 @@ section.vw-dash{gap:10px!important}
           <span class="tb-fim" id="r-count"></span>
         </div>
         <div class="stats three r-stats">
-          <div class="card stat"><div class="stat-h"><svg class="i"><use href="#i-check"/></svg>Podem entrar de novo<span class="help" title="Já passaram 6 meses desde o protocolo e ainda não foram contatados.">?</span></div><div class="stat-v tnum" id="r-s1">0</div><div class="stat-c">aguardando nosso contato</div><div class="stat-viz" id="r-v1"></div></div>
-          <div class="card stat"><div class="stat-h"><svg class="i"><use href="#i-clock"/></svg>Próximos 30 dias<span class="help" title="Clientes que completam 6 meses do protocolo nos próximos 30 dias.">?</span></div><div class="stat-v tnum" id="r-s2">0</div><div class="stat-c">liberam para nova ação</div><div class="stat-viz" id="r-v2"></div></div>
+          <div class="card stat"><div class="stat-h"><svg class="i"><use href="#i-check"/></svg>Podem entrar de novo<span class="help" title="Já passaram 5 meses desde o protocolo e ainda não foram contatados.">?</span></div><div class="stat-v tnum" id="r-s1">0</div><div class="stat-c">aguardando nosso contato</div><div class="stat-viz" id="r-v1"></div></div>
+          <div class="card stat"><div class="stat-h"><svg class="i"><use href="#i-clock"/></svg>Próximos 30 dias<span class="help" title="Clientes que completam 5 meses do protocolo nos próximos 30 dias.">?</span></div><div class="stat-v tnum" id="r-s2">0</div><div class="stat-c">liberam para nova ação</div><div class="stat-viz" id="r-v2"></div></div>
           <div class="card stat"><div class="stat-h"><svg class="i"><use href="#i-users"/></svg>Já contatados<span class="help" title="Clientes marcados como contatados para a nova ação.">?</span></div><div class="stat-v tnum" id="r-s3">0</div><div class="stat-c">para a nova ação</div><div class="stat-viz" id="r-v3"></div></div>
           <button type="button" class="card stat r-arq" id="r-arq" title="Mostrar só os arquivados"><div class="stat-h"><svg class="i"><use href="#i-file"/></svg>Arquivados<span class="help" title="Processos encerrados: o cliente já recebeu o dinheiro. Saem do fluxo de Clientes e ficam aqui, prontos para a nova ação.">?</span></div><div class="stat-v tnum" id="r-s4">0</div><div class="stat-c" id="r-s4-c">&nbsp;</div><div class="stat-viz"></div></button>
         </div>
@@ -2225,7 +2226,7 @@ section.vw-dash{gap:10px!important}
   var RES = { parcial: ['Parcialmente procedente', 'ok'], improcedente: ['Improcedente', 'crit'], extinto: ['Extinto sem resolução do mérito', 'crit'], ausente: ['Autor ausente', 'warn'], aguardando: ['Conclusos para sentença', 'blue'] };
   var REC = { sem: ['Sem embargos', 'muted'], opostos: ['Embargos da requerida', 'warn'] };
   var PAG = { aguardando: ['Aguardando pagamento', 'muted'], alvara_expedido: ['Alvará expedido', 'blue'], alvara_enviado: ['Alvará enviado', 'blue'], pago: ['Pago', 'ok'] };
-  var RETORNO_MESES = 6;
+  var RETORNO_MESES = 5;   // nova ação: 5 meses depois do protocolo
   function opts(map, blank){ return '<option value="">' + blank + '</option>' + Object.keys(map).map(function(k){ return '<option value="' + k + '">' + map[k][0] + '</option>'; }).join(''); }
   function tag(map, k){ return k && map[k] ? '<span class="pill ' + map[k][1] + '">' + map[k][0] + '</span>' : '<span class="small">—</span>'; }
   function addMonths(s, m){ var d = parseDate(s); if (!d) return ''; var day = d.getDate(); d.setDate(1); d.setMonth(d.getMonth() + m); var last = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate(); d.setDate(Math.min(day, last)); return iso(d); }
@@ -3055,7 +3056,7 @@ section.vw-dash{gap:10px!important}
   var MES_ABR = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
   var MES_EXT = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
   function mesLabel(ym, longo){ var p = ym.split('-'); return longo ? MES_EXT[+p[1] - 1] + ' de ' + p[0] : MES_ABR[+p[1] - 1] + '/' + p[0].slice(2); }
-  /* how much of the 6-month wait has passed, 0..1 */
+  /* how much of the 5-month wait has passed, 0..1 */
   function progressoRetorno(r){
     var a = parseDate(r.protocolo), b = parseDate(retornoEm(r)), t = today();
     if (!a || !b || b <= a) return 0;
@@ -3063,7 +3064,7 @@ section.vw-dash{gap:10px!important}
   }
   function termoMini(r){
     var p = progressoRetorno(r), cor = p >= 1 ? 'var(--red)' : p >= 0.83 ? 'var(--amber)' : 'var(--blue)';
-    return '<div class="tmini" title="' + Math.round(p * 100) + '% dos 6 meses já passaram"><span style="width:' + Math.max(3, p * 100) + '%;background:' + cor + '"></span></div>';
+    return '<div class="tmini" title="' + Math.round(p * 100) + '% dos 5 meses já passaram"><span style="width:' + Math.max(3, p * 100) + '%;background:' + cor + '"></span></div>';
   }
   function renderTermo(com){
     var box = $('r-termo'), pend = com.filter(function(r){ return !r.contatadoRetorno; });
@@ -3100,7 +3101,7 @@ section.vw-dash{gap:10px!important}
   }
   function renderRet(){
     var f = state.r, hoje = iso(today());
-    var com = state.rows.filter(function(r){ return r.arquivado || (r.audData && jaRealizada(r)); });   // só quem já passou pela audiência
+    var com = state.rows.filter(function(r){ return !r.descartado && (r.arquivado || String(r.processo || '').trim() || r.protocolo); });   // base de todos os clientes protocolados, antigos e novos
     var arq = state.rows.filter(function(r){ return r.arquivado; });
     $('r-s4').textContent = arq.length;
     $('r-s4-c').textContent = arq.length ? 'pagos · ' + arq.filter(function(r){ return !r.contatadoRetorno; }).length + ' ainda não chamados' : 'nenhum processo pago ainda';
@@ -3125,7 +3126,7 @@ section.vw-dash{gap:10px!important}
     // lista: cliente | última audiência | protocolo | pode entrar com a nova ação | contatado
     var RES_N = { procedente: ['Procedente', 'ok'], faltou: ['Faltou', 'crit'], conclusos: ['Conclusos', 'warn'], improcedente: ['Improcedente', 'crit'] };
     var html = '<div class="row head ret-row"><div>Cliente</div><div>Última audiência</div><div>Protocolo</div><div>Nova ação a partir de</div><div>Contato</div><div></div></div>';
-    if (!list.length) html += '<div class="empty">' + (com.length ? 'Nenhum cliente neste filtro.' : 'Nenhum cliente passou pela audiência ainda.') + '</div>';
+    if (!list.length) html += '<div class="empty">' + (com.length ? 'Nenhum cliente neste filtro.' : 'Nenhum cliente protocolado ainda.') + '</div>';
     list.slice(0, state.r.lim || 100).forEach(function(r){
       var ret = retornoEm(r), n = ret ? daysUntil(ret) : null, res = RES_N[resAud(r)];
       var quando = !ret ? '' : r.contatadoRetorno ? '' : n <= 0 ? '<span class="ret-q ok">já pode entrar</span>' : '<span class="ret-q' + (n <= 30 ? ' warn' : '') + '">em ' + n + (n === 1 ? ' dia' : ' dias') + '</span>';
@@ -3133,7 +3134,7 @@ section.vw-dash{gap:10px!important}
         '<div class="c-name"><div class="name">' + esc(r.nome) + (r.arquivado ? ' <span class="pill ok">Pago</span>' : '') + '</div><div class="addr">' + esc(r.cpf ? 'CPF ' + r.cpf : '') + '</div></div>' +
         '<div><span class="lbl">Última audiência</span><div class="val">' + (r.audData ? fmtDate(r.audData) + (r.audHora ? ' · ' + esc(r.audHora) : '') : '—') + '</div><div class="addr">' + (res ? '<span class="cad-sit ' + res[1] + '">' + res[0] + '</span>' : 'sem resultado') + '</div></div>' +
         '<div><span class="lbl">Protocolo</span><div class="val">' + (r.protocolo ? fmtDate(r.protocolo) : '—') + '</div><div class="addr tnum">' + esc(r.processo || '') + '</div></div>' +
-        '<div><span class="lbl">Nova ação a partir de</span><div class="val" style="font-weight:600">' + (ret ? fmtDate(ret) : '—') + '</div>' + quando + '</div>' +
+        '<div><span class="lbl">Nova ação a partir de</span><div class="val" style="font-weight:600">' + (ret ? fmtDate(ret) : '—') + '</div>' + (ret && !r.contatadoRetorno ? termoMini(r) : '') + quando + '</div>' +
         '<div><span class="lbl">Contato</span><button type="button" class="toggle" data-act="contato" data-id="' + esc(r.id) + '" aria-pressed="' + (r.contatadoRetorno ? 'true' : 'false') + '"><span class="dot"></span>' + (r.contatadoRetorno ? 'Contatado' : 'Marcar contatado') + '</button></div>' +
         '<div class="c-act"><button type="button" class="ico-btn" data-act="edit" data-id="' + esc(r.id) + '" title="Editar cadastro" aria-label="Editar ' + esc(r.nome) + '"><svg class="i"><use href="#i-pencil"/></svg></button></div>' +
       '</div>';
