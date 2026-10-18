@@ -734,6 +734,19 @@ html[data-tema="dark"] .pag-resumo span{background:#0f2348;border-color:#1e3a6e}
 .atribuir select{flex:1;min-width:0;border:0;background:none;color:var(--ink);font:inherit;font-size:16px;outline:0;appearance:auto}
 html[data-tema="dark"] .atribuir select option{background:#0f2348;color:#fff}
 .filtro-prosp{display:block;width:100%;margin:0 0 10px;border:1px solid var(--line2);background:none;border-radius:12px;padding:9px 12px;font:inherit;font-size:13.5px;font-weight:600;color:var(--ink);text-align:left}
+/* gestor: painel mais simples */
+.kpis.gp-tres{grid-template-columns:repeat(3,1fr)!important;gap:8px!important}
+.kpis.gp-tres .kpi small{font-size:11.5px!important;line-height:1.25}
+.gp-pagar{display:flex;align-items:center;gap:10px;width:100%;margin:12px 0 2px;padding:12px 14px;border-radius:16px;border:1px solid var(--line2);background:var(--card);color:var(--ink);font:inherit;text-align:left}
+html[data-tema="dark"] .gp-pagar{background:#0f2348;border-color:#1e3a6e}
+.gp-pagar b{font-size:20px;color:#f87171}
+.gp-pagar span{flex:1;font-size:13.5px}
+.gp-pagar em{font-style:normal;font-size:13px;font-weight:600;color:#60a5fa}
+.gp-l .gp-ap{font-style:normal;font-size:12.5px;font-weight:600;color:#f87171;white-space:nowrap;margin-left:auto}
+.gp-rec{margin-top:16px}
+.gp-rec summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--ink2);padding:6px 2px;list-style:none}
+.gp-rec summary::before{content:"▸ "}
+.gp-rec[open] summary::before{content:"▾ "}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><script>try{var t=localStorage.getItem("campo_tema");if(!t)t="dark";document.documentElement.setAttribute("data-tema",t);}catch(e){document.documentElement.setAttribute("data-tema","light");}</script>
 </head>
@@ -772,7 +785,7 @@ html[data-tema="dark"] .atribuir select option{background:#0f2348;color:#fff}
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 42;
+  var APP_VERSAO = 43;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
@@ -1232,25 +1245,23 @@ html[data-tema="dark"] .atribuir select option{background:#0f2348;color:#fff}
       var aPagar = gp.prospectadores.reduce(function(s, p){ return s + (p.aPagar || 0); }, 0);
       box.innerHTML =
         '<div class="ola"><b>Olá' + (primeiro ? ', ' + esc(primeiro.charAt(0) + primeiro.slice(1).toLowerCase()) : '') + '!</b><span>' + h.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' }) + (at ? ' · atualizado às ' + at.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '') + '</span></div>' +
-        '<div class="hero"><small>Clientes no escritório</small><span class="num">' + gp.total + '</span></div>' +
-        '<div class="kpis">' +
+        '<div class="kpis gp-tres">' +
           kpi('No cadastro', gp.emCadastro, 'var(--line2)', 'preparo') +
           kpi('Aguardando audiência', gp.aguardando, 'var(--warn)', 'protocolado') +
-          kpi('Audiência marcada', gp.marcadas, 'var(--blue)', 'marcada') +
           kpi('Podem renovar', gp.renovar, 'var(--ok)', 'todos') +
-          kpi('Indicações a pagar', aPagar, 'var(--red)', 'pag') +
         '</div>' +
-        '<div class="rot">Por prospectador</div><div class="lista gp-l">' + gp.prospectadores.filter(function(p){ return p.indicados; }).map(function(p){
-          return '<div data-gp="' + esc(p.id) + '"><span class="nm"><b>' + esc(p.nome) + '</b><span>' + p.indicados + ' indicados · ' + p.emCadastro + ' no cadastro · ' + p.protocolados + ' protocolados · ' + p.comAud + ' com audiência</span></span>' + (p.aPagar ? '<small>' + p.aPagar + ' a pagar</small>' : '') + '</div>';
-        }).join('') + '</div>' +
+        (aPagar ? '<button type="button" class="gp-pagar" data-gir="pag"><b>' + aPagar + '</b><span>' + (aPagar === 1 ? 'parte de indicação a pagar' : 'partes de indicação a pagar') + '</span><em>Pagamentos ›</em></button>' : '') +
         '<div class="rot">Próximas audiências' + (gp.proximas.length ? ' · ' + gp.proximas.length : '') + '</div>' +
         (gp.proximas.length ? '<div class="auds">' + gp.proximas.map(function(c){
           var p = String(c.data).split('-');
-          return '<div data-cli="' + esc(c.id) + '"><div class="dia"><b>' + p[2] + '</b><span>' + MES[+p[1] - 1] + '</span></div><div class="info"><b>' + esc(String(c.nome || '').toUpperCase()) + '</b><span>' + quando(c.data) + (c.hora ? ' · ' + esc(c.hora) : '') + (c.prosp ? ' · ' + esc(c.prosp) : '') + '</span></div></div>';
+          return '<div data-cli="' + esc(c.id) + '"><div class="dia"><b>' + p[2] + '</b><span>' + MES[+p[1] - 1] + '</span></div><div class="info"><b>' + esc(String(c.nome || '').toUpperCase()) + '</b><span>' + quando(c.data) + (c.hora ? ' · ' + esc(c.hora) : '') + (c.prosp ? ' · ' + esc(primeiroNome(c.prosp)) : '') + '</span></div></div>';
         }).join('') + '</div>' : '<div class="vazio">Nenhuma audiência marcada agora.</div>') +
-        '<div class="rot">Últimos cadastros</div><div class="lista gp-l">' + gp.recentes.map(function(c){
-          return '<div data-cli="' + esc(c.id) + '"><span class="nm"><b>' + esc(String(c.nome || '').toUpperCase()) + '</b><span>' + (c.em ? dataBR(c.em) : '') + (c.prosp ? ' · ' + esc(c.prosp) : '') + '</span></span><small>' + (c.prot ? 'protocolado' : 'no cadastro') + '</small></div>';
-        }).join('') + '</div>';
+        '<div class="rot">Prospectadores</div><div class="lista gp-l">' + gp.prospectadores.filter(function(p){ return p.indicados; }).sort(function(x, y){ return y.indicados - x.indicados; }).map(function(p){
+          return '<div data-gp="' + esc(p.id) + '"><span class="nm"><b>' + esc(p.nome) + '</b><span>' + p.indicados + (p.indicados === 1 ? ' indicado' : ' indicados') + '</span></span>' + (p.aPagar ? '<em class="gp-ap">' + p.aPagar + ' a pagar</em>' : '') + '</div>';
+        }).join('') + '</div>' +
+        (gp.recentes.length ? '<details class="gp-rec"><summary>Últimos cadastros</summary><div class="lista gp-l">' + gp.recentes.map(function(c){
+          return '<div data-cli="' + esc(c.id) + '"><span class="nm"><b>' + esc(String(c.nome || '').toUpperCase()) + '</b><span>' + (c.em ? dataBR(c.em) : '') + (c.prosp ? ' · ' + esc(primeiroNome(c.prosp)) : '') + (c.prot ? ' · protocolado' : ' · no cadastro') + '</span></span></div>';
+        }).join('') + '</div></details>' : '');
     }
     desenhar();
     $('vista').onclick = function(e){
