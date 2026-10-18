@@ -1544,6 +1544,17 @@ section.vw-dash{gap:10px!important}
 #app .topnav .rl-logo{width:36px;height:36px;border-radius:11px;background:linear-gradient(140deg,#1d4fd7,#0f2f7a);display:grid;place-items:center;box-shadow:0 2px 8px rgba(15,47,122,.25);overflow:hidden}
 #app .topnav .rl-logo img{height:21px;width:auto;display:block}
 .ret-row .tmini{margin:5px 0 3px}
+/* Nova ação: 6 cartões que filtram + não quis renovar */
+.vw-dash .r-stats.r-six{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
+@media (max-width:1250px){ .vw-dash .r-stats.r-six{grid-template-columns:repeat(3,minmax(0,1fr))} }
+@media (max-width:640px){ .vw-dash .r-stats.r-six{grid-template-columns:repeat(2,minmax(0,1fr))} }
+.r-card{text-align:left;font:inherit;color:inherit;cursor:pointer}
+.r-card:hover{border-color:var(--line-2)!important}
+.r-card[aria-pressed="true"]{border-color:var(--blue)!important;box-shadow:0 0 0 1px var(--blue) inset}
+.ret-cont{display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+.ret-cont .nq-btn{font-size:12px;color:var(--ink-3)}
+.ret-cont .nq-btn:hover{color:var(--red)}
+.ret-q.nq{color:var(--red)}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -1854,14 +1865,19 @@ section.vw-dash{gap:10px!important}
             <option value="30">Liberam nos próximos 30 dias</option>
             <option value="aguardando">Ainda aguardando</option>
             <option value="contatado">Já contatados</option>
+            <option value="mes">Renovar este mês</option>
+            <option value="renovou">Renovaram</option>
+            <option value="naoquis">Não quis renovar</option>
           </select>
           <span class="tb-fim" id="r-count"></span>
         </div>
-        <div class="stats three r-stats">
-          <div class="card stat"><div class="stat-h"><svg class="i"><use href="#i-check"/></svg>Podem entrar de novo<span class="help" title="Já passaram 5 meses desde o protocolo e ainda não foram contatados.">?</span></div><div class="stat-v tnum" id="r-s1">0</div><div class="stat-c">aguardando nosso contato</div><div class="stat-viz" id="r-v1"></div></div>
-          <div class="card stat"><div class="stat-h"><svg class="i"><use href="#i-clock"/></svg>Próximos 30 dias<span class="help" title="Clientes que completam 5 meses do protocolo nos próximos 30 dias.">?</span></div><div class="stat-v tnum" id="r-s2">0</div><div class="stat-c">liberam para nova ação</div><div class="stat-viz" id="r-v2"></div></div>
-          <div class="card stat"><div class="stat-h"><svg class="i"><use href="#i-users"/></svg>Já contatados<span class="help" title="Clientes marcados como contatados para a nova ação.">?</span></div><div class="stat-v tnum" id="r-s3">0</div><div class="stat-c">para a nova ação</div><div class="stat-viz" id="r-v3"></div></div>
-          <button type="button" class="card stat r-arq" id="r-arq" title="Mostrar só os arquivados"><div class="stat-h"><svg class="i"><use href="#i-file"/></svg>Arquivados<span class="help" title="Processos encerrados: o cliente já recebeu o dinheiro. Saem do fluxo de Clientes e ficam aqui, prontos para a nova ação.">?</span></div><div class="stat-v tnum" id="r-s4">0</div><div class="stat-c" id="r-s4-c">&nbsp;</div><div class="stat-viz"></div></button>
+        <div class="stats r-stats r-six">
+          <button type="button" class="card stat r-card" data-rf="mes" title="Mostrar só estes clientes"><div class="stat-h"><svg class="i"><use href="#i-cal"/></svg>Renovar este mês<span class="help" title="Clientes que completam os 5 meses neste mês (sem contar quem não quis ou já renovou).">?</span></div><div class="stat-v tnum" id="r-s0">0</div><div class="stat-c" id="r-s0-c">completam 5 meses</div></button>
+          <button type="button" class="card stat r-card" data-rf="liberado" title="Mostrar só estes clientes"><div class="stat-h"><svg class="i"><use href="#i-check"/></svg>Podem entrar de novo<span class="help" title="Já passaram 5 meses desde o protocolo e ainda não foram contatados.">?</span></div><div class="stat-v tnum" id="r-s1">0</div><div class="stat-c" id="r-s1-c">aguardando nosso contato</div></button>
+          <button type="button" class="card stat r-card" data-rf="30" title="Mostrar só estes clientes"><div class="stat-h"><svg class="i"><use href="#i-clock"/></svg>Próximos 30 dias<span class="help" title="Clientes que completam 5 meses do protocolo nos próximos 30 dias.">?</span></div><div class="stat-v tnum" id="r-s2">0</div><div class="stat-c" id="r-s2-c">liberam para nova ação</div></button>
+          <button type="button" class="card stat r-card" data-rf="contatado" title="Mostrar só estes clientes"><div class="stat-h"><svg class="i"><use href="#i-users"/></svg>Já contatados<span class="help" title="Clientes marcados como contatados para a nova ação (sem contar quem não quis).">?</span></div><div class="stat-v tnum" id="r-s3">0</div><div class="stat-c" id="r-s3-c">para a nova ação</div></button>
+          <button type="button" class="card stat r-card" data-rf="renovou" title="Mostrar só estes clientes"><div class="stat-h"><svg class="i"><use href="#i-repeat"/></svg>Renovaram<span class="help" title="O mesmo CPF já entrou com uma ação nova depois desta.">?</span></div><div class="stat-v tnum" id="r-s5">0</div><div class="stat-c" id="r-s5-c">entraram com nova ação</div></button>
+          <button type="button" class="card stat r-card" data-rf="naoquis" title="Mostrar só estes clientes"><div class="stat-h"><svg class="i"><use href="#i-bellx"/></svg>Não quis renovar<span class="help" title="Clientes que foram procurados e não quiseram fazer a nova ação.">?</span></div><div class="stat-v tnum" id="r-s6">0</div><div class="stat-c" id="r-s6-c">recusaram a nova ação</div></button>
         </div>
         <div class="card termo" id="r-termo"></div>
         <div class="sec-title" id="r-title" hidden>Clientes</div>
@@ -3097,24 +3113,37 @@ section.vw-dash{gap:10px!important}
         (state.r.mes ? '<button type="button" class="fb-clear" id="t-clear">Ver todos os meses</button>' : '') + '</div>' +
       '<div class="tcols">' + cols + '</div>';
   }
+  var renovou = function(){ return false; };
   function renderRet(){
     var f = state.r, hoje = iso(today());
     var com = state.rows.filter(function(r){ return !r.descartado && (r.arquivado || String(r.processo || '').trim() || r.protocolo); });   // base de todos os clientes protocolados, antigos e novos
-    var arq = state.rows.filter(function(r){ return r.arquivado; });
-    $('r-s4').textContent = arq.length;
-    $('r-s4-c').textContent = arq.length ? 'pagos · ' + arq.filter(function(r){ return !r.contatadoRetorno; }).length + ' ainda não chamados' : 'nenhum processo pago ainda';
-    var lib = com.filter(function(r){ return retornoEm(r) <= hoje && !r.contatadoRetorno; });
-    var em30 = com.filter(function(r){ var n = daysUntil(retornoEm(r)); return n > 0 && n <= 30 && !r.contatadoRetorno; });
-    var cont = com.filter(function(r){ return r.contatadoRetorno; });
-    $('r-arq').setAttribute('aria-pressed', String(f.f === 'arquivado'));
+    // renovou: o mesmo CPF entrou com outra ação depois do protocolo desta
+    var porCpf = {};
+    todasRows().forEach(function(x){ var d = digits(x.cpf); if (d.length === 11) (porCpf[d] = porCpf[d] || []).push(String(x.protocolo || x.criadoEm || '').slice(0, 10)); });
+    renovou = function(r){ var d = digits(r.cpf), p = String(r.protocolo || '').slice(0, 10); return !!(d.length === 11 && p && (porCpf[d] || []).some(function(q){ return q > p; })); };
+    var fora = function(r){ return r.naoRenovou || renovou(r); };   // já resolvidos: não precisam ser procurados
+    var mesAtual = hoje.slice(0, 7);
+    var noMes = com.filter(function(r){ return retornoEm(r).slice(0, 7) === mesAtual && !fora(r); });
+    var lib = com.filter(function(r){ return retornoEm(r) <= hoje && !r.contatadoRetorno && !fora(r); });
+    var em30 = com.filter(function(r){ var n = daysUntil(retornoEm(r)); return n > 0 && n <= 30 && !r.contatadoRetorno && !fora(r); });
+    var cont = com.filter(function(r){ return r.contatadoRetorno && !r.naoRenovou; });
+    var ren = com.filter(renovou), naoq = com.filter(function(r){ return r.naoRenovou; });
+    $('r-s0').textContent = noMes.length; $('r-s0-c').textContent = 'completam 5 meses em ' + mesLabel(mesAtual, true);
     $('r-s1').textContent = lib.length; $('r-s2').textContent = em30.length; $('r-s3').textContent = cont.length;
-    renderTermo(com);
+    var procurados = ren.length + naoq.length;
+    $('r-s5').textContent = ren.length; $('r-s5-c').textContent = procurados ? Math.round(ren.length / procurados * 100) + '% dos que responderam' : 'entraram com nova ação';
+    $('r-s6').textContent = naoq.length;
+    Array.prototype.forEach.call(document.querySelectorAll('#view-ret [data-rf]'), function(c){ c.setAttribute('aria-pressed', String(f.f === c.dataset.rf)); });
+    renderTermo(com.filter(function(r){ return !fora(r); }));
     var list = com.filter(function(r){
       var n = daysUntil(retornoEm(r));
-      if (f.f === 'liberado' && !(n <= 0 && !r.contatadoRetorno)) return false;
-      if (f.f === '30' && !(n > 0 && n <= 30 && !r.contatadoRetorno)) return false;
+      if (f.f === 'liberado' && !(n <= 0 && !r.contatadoRetorno && !r.naoRenovou && !renovou(r))) return false;
+      if (f.f === '30' && !(n > 0 && n <= 30 && !r.contatadoRetorno && !r.naoRenovou && !renovou(r))) return false;
       if (f.f === 'aguardando' && !(n > 0)) return false;
-      if (f.f === 'contatado' && !r.contatadoRetorno) return false;
+      if (f.f === 'contatado' && !(r.contatadoRetorno && !r.naoRenovou)) return false;
+      if (f.f === 'mes' && !(retornoEm(r).slice(0, 7) === hoje.slice(0, 7) && !r.naoRenovou && !renovou(r))) return false;
+      if (f.f === 'renovou' && !renovou(r)) return false;
+      if (f.f === 'naoquis' && !r.naoRenovou) return false;
       if (f.f === 'arquivado' && !r.arquivado) return false;
       if (f.mes && (f.mes === 'passado' ? retornoEm(r).slice(0, 7) >= iso(today()).slice(0, 7) : retornoEm(r).slice(0, 7) !== f.mes)) return false;
       return textMatch(r, f.q);
@@ -3127,13 +3156,15 @@ section.vw-dash{gap:10px!important}
     if (!list.length) html += '<div class="empty">' + (com.length ? 'Nenhum cliente neste filtro.' : 'Nenhum cliente protocolado ainda.') + '</div>';
     list.slice(0, state.r.lim || 100).forEach(function(r){
       var ret = retornoEm(r), n = ret ? daysUntil(ret) : null, res = RES_N[resAud(r)];
-      var quando = !ret ? '' : r.contatadoRetorno ? '' : n <= 0 ? '<span class="ret-q ok">já pode entrar</span>' : '<span class="ret-q' + (n <= 30 ? ' warn' : '') + '">em ' + n + (n === 1 ? ' dia' : ' dias') + '</span>';
+      var jaRen = renovou(r);
+      var quando = !ret ? '' : r.naoRenovou ? '<span class="ret-q nq">não quis renovar</span>' : jaRen ? '<span class="ret-q ok">renovou</span>' : r.contatadoRetorno ? '' : n <= 0 ? '<span class="ret-q ok">já pode entrar</span>' : '<span class="ret-q' + (n <= 30 ? ' warn' : '') + '">em ' + n + (n === 1 ? ' dia' : ' dias') + '</span>';
       html += '<div class="row ret-row">' +
         '<div class="c-name"><div class="name">' + esc(r.nome) + (r.arquivado ? ' <span class="pill ok">Pago</span>' : '') + '</div><div class="addr">' + esc(r.cpf ? 'CPF ' + r.cpf : '') + '</div></div>' +
         '<div><span class="lbl">Última audiência</span><div class="val">' + (r.audData ? fmtDate(r.audData) + (r.audHora ? ' · ' + esc(r.audHora) : '') : '—') + '</div><div class="addr">' + (res ? '<span class="cad-sit ' + res[1] + '">' + res[0] + '</span>' : 'sem resultado') + '</div></div>' +
         '<div><span class="lbl">Protocolo</span><div class="val">' + (r.protocolo ? fmtDate(r.protocolo) : '—') + '</div><div class="addr tnum">' + esc(r.processo || '') + '</div></div>' +
         '<div><span class="lbl">Nova ação a partir de</span><div class="val" style="font-weight:600">' + (ret ? fmtDate(ret) : '—') + '</div>' + (ret && !r.contatadoRetorno ? termoMini(r) : '') + quando + '</div>' +
-        '<div><span class="lbl">Contato</span><button type="button" class="toggle" data-act="contato" data-id="' + esc(r.id) + '" aria-pressed="' + (r.contatadoRetorno ? 'true' : 'false') + '"><span class="dot"></span>' + (r.contatadoRetorno ? 'Contatado' : 'Marcar contatado') + '</button></div>' +
+        '<div class="ret-cont"><span class="lbl">Contato</span>' + (jaRen ? '<span class="small">entrou com nova ação</span>' : r.naoRenovou ? '<span class="small">não quis' + (r.naoRenovouEm ? ' · ' + fmtDate(r.naoRenovouEm) : '') + '</span><button type="button" class="linkbtn" data-act="naoquis" data-id="' + esc(r.id) + '">desfazer</button>' :
+          '<button type="button" class="toggle" data-act="contato" data-id="' + esc(r.id) + '" aria-pressed="' + (r.contatadoRetorno ? 'true' : 'false') + '"><span class="dot"></span>' + (r.contatadoRetorno ? 'Contatado' : 'Marcar contatado') + '</button><button type="button" class="linkbtn nq-btn" data-act="naoquis" data-id="' + esc(r.id) + '">Não quis renovar</button>') + '</div>' +
         '<div class="c-act"><button type="button" class="ico-btn" data-act="edit" data-id="' + esc(r.id) + '" title="Editar cadastro" aria-label="Editar ' + esc(r.nome) + '"><svg class="i"><use href="#i-pencil"/></svg></button></div>' +
       '</div>';
     });
@@ -3915,7 +3946,7 @@ section.vw-dash{gap:10px!important}
   $('rec-valor').addEventListener('input', function(){ $('rec-conta').innerHTML = contaRec(moedaNum(this.value)); });
   $('rec-cancel').addEventListener('click', function(){ dlgRec.close(); });
   $('rep-cancel').addEventListener('click', function(){ dlgRep.close(); });
-  $('r-arq').addEventListener('click', function(){ state.r.f = state.r.f === 'arquivado' ? '' : 'arquivado'; $('r-f').value = state.r.f; renderRet(); });
+  document.querySelector('#view-ret .r-stats').addEventListener('click', function(e){ var c = e.target.closest('[data-rf]'); if (!c) return; state.r.f = state.r.f === c.dataset.rf ? '' : c.dataset.rf; state.r.mes = ''; $('r-f').value = state.r.f; renderRet(); });
   $('rep-desfazer').addEventListener('click', async function(){
     if (!repCli || !confirm('Desfazer o pagamento de ' + repCli.nome + '? O processo volta para o fluxo de clientes.')) return;
     try { await patchRow(repCli.id, { repasse: null, arquivado: false, arquivadoEm: null, pagamento: repCli.recebimento ? 'alvara_expedido' : 'aguardando', atualizadoEm: new Date().toISOString() }); dlgRep.close(); toast('Pagamento desfeito: ' + repCli.nome); }
@@ -5103,6 +5134,14 @@ section.vw-dash{gap:10px!important}
       if (fal && !r.resultado) cp.resultado = 'ausente';
       if (!fal && r.resultado === 'ausente') cp.resultado = '';
       try { await patchRow(r.id, cp); toast(fal ? 'Marcado como faltoso' : 'Marcado como compareceu'); }
+      catch(err){ toast(errMsg(err)); }
+      return;
+    }
+    if (b.dataset.act === 'naoquis'){
+      var nq = !r.naoRenovou;
+      if (nq && !confirm(r.nome + ' não quis fazer a nova ação? O cliente sai da lista de quem precisa ser procurado (dá para desfazer).')) return;
+      try { await patchRow(r.id, { naoRenovou: nq, naoRenovouEm: nq ? iso(new Date()) : '', contatadoRetorno: nq ? (r.contatadoRetorno || iso(new Date())) : r.contatadoRetorno, atualizadoEm: new Date().toISOString() });
+            toast(nq ? r.nome + ': não quis renovar' : 'Desfeito: ' + r.nome + ' voltou para a lista'); }
       catch(err){ toast(errMsg(err)); }
       return;
     }
