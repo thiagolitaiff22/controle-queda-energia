@@ -767,7 +767,7 @@ html[data-tema="dark"] .pag-resumo span{background:#0f2348;border-color:#1e3a6e}
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 40;
+  var APP_VERSAO = 41;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
@@ -2055,11 +2055,11 @@ html[data-tema="dark"] .pag-resumo span{background:#0f2348;border-color:#1e3a6e}
   // entrada: CPF do prospectador e senha (a primeira é 123456; depois a pessoa cria a sua, de 6 números)
   var SENHA_INI = '123456';
   function campoSenha(id, ph, ac){
-    return '<label class="fone" style="margin:0"><svg viewBox="0 0 24 24"><use href="#i-cadeado"/></svg><input id="' + id + '" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="' + ph + '" autocomplete="' + ac + '"><button type="button" class="ver-senha" data-ver="' + id + '" style="border:0;background:none;color:var(--ink2);font:inherit;font-size:14px">mostrar</button></label>';
+    return '<label class="fone" style="margin:0"><svg viewBox="0 0 24 24"><use href="#i-cadeado"/></svg><input id="' + id + '" class="senha6" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="' + ph + '" autocomplete="' + ac + '"><button type="button" class="ver-senha" data-ver="' + id + '" style="border:0;background:none;color:var(--ink2);font:inherit;font-size:14px">mostrar</button></label>';
   }
   function ligarSenhas(){
     Array.prototype.forEach.call(document.querySelectorAll('.ver-senha'), function(b){ b.onclick = function(){ var e = $(b.dataset.ver); e.type = e.type === 'password' ? 'text' : 'password'; b.textContent = e.type === 'password' ? 'mostrar' : 'esconder'; }; });
-    Array.prototype.forEach.call(document.querySelectorAll('.login input[inputmode="numeric"]'), function(e){ e.addEventListener('input', function(){ var v = this.value.replace(/\D/g, '').slice(0, 6); if (v !== this.value) this.value = v; }); });
+    Array.prototype.forEach.call(document.querySelectorAll('.login input.senha6'), function(e){ e.addEventListener('input', function(){ var v = this.value.replace(/\D/g, '').slice(0, 6); if (v !== this.value) this.value = v; }); });
   }
   function rpc(nome, corpo){
     return fetch(CFG.url + '/rest/v1/rpc/' + nome, { method: 'POST', headers: { apikey: CFG.key, 'Content-Type': 'application/json' }, body: JSON.stringify(corpo) }).then(function(r){ return r.json(); });
