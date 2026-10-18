@@ -5318,6 +5318,7 @@ section.vw-dash{gap:10px!important}
       ativo: true, criadoEm: prev.criadoEm || new Date().toISOString(), atualizadoEm: new Date().toISOString() };
     if (prev.valorIndicacao) data.valorIndicacao = prev.valorIndicacao;
     if (isAdmin() ? $('fp-gestor').checked : prev.gestor) data.gestor = true;
+    ['avulso', 'criadoPor'].forEach(function(k){ if (prev[k] != null) data[k] = prev[k]; });   // campos criados pelo aplicativo do gestor
     $('fp-save').disabled = true;
     try {
       if (state.db){ await (pEditing ? pcol().doc(pEditing) : pcol().doc()).set(data); }

@@ -774,6 +774,20 @@ html[data-tema="dark"] .gp-pagar{background:#0f2348;border-color:#1e3a6e}
 #pag-v .pag-cab span{font-size:13px!important}
 #pag-v .chips button{font-size:13px!important}
 #pag-v .pg-b{font-size:12.5px!important}
+/* gestor: barra com 5 botões (Novo no meio) e aba Equipe */
+.abas.cinco{grid-template-columns:repeat(5,1fr)!important}
+.abas.cinco button{font-size:11.5px!important;padding-left:0!important;padding-right:0!important}
+#eq-v .rot{font-size:12px!important;font-weight:700!important;letter-spacing:.06em!important;text-transform:uppercase!important;color:var(--ink2)!important;margin:22px 2px 8px!important}
+#eq-v .nm b{font-size:15px!important;font-weight:600!important}
+#eq-v .nm span{font-size:13px!important;color:var(--ink2)!important}
+#eq-v .lista > div{cursor:default!important;padding:13px 14px!important}
+.eq-tag{font-style:normal;font-size:11px;font-weight:700;color:#60a5fa;border:1px solid rgba(96,165,250,.4);border-radius:999px;padding:1px 7px;margin-left:4px;vertical-align:2px}
+.eq-novo{display:block;width:100%;border:1px dashed var(--line2);background:none;border-radius:14px;padding:14px;font:inherit;font-size:14.5px;font-weight:600;color:#60a5fa}
+#eq-v .dados{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.eq-nota{font-size:13px;color:var(--ink2);margin:10px 2px 0;line-height:1.45}
+.eq-bts{display:flex;gap:10px;margin-top:14px}
+.eq-cancel{flex:1;border:1px solid var(--line2);background:none;border-radius:14px;font:inherit;font-size:15px;font-weight:600;color:var(--ink)}
+.eq-salvar{flex:2;margin:0!important}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><script>try{var t=localStorage.getItem("campo_tema");if(!t)t="dark";document.documentElement.setAttribute("data-tema",t);}catch(e){document.documentElement.setAttribute("data-tema","light");}</script>
 </head>
@@ -812,7 +826,7 @@ html[data-tema="dark"] .gp-pagar{background:#0f2348;border-color:#1e3a6e}
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 44;
+  var APP_VERSAO = 45;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
@@ -1003,12 +1017,18 @@ html[data-tema="dark"] .gp-pagar{background:#0f2348;border-color:#1e3a6e}
         '<button type="button" class="tema" id="tema" aria-label="Trocar entre modo claro e escuro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle class="sol" cx="12" cy="12" r="4"/><path class="sol" d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/><path class="lua" d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button></div>' +
       '<main class="vista" id="vista"></main>' +
       '<nav class="abas" id="abas">' +
-        '<button type="button" data-aba="painel"><svg><use href="#i-painel"/></svg>Painel</button>' +
-        '<button type="button" data-aba="novo"><svg><use href="#i-novo"/></svg>Novo cadastro<span class="bolha" id="bolha" hidden></span></button>' +
-        '<button type="button" data-aba="clientes"><svg><use href="#i-grupo"/></svg>Clientes</button>' +
-        (quem && quem.gestor ? '<button type="button" data-aba="pag"><svg><use href="#i-ok"/></svg>Pagamentos</button>' : '') +
+        (quem && quem.gestor ?
+          '<button type="button" data-aba="painel"><svg><use href="#i-painel"/></svg>Painel</button>' +
+          '<button type="button" data-aba="clientes"><svg><use href="#i-grupo"/></svg>Clientes</button>' +
+          '<button type="button" data-aba="novo"><svg><use href="#i-novo"/></svg>Novo<span class="bolha" id="bolha" hidden></span></button>' +
+          '<button type="button" data-aba="pag"><svg><use href="#i-ok"/></svg>Pagamentos</button>' +
+          '<button type="button" data-aba="equipe"><svg><use href="#i-pessoa"/></svg>Equipe</button>'
+        :
+          '<button type="button" data-aba="painel"><svg><use href="#i-painel"/></svg>Painel</button>' +
+          '<button type="button" data-aba="novo"><svg><use href="#i-novo"/></svg>Novo cadastro<span class="bolha" id="bolha" hidden></span></button>' +
+          '<button type="button" data-aba="clientes"><svg><use href="#i-grupo"/></svg>Clientes</button>') +
       '</nav>';
-    if (quem && quem.gestor) $('abas').classList.add('quatro');
+    if (quem && quem.gestor) $('abas').classList.add('cinco');
     $('abas').addEventListener('click', function(e){ var b = e.target.closest('[data-aba]'); if (b) irPara(b.dataset.aba); });
     // modo claro / escuro (fica guardado no celular)
     $('tema').addEventListener('click', function(){
@@ -1039,12 +1059,67 @@ html[data-tema="dark"] .gp-pagar{background:#0f2348;border-color:#1e3a6e}
     if (aba === 'painel') return vistaPainel();
     if (aba === 'clientes') return vistaClientes();
     if (aba === 'pag' && quem && quem.gestor) return vistaPag();
+    if (aba === 'equipe' && quem && quem.gestor) return vistaEquipe();
     vistaNovo();
   }
   /* ---------- gestor: pagamentos das indicações (R$ 25 no protocolo e R$ 25 quando sai) ---------- */
   var gest = null, gestProsp = '', gestFiltro = 'apagar';
   try { gest = JSON.parse(lsGet('campo_gestor') || 'null'); } catch(e){}
   function primeiroNome(n){ var p = String(n || '').replace(/^(dona|seu|sr\.?|sra\.?)\s+/i, '').split(/\s+/); return p[0] + (/^j[rú]/i.test(p[p.length - 1] || '') ? ' Jr.' : p.length > 1 ? ' ' + p[p.length - 1].charAt(0) + '.' : ''); }
+  /* ---------- gestor: Equipe (prospectadores e quem só indicou) ---------- */
+  var equipe = null, eqForm = false, eqAvulso = false;
+  try { equipe = JSON.parse(lsGet('campo_equipe') || 'null'); } catch(e){}
+  function carregarEquipe(){
+    if (navigator.onLine === false) return Promise.resolve(equipe);
+    return rpc('campo_gestor_equipe', { p_token: token }).then(function(d){ if (Array.isArray(d)){ equipe = d; lsSet('campo_equipe', JSON.stringify(d)); } return equipe; }).catch(function(){ return equipe; });
+  }
+  function vistaEquipe(){
+    $('vista').innerHTML = '<div id="eq-v"></div>';
+    desenharEquipe();
+    carregarEquipe().then(function(){ if (aba === 'equipe' && !eqForm) desenharEquipe(); });
+  }
+  function desenharEquipe(){
+    var box = $('eq-v'); if (!box) return;
+    var l = equipe || [], app = l.filter(function(p){ return !p.avulso; }), av = l.filter(function(p){ return p.avulso; });
+    var linha = function(p){ return '<div><span class="nm"><b>' + esc(p.nome) + (p.gestor ? ' <i class="eq-tag">gestor</i>' : '') + '</b><span>' + (p.avulso ? 'só indicou' : p.cpf ? (p.entrou ? 'usa o aplicativo' : 'ainda não entrou no aplicativo') : 'sem CPF: não consegue entrar') + ' · ' + p.indicados + (p.indicados === 1 ? ' indicado' : ' indicados') + '</span></span></div>'; };
+    box.innerHTML =
+      (eqForm ?
+        '<div class="rot" style="margin-top:0">Novo cadastro na equipe</div>' +
+        '<div class="chips" id="eq-tipo"><button type="button" data-t="app" aria-pressed="' + !eqAvulso + '">Prospectador (usa o app)</button><button type="button" data-t="av" aria-pressed="' + eqAvulso + '">Só indicou</button></div>' +
+        '<div class="dados">' +
+          '<label class="fone"><svg viewBox="0 0 24 24"><use href="#i-pessoa"/></svg><input id="eq-nome" autocomplete="off" autocapitalize="words" placeholder="Nome completo"></label>' +
+          '<label class="fone"><svg viewBox="0 0 24 24"><use href="#i-id"/></svg><input id="eq-cpf" inputmode="numeric" maxlength="14" placeholder="' + (eqAvulso ? 'CPF (opcional)' : 'CPF (é o login dele)') + '"></label>' +
+          '<label class="fone"><svg viewBox="0 0 24 24"><use href="#i-fone"/></svg><input id="eq-tel" inputmode="tel" placeholder="+55 (97) 99999-9999"></label>' +
+        '</div>' +
+        '<p class="eq-nota">' + (eqAvulso ? 'Fica na lista do "Cadastro para" e em Pagamentos, mas não entra no aplicativo.' : 'Ele entra no aplicativo com este CPF e a senha 123456, e depois cria a senha dele.') + '</p>' +
+        '<div class="eq-bts"><button type="button" class="eq-cancel" id="eq-cancel">Cancelar</button><button type="button" class="enviar eq-salvar" id="eq-salvar">Salvar</button></div>'
+      : '<button type="button" class="eq-novo" id="eq-novo">+ Novo prospectador ou indicação</button>') +
+      '<div class="rot">Prospectadores · ' + app.length + '</div>' + (app.length ? '<div class="lista gp-l">' + app.map(linha).join('') + '</div>' : '<div class="vazio">' + (equipe ? 'Nenhum prospectador.' : 'Carregando…') + '</div>') +
+      (av.length ? '<div class="rot">Só indicaram · ' + av.length + '</div><div class="lista gp-l">' + av.map(linha).join('') + '</div>' : '');
+    if ($('eq-novo')) $('eq-novo').onclick = function(){ eqForm = true; eqAvulso = false; desenharEquipe(); $('eq-nome').focus(); };
+    if (!eqForm) return;
+    $('eq-tipo').onclick = function(e){ var b = e.target.closest('[data-t]'); if (!b) return; var v = [$('eq-nome').value, $('eq-cpf').value, $('eq-tel').value]; eqAvulso = b.dataset.t === 'av'; desenharEquipe(); $('eq-nome').value = v[0]; $('eq-cpf').value = v[1]; $('eq-tel').value = v[2]; };
+    $('eq-cpf').oninput = function(){ this.value = mascaraCPF(this.value); };
+    $('eq-tel').onfocus = function(){ if (!this.value) this.value = '+55 '; };
+    $('eq-tel').oninput = function(){ this.value = mascaraTel(this.value); };
+    $('eq-cancel').onclick = function(){ eqForm = false; desenharEquipe(); };
+    $('eq-salvar').onclick = function(){
+      var nome = $('eq-nome').value.replace(/\s+/g, ' ').trim(), cpf = $('eq-cpf').value, tel = $('eq-tel').value.replace(/\D/g, '').length > 4 ? $('eq-tel').value : '', b = this;
+      if (nome.split(' ').length < 2) return alert('Digite o nome completo.');
+      if (!eqAvulso && !cpfCerto(cpf)) return alert('Digite o CPF certo: é o login dele no aplicativo.');
+      if (eqAvulso && cpf.replace(/\D/g, '') && !cpfCerto(cpf)) return alert('Este CPF não confere. Corrija ou deixe em branco.');
+      if (navigator.onLine === false) return alert('Sem internet agora. Precisa de sinal para salvar.');
+      b.disabled = true; b.textContent = 'Salvando…';
+      rpc('campo_gestor_novo_prosp', { p_token: token, p_nome: nome, p_cpf: cpf, p_telefone: tel, p_avulso: eqAvulso }).then(function(d){
+        if (d && d.ok){
+          alert(eqAvulso ? nome + ' foi cadastrado. Já aparece no "Cadastro para" do Novo cadastro.' : nome + ' foi cadastrado. Ele entra no aplicativo com o CPF ' + cpf + ' e a senha 123456.');
+          eqForm = false; lsSet('campo_atribuir', d.id);
+          return Promise.all([carregarEquipe(), carregarGPainel(true)]).then(desenharEquipe);
+        }
+        alert((d && (d.erro || d.message)) || 'Não foi possível salvar.'); b.disabled = false; b.textContent = 'Salvar';
+      }).catch(function(){ alert('Sem internet agora. Precisa de sinal para salvar.'); b.disabled = false; b.textContent = 'Salvar'; });
+    };
+  }
   function listaProspsPag(){
     var ps = (gest || []).filter(function(p){ return p.itens && p.itens.length; }).map(function(p){
       var ap = p.itens.filter(gestAPagar).length, ult = p.itens.reduce(function(m, c){ return String(c.protocolo || '') > m ? String(c.protocolo) : m; }, '');
@@ -1271,7 +1346,7 @@ html[data-tema="dark"] .gp-pagar{background:#0f2348;border-color:#1e3a6e}
     return rpc('campo_gestor_painel', { p_token: token }).then(function(d){ if (d && d.prospectadores){ gp = d; lsSet('campo_gpainel', JSON.stringify(d)); } return gp; }).catch(function(){ return gp; });
   }
   function prospsGestor(){
-    var l = ((gp && gp.prospectadores) || (gest || [])).map(function(p){ return { id: p.id, nome: p.nome }; });
+    var l = (equipe || (gp && gp.prospectadores) || gest || []).map(function(p){ return { id: p.id, nome: p.nome + (p.avulso ? ' (só indicou)' : '') }; });
     if (quem && quem.prospId && !l.some(function(p){ return p.id === quem.prospId; })) l.unshift({ id: quem.prospId, nome: quem.nome || 'Eu' });
     return l;
   }
@@ -1425,7 +1500,7 @@ html[data-tema="dark"] .gp-pagar{background:#0f2348;border-color:#1e3a6e}
       if (Object.keys(fotos).length && !confirm('Há fotos de um cadastro em andamento. Sair mesmo assim? As fotos serão apagadas.')) return;
       if (!confirm('Sair desta conta? Para entrar de novo você vai precisar do seu CPF e da senha.')) return;
       fotos = {}; guardarRascunho();
-      ['campo_token', 'campo_quem', 'campo_painel', 'campo_nome', 'campo_fone', 'campo_cpf', 'campo_rg', 'campo_endereco', 'campo_aba', 'campo_trocar', 'campo_gestor', 'campo_gest_prosp', 'campo_gpainel', 'campo_atribuir'].forEach(function(k){ lsSet(k, ''); });
+      ['campo_token', 'campo_quem', 'campo_painel', 'campo_nome', 'campo_fone', 'campo_cpf', 'campo_rg', 'campo_endereco', 'campo_aba', 'campo_trocar', 'campo_gestor', 'campo_gest_prosp', 'campo_gpainel', 'campo_atribuir', 'campo_equipe'].forEach(function(k){ lsSet(k, ''); });
       token = ''; quem = null; painel = null; aba = 'painel';
       pedirLink();
     });
@@ -2259,7 +2334,7 @@ html[data-tema="dark"] .gp-pagar{background:#0f2348;border-color:#1e3a6e}
       if (!q) quem = { nome: 'Prospectador', cadastros: [] };   // primeira vez sem internet: cadastra e envia depois
       telaInicial();
       carregarPainel();
-      if (quem && quem.gestor) carregarGPainel(true);
+      if (quem && quem.gestor){ carregarGPainel(true); carregarEquipe(); }
       if (quem.envioUrl) proximo();
     });
   }
