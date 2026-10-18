@@ -3535,8 +3535,8 @@ section.vw-dash{gap:10px!important}
     if (cadAberto[ln.dataset.linha]) delete cadAberto[ln.dataset.linha]; else cadAberto[ln.dataset.linha] = 1;
     renderCad();
   });
-  /* Antigos x Novos: antigo é só o processo que veio da planilha antiga; toda outra ação é nova (a mesma pessoa pode ter várias ações) */
-  function ehNovo(r){ return !/planilha/i.test(String(r.origem || '')); }
+  /* Antigos x Novos: o cliente vira antigo quando a audiência dele já aconteceu (ou o processo foi arquivado); até lá é novo, venha de onde vier */
+  function ehNovo(r){ return !(r.arquivado || (r.audData && jaRealizada(r))); }
   function todasRows(){ return state.todos || state.rows || []; }
   state.base = 'todos';   // sempre abre em Todos, para não esconder ninguém sem perceber
   function filtroBase(l){ l = l || []; return state.base === 'novos' ? l.filter(ehNovo) : state.base === 'antigos' ? l.filter(function(r){ return !ehNovo(r); }) : l; }
@@ -3544,7 +3544,7 @@ section.vw-dash{gap:10px!important}
     var box = $('base-seg'); if (!box) return;
     var t = todasRows(), nN = t.filter(ehNovo).length;
     box.innerHTML = [['todos', 'Todos', t.length], ['antigos', 'Antigos', t.length - nN], ['novos', 'Novos', nN]].map(function(o){
-      return '<button type="button" data-base="' + o[0] + '" aria-pressed="' + (state.base === o[0]) + '" title="' + (o[0] === 'antigos' ? 'Processos que vieram da planilha antiga' : o[0] === 'novos' ? 'Ações novas (aplicativo, Novo cliente ou lançadas no sistema), mesmo de quem já foi cliente' : 'Todos os clientes') + '">' + o[1] + '<b>' + o[2] + '</b></button>';
+      return '<button type="button" data-base="' + o[0] + '" aria-pressed="' + (state.base === o[0]) + '" title="' + (o[0] === 'antigos' ? 'Já tiveram a audiência' : o[0] === 'novos' ? 'Ainda não tiveram a audiência (no cadastro, protocolados ou com audiência marcada)' : 'Todos os clientes') + '">' + o[1] + '<b>' + o[2] + '</b></button>';
     }).join('');
   }
   document.addEventListener('click', function(e){
