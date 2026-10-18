@@ -3163,16 +3163,14 @@ section.vw-dash{gap:10px!important}
         '<div class="prosp-nums"><div><b>' + mine.length + '</b><span>clientes</span></div><div><b>' + av + '</b><span>avisados</span></div><div><b>' + aAvisar + '</b><span>a avisar</span></div><div><b>' + sc + '</b><span>sem contato</span></div></div>' +
         pautaProsp(p, fut) +
         (function(){
-          var app = mine.filter(function(r){ return r.origem === 'campo'; }), appProt = app.filter(function(r){ return String(r.processo || '').trim(); }).length;
-          var ind = mine.filter(function(r){ return String(r.processo || '').trim(); }), f = faltasInd(ind);
+          var ind = mine.filter(function(r){ return String(r.processo || '').trim(); }), comAud = ind.filter(function(r){ return r.audData; }).length, pagas = ind.filter(function(r){ return r.indicacaoPagaEm; }).length;
           return '<div class="prosp-ind">' +
-            (app.length ? '<span><b>Aplicativo:</b> ' + app.length + ' cadastrados · ' + appProt + ' protocolados</span>' : '') +
-            '<span><b>Pago no protocolo:</b> ' + f.p1 + ' de ' + ind.length + ' · <b>quando sai:</b> ' + f.p2 + ' de ' + f.sairam + '</span>' +
-            (f.falta ? '<span class="ind-falta">' + f.falta + (f.falta === 1 ? ' parte a pagar' : ' partes a pagar') + '</span>' : '') +
+            '<span><b>' + ind.length + (ind.length === 1 ? ' indicação protocolada' : ' indicações protocoladas') + '</b> (' + (comAud ? comAud + ' com audiência' : 'nenhuma com audiência') + ')</span>' +
+            '<span><b>Pago: ' + pagas + ' de ' + ind.length + '</b>' + (ind.length - pagas ? ' · o pagamento é marcado no aplicativo' : '') + '</span>' +
           '</div>';
         })() +
         ((p.palavrasEndereco || []).length ? '<div class="small">Endereços com: ' + p.palavrasEndereco.map(function(k){ return '<span class="tag-kw">' + esc(k) + '</span>'; }).join('') + '</div>' : '') +
-        '<div class="prosp-actions"><button type="button" class="btn" data-pact="ver" data-id="' + esc(p.id) + '">Ver clientes</button>' + (isAdmin() ? '<button type="button" class="btn" data-pact="pag" data-id="' + esc(p.id) + '">Pagamentos</button>' : '') + (isAdmin() ? '<button type="button" class="btn" data-pact="link" data-id="' + esc(p.id) + '"><svg class="i"><use href="#i-phone"/></svg>Aplicativo</button>' : '') + '<button type="button" class="btn" data-pact="edit" data-id="' + esc(p.id) + '">Editar</button>' +
+        '<div class="prosp-actions"><button type="button" class="btn" data-pact="ver" data-id="' + esc(p.id) + '">Ver clientes</button>' +  (isAdmin() ? '<button type="button" class="btn" data-pact="link" data-id="' + esc(p.id) + '"><svg class="i"><use href="#i-phone"/></svg>Aplicativo</button>' : '') + '<button type="button" class="btn" data-pact="edit" data-id="' + esc(p.id) + '">Editar</button>' +
           (soltos ? '<button type="button" class="btn" data-pact="aplicar" data-id="' + esc(p.id) + '">Atribuir ' + soltos + ' cliente(s) do endereço</button>' : '') + '</div>' +
       '</div>';
     }).join('');
