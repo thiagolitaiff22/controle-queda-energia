@@ -3128,7 +3128,7 @@ section.vw-dash{gap:10px!important}
     var em30 = com.filter(function(r){ var n = daysUntil(retornoEm(r)); return n > 0 && n <= 30 && !r.contatadoRetorno && !fora(r); });
     var cont = com.filter(function(r){ return r.contatadoRetorno && !r.naoRenovou; });
     var ren = com.filter(renovou), naoq = com.filter(function(r){ return r.naoRenovou; });
-    $('r-s0').textContent = noMes.length; $('r-s0-c').textContent = 'completam 5 meses em ' + mesLabel(mesAtual, true);
+    $('r-s0').textContent = noMes.length; $('r-s0-c').textContent = 'em ' + mesLabel(mesAtual, true);
     $('r-s1').textContent = lib.length; $('r-s2').textContent = em30.length; $('r-s3').textContent = cont.length;
     var procurados = ren.length + naoq.length;
     $('r-s5').textContent = ren.length; $('r-s5-c').textContent = procurados ? Math.round(ren.length / procurados * 100) + '% dos que responderam' : 'entraram com nova ação';
@@ -5191,7 +5191,7 @@ section.vw-dash{gap:10px!important}
     l: ['Clientes', 'Todos os clientes e a etapa de cada processo'],
     p: ['Pós-audiência', 'Resultados, conclusos, embargos e pagamentos'],
     f: ['Financeiro', 'Depois da audiência: condenações, previsão de pagamento, honorários e repasse'],
-    r: ['Nova ação', 'Clientes que já passaram pela audiência · última audiência, protocolo e quando podem entrar com a nova ação'],
+    r: ['Nova ação', 'Base de todos os clientes protocolados · quando cada um pode entrar com a nova ação (5 meses depois do protocolo)'],
     t: ['Contestações', 'Audiências ainda com resultado a lançar: teses da Âmbar e resultado de cada cliente'],
     h: ['Audiências', 'Histórico das audiências concluídas: quantos procedentes, conclusos, faltaram e improcedentes'],
     e: ['Configurações', 'Equipe, integrações e prospectadores']
