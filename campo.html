@@ -917,6 +917,26 @@ html[data-tema="dark"] .cli-sel select option{background:#141b2d;color:#fff}
 .ses-cab{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:16px 4px 6px}
 .ses-cab b{font-size:14.5px;font-weight:700;color:var(--ink)}
 .ses-cab span{font-size:12.5px;color:var(--ink2)}
+
+/* agenda de audiências */
+.ag-linha{display:flex;align-items:center;gap:12px;width:100%;margin-top:12px;text-align:left;border:1px solid var(--line);border-radius:18px;background:var(--card);color:var(--ink);font:inherit;padding:12px 14px}
+.ag-ic{flex:none;width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:rgba(47,107,255,.14);color:#2f6bff}
+html[data-tema="dark"] .ag-ic{color:#93c5fd}
+.ag-ic svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2}
+.ag-modo{margin:14px 0 4px}
+.ag-dia{display:flex;align-items:baseline;justify-content:space-between;margin:18px 4px 8px}
+.ag-dia b{font-size:15px;font-weight:700;color:var(--ink)}
+.ag-dia span{font-size:12.5px;color:var(--ink2)}
+.ag-ses{border:1px solid var(--line);border-radius:18px;background:var(--card);overflow:hidden;margin-bottom:10px}
+.ag-ses-cab{display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(47,107,255,.10);border-bottom:1px solid var(--line)}
+.ag-ses-cab b{font-size:15px;font-weight:700;color:#2f6bff}
+html[data-tema="dark"] .ag-ses-cab b{color:#93c5fd}
+.ag-ses-cab span{font-size:12.5px;color:var(--ink2)}
+.ag-cli{display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer}
+.ag-cli + .ag-cli{border-top:1px solid var(--line)}
+.ag-st{flex:none;font-style:normal;font-size:12px;font-weight:700;white-space:nowrap}
+.ag-st.ok{color:#22c55e}.ag-st.warn{color:#f59e0b}.ag-st.red{color:#f87171}.ag-st.purple{color:#a78bfa}.ag-st.gray{color:var(--ink2)}
+#ag-v .gp-faixa{margin-top:4px}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><script>try{var t=localStorage.getItem("campo_tema");if(!t)t="dark";document.documentElement.setAttribute("data-tema",t);}catch(e){document.documentElement.setAttribute("data-tema","light");}</script>
 </head>
@@ -955,7 +975,7 @@ html[data-tema="dark"] .cli-sel select option{background:#141b2d;color:#fff}
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 51;
+  var APP_VERSAO = 52;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
@@ -1185,7 +1205,7 @@ html[data-tema="dark"] .cli-sel select option{background:#141b2d;color:#fff}
   function telaInicial(){
     montarCasca();
     $('topo-nome').textContent = (quem && quem.nome) || 'Prospectador';
-    Array.prototype.forEach.call(document.querySelectorAll('#abas [data-aba]'), function(b){ b.setAttribute('aria-current', b.dataset.aba === aba ? 'true' : 'false'); });
+    Array.prototype.forEach.call(document.querySelectorAll('#abas [data-aba]'), function(b){ b.setAttribute('aria-current', b.dataset.aba === (aba === 'agenda' ? 'painel' : aba) ? 'true' : 'false'); });
     $('vista').className = 'vista' + (aba === 'novo' ? ' novo' : '');
     $('vista').onclick = null;   // cada aba põe o seu próprio clique
     document.body.classList.toggle('na-novo', aba === 'novo');
@@ -1194,6 +1214,7 @@ html[data-tema="dark"] .cli-sel select option{background:#141b2d;color:#fff}
     if (aba === 'clientes') return vistaClientes();
     if (aba === 'pag' && quem && quem.gestor) return vistaPag();
     if (aba === 'equipe' && quem && quem.gestor) return vistaEquipe();
+    if (aba === 'agenda' && quem && quem.gestor) return vistaAgenda();
     vistaNovo();
   }
   /* ---------- gestor: pagamentos das indicações (R$ 25 no protocolo e R$ 25 quando sai) ---------- */
@@ -1252,6 +1273,58 @@ html[data-tema="dark"] .cli-sel select option{background:#141b2d;color:#fff}
         }
         alert((d && (d.erro || d.message)) || 'Não foi possível salvar.'); b.disabled = false; b.textContent = 'Salvar';
       }).catch(function(){ alert('Sem internet agora. Precisa de sinal para salvar.'); b.disabled = false; b.textContent = 'Salvar'; });
+    };
+  }
+  /* ---------- gestor: agenda de audiências (por dia e por sessão; nunca mistura sessões) ---------- */
+  var agModo = 'prox';
+  var DIAS = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+  function diaLongo(iso){ var p = String(iso).slice(0, 10).split('-'), d = new Date(+p[0], +p[1] - 1, +p[2]); return DIAS[d.getDay()].charAt(0).toUpperCase() + DIAS[d.getDay()].slice(1) + ', ' + (+p[2]) + ' de ' + ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'][+p[1] - 1]; }
+  function audsDoEscritorio(prox){
+    return clientesPainel().filter(function(c){ if (!c.audData) return false; var n = diasAte(c.audData); return prox ? n >= 0 && etapaCli(c) === 'marcada' : !(n >= 0 && etapaCli(c) === 'marcada'); });
+  }
+  function linhaAgenda(){
+    var l = audsDoEscritorio(true), ses = {}; l.forEach(function(c){ ses[c.audData + ' ' + (c.audHora || '')] = 1; });
+    var prox = l.map(function(c){ return c.audData; }).sort()[0];
+    return '<button type="button" class="ag-linha" data-ir-agenda="1"><span class="ag-ic"><svg viewBox="0 0 24 24"><use href="#i-cal"/></svg></span><span class="pp-t"><b>Agenda de audiências</b><span>' +
+      (l.length ? Object.keys(ses).length + (Object.keys(ses).length === 1 ? ' sessão' : ' sessões') + ' · ' + l.length + (l.length === 1 ? ' cliente' : ' clientes') + ' · próxima ' + dataBR(prox).slice(0, 5) : 'Nenhuma audiência marcada') + '</span></span><span class="pp-seta">›</span></button>';
+  }
+  document.addEventListener('click', function(e){ if (e.target.closest('[data-ir-agenda]')) irPara('agenda'); });
+  function vistaAgenda(){
+    var prox = agModo === 'prox', l = audsDoEscritorio(prox);
+    var porDia = {}; l.forEach(function(c){ var d = String(c.audData).slice(0, 10); porDia[d] = porDia[d] || {}; var k = c.audHora || 'sem hora'; (porDia[d][k] = porDia[d][k] || []).push(c); });
+    var dias = Object.keys(porDia).sort(); if (!prox) dias.reverse();
+    var nSes = dias.reduce(function(s, d){ return s + Object.keys(porDia[d]).length; }, 0), semAviso = prox ? l.filter(function(c){ return !c.avisado; }).length : 0;
+    var RES = function(c){
+      var k = etapaCli(c);
+      if (k === 'ganhou' || k === 'alvara' || k === 'pago') return ['ok', c.resultado === 'parcial' ? 'Parcial' : 'Procedente'];
+      if (k === 'perdeu') return ['red', 'Improcedente'];
+      if (k === 'faltou') return ['red', 'Faltou · pode repetir'];
+      if (k === 'concluso') return ['purple', 'Concluso'];
+      return ['gray', 'Sem resultado'];
+    };
+    $('vista').innerHTML =
+      '<div id="ag-v"><button type="button" class="pag-volta" data-volta-painel="1">‹ Painel</button>' +
+      '<div class="gp-faixa"><div class="gp-faixa-t"><span>Agenda de audiências</span><img src="img/logo-rl-icone.png" alt=""></div><div class="gp-faixa-n">' +
+        '<button type="button"><b>' + nSes + '</b><span>' + (nSes === 1 ? 'Sessão' : 'Sessões') + '</span></button>' +
+        '<button type="button"><b>' + l.length + '</b><span>Clientes</span></button>' +
+        (prox ? '<button type="button"><b>' + semAviso + '</b><span>Sem aviso</span></button>' : '<button type="button"><b>' + l.filter(function(c){ return RES(c)[1] === 'Sem resultado'; }).length + '</b><span>Sem resultado</span></button>') +
+      '</div></div>' +
+      '<div class="chips ag-modo" id="ag-modo"><button type="button" data-m="prox" aria-pressed="' + prox + '">Próximas</button><button type="button" data-m="feitas" aria-pressed="' + !prox + '">Realizadas</button></div>' +
+      (dias.length ? dias.map(function(d){
+        var n = diasAte(d), hs = Object.keys(porDia[d]).sort();
+        return '<div class="ag-dia"><b>' + diaLongo(d) + '</b><span>' + quando(d) + '</span></div>' + hs.map(function(hh){
+          var cs = porDia[d][hh].sort(function(a, b){ return String(a.nome).localeCompare(String(b.nome)); }), on = cs.filter(function(c){ return c.online; }).length;
+          return '<div class="ag-ses"><div class="ag-ses-cab"><b>' + esc(hh) + '</b><span>' + cs.length + (cs.length === 1 ? ' cliente' : ' clientes') + (on ? ' · ' + on + ' on-line' : '') + '</span></div>' +
+            cs.map(function(c){
+              var st = prox ? (c.avisado ? ['ok', 'avisado'] : ['warn', 'sem aviso']) : RES(c);
+              return '<div class="ag-cli" data-cli="' + esc(c.id) + '"><span class="pp-t"><b>' + esc(nomeBonito(c.nome)) + '</b><span>' + esc(c.prosp || '') + (c.online ? ' · on-line' : '') + '</span></span><em class="ag-st ' + st[0] + '">' + st[1] + '</em></div>';
+            }).join('') + '</div>';
+        }).join('');
+      }).join('') : '<div class="vazio">' + (prox ? 'Nenhuma audiência marcada agora. As datas entram pela Pauta do PROJUDI, no BI.' : 'Nenhuma audiência realizada ainda.') + '</div>') + '</div>';
+    $('ag-modo').onclick = function(e){ var b = e.target.closest('[data-m]'); if (!b) return; agModo = b.dataset.m; vistaAgenda(); window.scrollTo(0, 0); };
+    $('vista').onclick = function(e){
+      if (e.target.closest('[data-volta-painel]')) return irPara('painel');
+      var c = e.target.closest('[data-cli]'); if (c) fichaCli(c.dataset.cli);
     };
   }
   function listaProspsPag(){
@@ -1509,6 +1582,7 @@ html[data-tema="dark"] .cli-sel select option{background:#141b2d;color:#fff}
           '<button type="button" data-gir="protocolado"><b>' + gp.aguardando + '</b><span>Aguardando</span></button>' +
           '<button type="button" data-gir="todos"><b>' + gp.renovar + '</b><span>Renovar</span></button>' +
         '</div></div>' +
+        linhaAgenda() +
         '<div class="gp-sec">Prospectadores</div>' + listaProspsPag();
     }
     desenhar();
