@@ -75,6 +75,7 @@ returns jsonb language sql stable security definer set search_path = public as $
         'online', (c.data ->> 'online') = 'true',
         'resultado', case when c.data ->> 'resultado' in ('parcial', 'procedente', 'improcedente', 'extinto', 'ausente') then c.data ->> 'resultado' end,
         'comparecimento', c.data ->> 'comparecimento',
+        'concluso', coalesce(c.data ->> 'concluso', '') = 'true',
         'origem', c.data ->> 'origem',
         'faltaDocs', c.data -> 'faltaDocs',
         'temPasta', coalesce(c.data ->> 'pastaId', '') <> '',
