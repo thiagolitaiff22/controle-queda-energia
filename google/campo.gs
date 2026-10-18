@@ -153,7 +153,7 @@ function fechar(p, quem){
   var id = rpc('campo_cadastrar', {
     p_token: p.token, p_envio: p.envio,
     p_dados: { nome: dados.nome, cpf: dados.cpf, rg: dados.rg, nascimento: dados.nascimento, endereco: dados.endereco,
-      contato: p.contato || '', pastaUrl: pasta.getUrl(), pastaId: pasta.getId(), docs: p.docs || [], faltam: p.faltam || [], local: p.local || null, foto: /^data:image\/jpeg;base64,/.test(p.foto || '') ? p.foto : '', leitura: nota.join('\n') }
+      contato: p.contato || '', atribuirA: String(p.atribuirA || '').slice(0, 80), pastaUrl: pasta.getUrl(), pastaId: pasta.getId(), docs: p.docs || [], faltam: p.faltam || [], local: p.local || null, foto: /^data:image\/jpeg;base64,/.test(p.foto || '') ? p.foto : '', leitura: nota.join('\n') }
   });
   PropertiesService.getScriptProperties().deleteProperty('pasta_' + p.envio);
   return { ok: true, id: id, nome: dados.nome || '' };

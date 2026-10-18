@@ -729,6 +729,11 @@ html[data-tema="dark"] .pag-resumo span{background:#0f2348;border-color:#1e3a6e}
 .pg-b.ok em{color:#dcfce7}
 .pg-b.nao{opacity:.5}
 .pg-b:disabled{opacity:.4}
+/* gestor: painel do escritório e "cadastro para" */
+.gp-l > div{cursor:pointer}
+.atribuir select{flex:1;min-width:0;border:0;background:none;color:var(--ink);font:inherit;font-size:16px;outline:0;appearance:auto}
+html[data-tema="dark"] .atribuir select option{background:#0f2348;color:#fff}
+.filtro-prosp{display:block;width:100%;margin:0 0 10px;border:1px solid var(--line2);background:none;border-radius:12px;padding:9px 12px;font:inherit;font-size:13.5px;font-weight:600;color:var(--ink);text-align:left}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><script>try{var t=localStorage.getItem("campo_tema");if(!t)t="dark";document.documentElement.setAttribute("data-tema",t);}catch(e){document.documentElement.setAttribute("data-tema","light");}</script>
 </head>
@@ -767,7 +772,7 @@ html[data-tema="dark"] .pag-resumo span{background:#0f2348;border-color:#1e3a6e}
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 41;
+  var APP_VERSAO = 42;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
@@ -972,7 +977,7 @@ html[data-tema="dark"] .pag-resumo span{background:#0f2348;border-color:#1e3a6e}
       try { localStorage.setItem('campo_tema', novo); } catch(e){}
     });
   }
-  function irPara(a){ aba = a; lsSet('campo_aba', a); window.scrollTo(0, 0); telaInicial(); if (a !== 'novo') carregarPainel(); }
+  function irPara(a){ if (a !== 'clientes' && aba === 'clientes') buscaProsp = ''; aba = a; lsSet('campo_aba', a); window.scrollTo(0, 0); telaInicial(); if (a !== 'novo') carregarPainel(); }
   function sincronia(){
     var el = $('sinc'); if (!el) return;
     filaTodos().catch(function(){ return []; }).then(function(l){
@@ -1094,7 +1099,8 @@ html[data-tema="dark"] .pag-resumo span{background:#0f2348;border-color:#1e3a6e}
     var visiveis = DOCS.filter(function(d){ return !d.oculto && (!completando || completando.faltaDocs.indexOf(d.k) >= 0); });
     $('vista').innerHTML = (completando ?
       '<div class="completar"><small>Completar documentos de</small><b>' + esc(completando.nome) + '</b><span>Tire só as fotos que estavam faltando e envie.</span><button type="button" id="cancelar-comp">Cancelar</button></div>' :
-      '<div class="rot" style="margin-top:0">Dados do cliente</div><div class="dados">' +
+      (quem && quem.gestor ? '<div class="rot" style="margin-top:0">Cadastro para</div><label class="fone atribuir"><svg viewBox="0 0 24 24"><use href="#i-pessoa"/></svg><select id="atribuir">' + prospsGestor().map(function(p){ return '<option value="' + esc(p.id) + '"' + (p.id === atribuidoA() ? ' selected' : '') + '>' + esc(p.nome) + (p.id === quem.prospId ? ' (eu)' : '') + '</option>'; }).join('') + '</select></label>' : '') +
+      '<div class="rot"' + (quem && quem.gestor ? '' : ' style="margin-top:0"') + '>Dados do cliente</div><div class="dados">' +
         '<label class="fone' + (lsGet('campo_nome').trim() ? '' : ' falta') + '" id="l-nome"><svg viewBox="0 0 24 24"><use href="#i-pessoa"/></svg><input id="nome" autocomplete="off" autocapitalize="characters" placeholder="Nome completo do cliente" value="' + esc(lsGet('campo_nome')) + '"></label>' +
         CAMPOS_DADOS.map(function(c){
           var v = lsGet('campo_' + c.k);
@@ -1112,6 +1118,7 @@ html[data-tema="dark"] .pag-resumo span{background:#0f2348;border-color:#1e3a6e}
       }).join('') + '</div>' +
 
       '<div class="barra"><button class="enviar" id="enviar"' + (n ? '' : ' disabled') + '><svg viewBox="0 0 24 24"><use href="#i-env"/></svg>Enviar cadastro</button></div>';
+    if ($('atribuir')) $('atribuir').onchange = function(){ lsSet('campo_atribuir', this.value); };
     if (completando){ $('cancelar-comp').onclick = cancelarComplemento; if ($('enviar')) $('enviar').lastChild.textContent = 'Enviar documentos'; }
     else {
     $('fone').addEventListener('focus', function(){ if (!this.value) this.value = '+55 '; });
@@ -1197,7 +1204,65 @@ html[data-tema="dark"] .pag-resumo span{background:#0f2348;border-color:#1e3a6e}
   }
 
   /* ---------- aba Painel ---------- */
+  /* ---------- gestor: painel do escritório inteiro ---------- */
+  var gp = null, gpQuando = 0;
+  try { gp = JSON.parse(lsGet('campo_gpainel') || 'null'); } catch(e){}
+  function carregarGPainel(forcar){
+    if (navigator.onLine === false || (!forcar && Date.now() - gpQuando < 30000)) return Promise.resolve(gp);
+    gpQuando = Date.now();
+    return rpc('campo_gestor_painel', { p_token: token }).then(function(d){ if (d && d.prospectadores){ gp = d; lsSet('campo_gpainel', JSON.stringify(d)); } return gp; }).catch(function(){ return gp; });
+  }
+  function prospsGestor(){
+    var l = ((gp && gp.prospectadores) || (gest || [])).map(function(p){ return { id: p.id, nome: p.nome }; });
+    if (quem && quem.prospId && !l.some(function(p){ return p.id === quem.prospId; })) l.unshift({ id: quem.prospId, nome: quem.nome || 'Eu' });
+    return l;
+  }
+  function atribuidoA(){ var v = lsGet('campo_atribuir'); return prospsGestor().some(function(p){ return p.id === v; }) ? v : (quem && quem.prospId) || ''; }
+  function vistaEscritorio(){
+    var h = new Date(), primeiro = String((quem && quem.nome) || '').trim().split(/\s+/)[0];
+    $('vista').innerHTML = '<div id="gp-v"></div>' +
+      '<button type="button" class="sair" id="sair"><svg><use href="#i-sair"/></svg>Sair desta conta</button>' +
+      '<div class="versao">RL Advogados · versão ' + APP_VERSAO + '</div>';
+    $('sair').onclick = sair;
+    function desenhar(){
+      var box = $('gp-v'); if (!box) return;
+      if (!gp){ box.innerHTML = '<div class="ola"><b>Olá' + (primeiro ? ', ' + esc(primeiro.charAt(0) + primeiro.slice(1).toLowerCase()) : '') + '!</b><span>Painel do escritório</span></div><div class="vazio">' + (navigator.onLine === false ? 'Sem internet: o painel aparece quando o celular tiver sinal.' : 'Carregando…') + '</div>'; return; }
+      var at = gp.atualizado ? new Date(gp.atualizado) : null;
+      var kpi = function(rot, n, cor, ir){ return '<button type="button" class="kpi" data-gir="' + ir + '" style="--c:' + cor + '"><small>' + rot + '</small><b>' + n + '</b></button>'; };
+      var aPagar = gp.prospectadores.reduce(function(s, p){ return s + (p.aPagar || 0); }, 0);
+      box.innerHTML =
+        '<div class="ola"><b>Olá' + (primeiro ? ', ' + esc(primeiro.charAt(0) + primeiro.slice(1).toLowerCase()) : '') + '!</b><span>' + h.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' }) + (at ? ' · atualizado às ' + at.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '') + '</span></div>' +
+        '<div class="hero"><small>Clientes no escritório</small><span class="num">' + gp.total + '</span>' +
+          '<div class="lin"><span><b>' + gp.emCadastro + '</b> no cadastro</span><span><b>' + gp.marcadas + '</b> com audiência marcada</span></div></div>' +
+        '<div class="kpis">' +
+          kpi('No cadastro', gp.emCadastro, 'var(--line2)', 'preparo') +
+          kpi('Aguardando audiência', gp.aguardando, 'var(--warn)', 'protocolado') +
+          kpi('Audiência marcada', gp.marcadas, 'var(--blue)', 'marcada') +
+          kpi('Podem renovar', gp.renovar, 'var(--ok)', 'todos') +
+          kpi('Indicações a pagar', aPagar, 'var(--red)', 'pag') +
+        '</div>' +
+        '<div class="rot">Por prospectador</div><div class="lista gp-l">' + gp.prospectadores.filter(function(p){ return p.indicados; }).map(function(p){
+          return '<div data-gp="' + esc(p.id) + '"><span class="nm"><b>' + esc(p.nome) + '</b><span>' + p.indicados + ' indicados · ' + p.emCadastro + ' no cadastro · ' + p.protocolados + ' protocolados · ' + p.comAud + ' com audiência</span></span>' + (p.aPagar ? '<small>' + p.aPagar + ' a pagar</small>' : '') + '</div>';
+        }).join('') + '</div>' +
+        '<div class="rot">Próximas audiências' + (gp.proximas.length ? ' · ' + gp.proximas.length : '') + '</div>' +
+        (gp.proximas.length ? '<div class="auds">' + gp.proximas.map(function(c){
+          var p = String(c.data).split('-');
+          return '<div data-cli="' + esc(c.id) + '"><div class="dia"><b>' + p[2] + '</b><span>' + MES[+p[1] - 1] + '</span></div><div class="info"><b>' + esc(String(c.nome || '').toUpperCase()) + '</b><span>' + quando(c.data) + (c.hora ? ' · ' + esc(c.hora) : '') + (c.prosp ? ' · ' + esc(c.prosp) : '') + '</span></div></div>';
+        }).join('') + '</div>' : '<div class="vazio">Nenhuma audiência marcada agora.</div>') +
+        '<div class="rot">Últimos cadastros</div><div class="lista gp-l">' + gp.recentes.map(function(c){
+          return '<div data-cli="' + esc(c.id) + '"><span class="nm"><b>' + esc(String(c.nome || '').toUpperCase()) + '</b><span>' + (c.em ? dataBR(c.em) : '') + (c.prosp ? ' · ' + esc(c.prosp) : '') + '</span></span><small>' + (c.prot ? 'protocolado' : 'no cadastro') + '</small></div>';
+        }).join('') + '</div>';
+    }
+    desenhar();
+    $('vista').onclick = function(e){
+      var k = e.target.closest('[data-gir]'); if (k){ if (k.dataset.gir === 'pag') return irPara('pag'); filtroCli = k.dataset.gir; buscaCli = ''; return irPara('clientes'); }
+      var g = e.target.closest('[data-gp]'); if (g){ var pp = (gp.prospectadores || []).filter(function(x){ return x.id === g.dataset.gp; })[0]; if (pp){ filtroCli = 'todos'; buscaCli = ''; buscaProsp = pp.nome; return irPara('clientes'); } }
+      var c = e.target.closest('[data-cli]'); if (c) fichaCli(c.dataset.cli);
+    };
+    carregarGPainel().then(function(){ if (aba === 'painel') desenhar(); });
+  }
   function vistaPainel(){
+    if (quem && quem.gestor) return vistaEscritorio();
     var cl = clientesPainel(), cont = {};
     cl.forEach(function(c){ var k = etapaCli(c); cont[k] = (cont[k] || 0) + 1; });
     var ganharam = (cont.ganhou || 0) + (cont.alvara || 0) + (cont.pago || 0);
@@ -1248,18 +1313,22 @@ html[data-tema="dark"] .pag-resumo span{background:#0f2348;border-color:#1e3a6e}
   /* ---------- aba Clientes ---------- */
   var GRUPOS = [['todos', 'Todos'], ['faltam', 'Faltam documentos'], ['preparo', 'Em preparação'], ['protocolado', 'Aguardando audiência'], ['marcada', 'Audiência marcada'], ['ganharam', 'Ganharam'], ['faltou', 'Faltaram'], ['perdeu', 'Não ganharam']];
   function noGrupo(c, g){ var k = etapaCli(c); if (g === 'faltam') return faltas(c).length > 0; return g === 'todos' || k === g || (g === 'ganharam' && (k === 'ganhou' || k === 'alvara' || k === 'pago')); }
+  var buscaProsp = '';
   function vistaClientes(){
     var cl = clientesPainel();
     $('vista').innerHTML =
       '<label class="busca"><svg><use href="#i-busca"/></svg><input id="busca-cli" placeholder="Buscar cliente pelo nome" value="' + esc(buscaCli) + '" autocomplete="off"></label>' +
       '<div class="chips" id="chips">' + GRUPOS.map(function(g){ var n = cl.filter(function(c){ return noGrupo(c, g[0]); }).length; return (n || g[0] === 'todos' || g[0] === filtroCli) ? '<button type="button" data-g="' + g[0] + '" aria-pressed="' + (filtroCli === g[0]) + '">' + g[1] + '<b>' + n + '</b></button>' : ''; }).join('') + '</div>' +
+      (buscaProsp ? '<button type="button" class="filtro-prosp" id="tira-prosp">Só de ' + esc(buscaProsp) + ' · mostrar todos ×</button>' : '') +
       '<div id="lista-cli"></div><div id="fila"></div>';
+    if ($('tira-prosp')) $('tira-prosp').onclick = function(){ buscaProsp = ''; vistaClientes(); };
     function desenhar(){
       var q = buscaCli.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-      var l = cl.filter(function(c){ return noGrupo(c, filtroCli) && (!q || String(c.nome || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().indexOf(q) >= 0); });
+      var l = cl.filter(function(c){ return noGrupo(c, filtroCli) && (!buscaProsp || c.prosp === buscaProsp) && (!q || String(c.nome || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().indexOf(q) >= 0); });
       $('lista-cli').innerHTML = '<div class="rot">' + l.length + (l.length === 1 ? ' cliente' : ' clientes') + '</div>' + (l.length ? '<div class="lista">' + l.slice(0, 300).map(function(c){
         var k = etapaCli(c), e = ETP[k], sub = k === 'marcada' ? dataBR(c.audData) + (c.audHora ? ' · ' + c.audHora : '') + ' · ' + quando(c.audData) : c.cadastro ? 'indicado em ' + dataBR(c.cadastro) : '';
         var fl = faltas(c);
+        if (c.prosp) sub = (sub ? sub + ' · ' : '') + c.prosp;
         return '<div data-cli="' + esc(c.id) + '"><i class="' + (fl.length ? 'red' : e[1]) + '"></i><span class="nm"><b>' + esc(c.nome || 'Sem nome') + '</b><span>' + esc(sub) + '</span>' + (fl.length ? '<span class="falta-l">Falta: ' + esc(nomesFaltas(fl)) + '</span>' : '') + '</span><small>' + e[0] + '</small></div>';
       }).join('') + '</div>' : '<div class="vazio">' + (cl.length ? 'Nenhum cliente neste filtro.' : navigator.onLine === false && !painel ? 'Sem internet: a lista aparece quando o celular tiver sinal.' : 'Você ainda não tem clientes no sistema. Os cadastros enviados aparecem aqui.') + '</div>');
     }
@@ -1306,7 +1375,7 @@ html[data-tema="dark"] .pag-resumo span{background:#0f2348;border-color:#1e3a6e}
       if (Object.keys(fotos).length && !confirm('Há fotos de um cadastro em andamento. Sair mesmo assim? As fotos serão apagadas.')) return;
       if (!confirm('Sair desta conta? Para entrar de novo você vai precisar do seu CPF e da senha.')) return;
       fotos = {}; guardarRascunho();
-      ['campo_token', 'campo_quem', 'campo_painel', 'campo_nome', 'campo_fone', 'campo_cpf', 'campo_rg', 'campo_endereco', 'campo_aba', 'campo_trocar', 'campo_gestor', 'campo_gest_prosp'].forEach(function(k){ lsSet(k, ''); });
+      ['campo_token', 'campo_quem', 'campo_painel', 'campo_nome', 'campo_fone', 'campo_cpf', 'campo_rg', 'campo_endereco', 'campo_aba', 'campo_trocar', 'campo_gestor', 'campo_gest_prosp', 'campo_gpainel', 'campo_atribuir'].forEach(function(k){ lsSet(k, ''); });
       token = ''; quem = null; painel = null; aba = 'painel';
       pedirLink();
     });
@@ -1853,7 +1922,7 @@ html[data-tema="dark"] .pag-resumo span{background:#0f2348;border-color:#1e3a6e}
       cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height); fotoMini = cv.toDataURL('image/jpeg', 0.72);
     }).catch(function(){}); });
     p     .then(function(){
-       var envio = { id: id, token: token, criado: new Date().toISOString(), completar: comp ? comp.id : '', foto: fotoMini, contato: ($('fone') || {}).value || '', cpf: comp ? '' : (($('cpf') || {}).value || '').trim(), rg: comp ? '' : (($('rg') || {}).value || '').trim(), endereco: comp ? '' : (($('endereco') || {}).value || '').trim(), cliente: comp ? comp.nome : (($('nome') || {}).value || '').replace(/\s+/g, ' ').trim().toUpperCase(), local: local, faltam: falta.map(function(d){ return d.k; }),
+       var envio = { id: id, token: token, atribuirA: !comp && quem && quem.gestor ? atribuidoA() : '', criado: new Date().toISOString(), completar: comp ? comp.id : '', foto: fotoMini, contato: ($('fone') || {}).value || '', cpf: comp ? '' : (($('cpf') || {}).value || '').trim(), rg: comp ? '' : (($('rg') || {}).value || '').trim(), endereco: comp ? '' : (($('endereco') || {}).value || '').trim(), cliente: comp ? comp.nome : (($('nome') || {}).value || '').replace(/\s+/g, ' ').trim().toUpperCase(), local: local, faltam: falta.map(function(d){ return d.k; }),
          docs: DOCS.filter(function(d){ return fotos[d.k]; }).map(function(d){ return d.k; }), arquivos: [] };
        return Promise.all(arquivos.map(function(a){ return paraBytes(a.blob).then(function(b){ return { nome: a.nome, mime: a.mime, buf: b, tam: b.byteLength, ok: false }; }, function(){ return { nome: a.nome, mime: a.mime, blob: a.blob, tam: a.blob.size, ok: false }; }); }))
          .then(function(l){ envio.arquivos = l; return filaPor(envio); }).then(function(){ return histPor({ id: envio.id, token: token, cliente: envio.cliente + (comp ? ' · documentos' : ''), clienteId: comp ? comp.id : '', criado: envio.criado, enviado: null }); }).then(function(){ return envio; });
@@ -1944,7 +2013,7 @@ html[data-tema="dark"] .pag-resumo span{background:#0f2348;border-color:#1e3a6e}
     return p.then(function(){
         barraEnvio({ nome: envio.cliente, pct: 0.99, passo: 'registrando no sistema' });
         if (envio.completar) return post({ acao: 'completar', token: envio.token, envio: envio.id, completar: envio.completar, docs: envio.docs });
-        return post({ acao: 'fechar', token: envio.token, envio: envio.id, cliente: envio.cliente || '', contato: envio.contato, cpf: envio.cpf || '', rg: envio.rg || '', endereco: envio.endereco || '', local: envio.local, docs: envio.docs, faltam: envio.faltam, foto: envio.foto || '' }); })
+        return post({ acao: 'fechar', token: envio.token, envio: envio.id, atribuirA: envio.atribuirA || '', cliente: envio.cliente || '', contato: envio.contato, cpf: envio.cpf || '', rg: envio.rg || '', endereco: envio.endereco || '', local: envio.local, docs: envio.docs, faltam: envio.faltam, foto: envio.foto || '' }); })
       .then(function(d){
         // só tira da fila depois de ver o cliente no sistema
         if (envio.completar) return d;
@@ -2140,6 +2209,7 @@ html[data-tema="dark"] .pag-resumo span{background:#0f2348;border-color:#1e3a6e}
       if (!q) quem = { nome: 'Prospectador', cadastros: [] };   // primeira vez sem internet: cadastra e envia depois
       telaInicial();
       carregarPainel();
+      if (quem && quem.gestor) carregarGPainel(true);
       if (quem.envioUrl) proximo();
     });
   }
