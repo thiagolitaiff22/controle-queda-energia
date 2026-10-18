@@ -1232,8 +1232,7 @@ html[data-tema="dark"] .atribuir select option{background:#0f2348;color:#fff}
       var aPagar = gp.prospectadores.reduce(function(s, p){ return s + (p.aPagar || 0); }, 0);
       box.innerHTML =
         '<div class="ola"><b>Olá' + (primeiro ? ', ' + esc(primeiro.charAt(0) + primeiro.slice(1).toLowerCase()) : '') + '!</b><span>' + h.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' }) + (at ? ' · atualizado às ' + at.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '') + '</span></div>' +
-        '<div class="hero"><small>Clientes no escritório</small><span class="num">' + gp.total + '</span>' +
-          '<div class="lin"><span><b>' + gp.emCadastro + '</b> no cadastro</span><span><b>' + gp.marcadas + '</b> com audiência marcada</span></div></div>' +
+        '<div class="hero"><small>Clientes no escritório</small><span class="num">' + gp.total + '</span></div>' +
         '<div class="kpis">' +
           kpi('No cadastro', gp.emCadastro, 'var(--line2)', 'preparo') +
           kpi('Aguardando audiência', gp.aguardando, 'var(--warn)', 'protocolado') +
