@@ -901,6 +901,17 @@ html[data-tema] body .gp-faixa-t span{font-size:13px!important;font-weight:600!i
 .cli-resumo .gp-faixa-n button + button{padding-left:9px!important}
 .cli-resumo .gp-faixa-n b{font-size:19px!important}
 .cli-resumo .gp-faixa-n span{font-size:11px!important}
+
+/* Clientes: busca e filtro numa linha só, compactos */
+.cli-filtro{display:flex;gap:8px;margin:0 0 12px}
+.cli-filtro .busca{flex:1;min-width:0;margin:0!important;height:44px!important;padding:0 12px!important;border-radius:14px!important}
+.cli-filtro .busca input{font-size:15px!important}
+.cli-sel{flex:none;max-width:46%;position:relative;display:flex;align-items:center;height:44px;border:1px solid var(--line2);border-radius:14px;background:var(--card);padding:0 30px 0 12px}
+.cli-sel::after{content:"";position:absolute;right:12px;top:50%;width:7px;height:7px;border-right:2px solid var(--ink2);border-bottom:2px solid var(--ink2);transform:translateY(-70%) rotate(45deg);pointer-events:none}
+.cli-sel select{appearance:none;-webkit-appearance:none;border:0;background:none;color:var(--ink);font:inherit;font-size:13.5px;font-weight:600;outline:0;width:100%;text-overflow:ellipsis}
+html[data-tema="dark"] .cli-sel select option{background:#141b2d;color:#fff}
+.cli-resumo .gp-faixa-n button.on b{text-decoration:underline;text-underline-offset:4px}
+.cli-resumo .gp-faixa-n button.on span{color:#fff!important}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><script>try{var t=localStorage.getItem("campo_tema");if(!t)t="dark";document.documentElement.setAttribute("data-tema",t);}catch(e){document.documentElement.setAttribute("data-tema","light");}</script>
 </head>
@@ -939,7 +950,7 @@ html[data-tema] body .gp-faixa-t span{font-size:13px!important;font-weight:600!i
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 49;
+  var APP_VERSAO = 50;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
@@ -1351,7 +1362,7 @@ html[data-tema] body .gp-faixa-t span{font-size:13px!important;font-weight:600!i
     var falta = DOCS.filter(function(d){ return d.req && !fotos[d.k]; });
     var visiveis = DOCS.filter(function(d){ return !d.oculto && (!completando || completando.faltaDocs.indexOf(d.k) >= 0); });
     $('vista').innerHTML = (completando ?
-      '<div class="completar"><small>Completar documentos de</small><b>' + esc(completando.nome) + '</b><span>Tire só as fotos que estavam faltando e envie.</span><button type="button" id="cancelar-comp">Cancelar</button></div>' :
+      '<div class="completar"><small>Completar documentos de</small><b>' + esc(nomeBonito(completando.nome)) + '</b><span>Tire só as fotos que estavam faltando e envie.</span><button type="button" id="cancelar-comp">Cancelar</button></div>' :
       (quem && quem.gestor ? '<div class="rot" style="margin-top:0">Cadastro para</div><label class="fone atribuir"><svg viewBox="0 0 24 24"><use href="#i-pessoa"/></svg><select id="atribuir">' + prospsGestor().map(function(p){ return '<option value="' + esc(p.id) + '"' + (p.id === atribuidoA() ? ' selected' : '') + '>' + esc(p.nome) + (p.id === quem.prospId ? ' (eu)' : '') + '</option>'; }).join('') + '</select></label>' : '') +
       '<div class="rot"' + (quem && quem.gestor ? '' : ' style="margin-top:0"') + '>Dados do cliente</div><div class="dados">' +
         '<label class="fone' + (lsGet('campo_nome').trim() ? '' : ' falta') + '" id="l-nome"><svg viewBox="0 0 24 24"><use href="#i-pessoa"/></svg><input id="nome" autocomplete="off" autocapitalize="words" placeholder="Nome completo do cliente" value="' + esc(lsGet('campo_nome')) + '"></label>' +
@@ -1531,7 +1542,7 @@ html[data-tema] body .gp-faixa-t span{font-size:13px!important;font-weight:600!i
       '<div class="rot">Próximas audiências' + (prox.length ? ' · ' + prox.length : '') + '</div>' +
       (prox.length ? '<div class="auds">' + prox.slice(0, 15).map(function(c){
         var p = String(c.audData).split('-'), tl = telLink(c);
-        return '<div data-cli="' + esc(c.id) + '"><div class="dia"><b>' + p[2] + '</b><span>' + MES[+p[1] - 1] + '</span></div><div class="info"><b>' + esc(c.nome) + '</b><span>' + quando(c.audData) + (c.audHora ? ' · ' + esc(c.audHora) : '') + ' · ' + (c.online ? 'online (vídeo)' : 'no Fórum') + '</span></div>' +
+        return '<div data-cli="' + esc(c.id) + '"><div class="dia"><b>' + p[2] + '</b><span>' + MES[+p[1] - 1] + '</span></div><div class="info"><b>' + esc(nomeBonito(c.nome)) + '</b><span>' + quando(c.audData) + (c.audHora ? ' · ' + esc(c.audHora) : '') + ' · ' + (c.online ? 'online (vídeo)' : 'no Fórum') + '</span></div>' +
           (tl ? '<a class="lig" href="' + tl + '"><svg><use href="#i-fone"/></svg>Ligar</a>' : '') + '</div>';
       }).join('') + '</div>' : '<div class="vazio">Nenhuma audiência marcada para os seus clientes agora.</div>') +
       (cl.length ? '' : '<div class="vazio" style="margin-top:12px">' + (navigator.onLine === false && !painel ? 'Sem internet: o painel aparece quando o celular tiver sinal.' : 'Os clientes que você indicar aparecem aqui, com a situação de cada um.') + '</div>') +
@@ -1558,10 +1569,10 @@ html[data-tema] body .gp-faixa-t span{font-size:13px!important;font-weight:600!i
     var cl = clientesPainel();
     var nG = function(g){ return cl.filter(function(c){ return noGrupo(c, g); }).length; };
     var resumo = '<div class="gp-faixa cli-resumo"><div class="gp-faixa-t"><span>' + (quem && quem.gestor ? 'Clientes do escritório' : 'Seus clientes') + ' · ' + cl.length + '</span><img src="img/logo-rl-icone.png" alt=""></div><div class="gp-faixa-n">' +
-      [['preparo', 'Preparação'], ['protocolado', 'Aguardando'], ['marcada', 'Audiência'], ['ganharam', 'Ganharam']].map(function(g){ return '<button type="button" data-cg="' + g[0] + '"><b>' + nG(g[0]) + '</b><span>' + g[1] + '</span></button>'; }).join('') + '</div></div>';
+      [['preparo', 'Preparação'], ['protocolado', 'Aguardando'], ['marcada', 'Audiência'], ['ganharam', 'Ganharam']].map(function(g){ return '<button type="button" data-cg="' + g[0] + '"' + (filtroCli === g[0] ? ' class="on"' : '') + '><b>' + nG(g[0]) + '</b><span>' + g[1] + '</span></button>'; }).join('') + '</div></div>';
     $('vista').innerHTML = resumo +
-      '<label class="busca"><svg><use href="#i-busca"/></svg><input id="busca-cli" placeholder="Buscar cliente pelo nome" value="' + esc(buscaCli) + '" autocomplete="off"></label>' +
-      '<div class="chips" id="chips">' + GRUPOS.map(function(g){ var n = cl.filter(function(c){ return noGrupo(c, g[0]); }).length; return (n || g[0] === 'todos' || g[0] === filtroCli) ? '<button type="button" data-g="' + g[0] + '" aria-pressed="' + (filtroCli === g[0]) + '">' + g[1] + '<b>' + n + '</b></button>' : ''; }).join('') + '</div>' +
+      '<div class="cli-filtro"><label class="busca"><svg><use href="#i-busca"/></svg><input id="busca-cli" placeholder="Buscar pelo nome" value="' + esc(buscaCli) + '" autocomplete="off"></label>' +
+      '<label class="cli-sel"><select id="chips" aria-label="Mostrar">' + GRUPOS.map(function(g){ var n = cl.filter(function(c){ return noGrupo(c, g[0]); }).length; return (n || g[0] === 'todos' || g[0] === filtroCli) ? '<option value="' + g[0] + '"' + (filtroCli === g[0] ? ' selected' : '') + '>' + g[1] + ' (' + n + ')</option>' : ''; }).join('') + '</select></label></div>' +
       (buscaProsp ? '<button type="button" class="filtro-prosp" id="tira-prosp">Só de ' + esc(buscaProsp) + ' · mostrar todos ×</button>' : '') +
       '<div id="lista-cli"></div><div id="fila"></div>';
     if ($('tira-prosp')) $('tira-prosp').onclick = function(){ buscaProsp = ''; vistaClientes(); };
@@ -1572,13 +1583,13 @@ html[data-tema] body .gp-faixa-t span{font-size:13px!important;font-weight:600!i
         var k = etapaCli(c), e = ETP[k], sub = k === 'marcada' ? dataBR(c.audData) + (c.audHora ? ' · ' + c.audHora : '') + ' · ' + quando(c.audData) : c.cadastro ? 'indicado em ' + dataBR(c.cadastro) : '';
         var fl = faltas(c);
         if (c.prosp) sub = (sub ? sub + ' · ' : '') + c.prosp;
-        return '<div data-cli="' + esc(c.id) + '"><i class="' + (fl.length ? 'red' : e[1]) + '"></i><span class="nm"><b>' + esc(c.nome || 'Sem nome') + '</b><span>' + esc(sub) + '</span>' + (fl.length ? '<span class="falta-l">Falta: ' + esc(nomesFaltas(fl)) + '</span>' : '') + '</span><small>' + e[0] + '</small></div>';
+        return '<div data-cli="' + esc(c.id) + '"><i class="' + (fl.length ? 'red' : e[1]) + '"></i><span class="nm"><b>' + esc(nomeBonito(c.nome) || 'Sem nome') + '</b><span>' + esc(sub) + '</span>' + (fl.length ? '<span class="falta-l">Falta: ' + esc(nomesFaltas(fl)) + '</span>' : '') + '</span><small>' + e[0] + '</small></div>';
       }).join('') + '</div>' : '<div class="vazio">' + (cl.length ? 'Nenhum cliente neste filtro.' : navigator.onLine === false && !painel ? 'Sem internet: a lista aparece quando o celular tiver sinal.' : 'Você ainda não tem clientes no sistema. Os cadastros enviados aparecem aqui.') + '</div>');
     }
     desenhar();
     $('busca-cli').addEventListener('input', function(){ buscaCli = this.value; desenhar(); });
     Array.prototype.forEach.call(document.querySelectorAll('[data-cg]'), function(b){ b.onclick = function(){ filtroCli = filtroCli === b.dataset.cg ? 'todos' : b.dataset.cg; vistaClientes(); }; });
-    $('chips').addEventListener('click', function(e){ var b = e.target.closest('[data-g]'); if (!b) return; filtroCli = b.dataset.g; Array.prototype.forEach.call(this.children, function(x){ x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); }); desenhar(); });
+    $('chips').addEventListener('change', function(){ filtroCli = this.value; desenhar(); Array.prototype.forEach.call(document.querySelectorAll('[data-cg]'), function(b){ b.classList.toggle('on', b.dataset.cg === filtroCli); }); });
     $('lista-cli').addEventListener('click', function(e){ var c = e.target.closest('[data-cli]'); if (c) fichaCli(c.dataset.cli); });
     mostrarFila();
   }
@@ -1596,7 +1607,7 @@ html[data-tema] body .gp-faixa-t span{font-size:13px!important;font-weight:600!i
     ];
     var atual = passos.findIndex(function(p){ return !p.ok && !p.ruim; });
     var f = document.createElement('div'); f.className = 'folha';
-    f.innerHTML = '<div><div class="puxa"></div><h3>' + esc(c.nome) + '</h3><div class="sub">' + ETP[k][0] + (c.contato ? ' · ' + esc(c.contato) : '') + '</div>' +
+    f.innerHTML = '<div><div class="puxa"></div><h3>' + esc(nomeBonito(c.nome)) + '</h3><div class="sub">' + ETP[k][0] + (c.contato ? ' · ' + esc(c.contato) : '') + '</div>' +
       ((tl || zp) ? '<div class="acoes">' + (tl ? '<a class="lig" href="' + tl + '"><svg><use href="#i-fone"/></svg>Ligar</a>' : '') + (zp ? '<a class="lig" href="' + zp + '" target="_blank" rel="noopener">WhatsApp</a>' : '') + '</div>' : '') +
       (faltas(c).length ? '<div class="falta-box"><b>Faltam documentos</b><span>' + esc(nomesFaltas(faltas(c))) + '</span>' + (c.temPasta !== false ? '<button type="button" class="enviar" data-completar style="height:50px;font-size:16px;margin-top:10px">Completar documentos</button>' : '<span>O escritório ainda está criando a pasta deste cliente.</span>') + '</div>' : '') +
       '<ol class="tempo">' + passos.map(function(p, i){
@@ -2317,7 +2328,7 @@ html[data-tema] body .gp-faixa-t span{font-size:13px!important;font-weight:600!i
           : noSis ? ['ok', 'No sistema ✓']
           : lista ? ['red', 'Não chegou ao sistema'] : ['warn', 'Conferindo…'];
         var perdido = !e && !comp && lista && !noSis;
-        return '<div data-envio="' + esc(x.id) + '"' + (e ? ' data-pend="' + esc(x.id) + '"' : '') + (perdido ? ' data-perdido="' + esc(x.id) + '"' : '') + '><i class="' + st[0] + '"></i><span style="min-width:0"><b style="display:block;font-weight:600;overflow-wrap:anywhere">' + esc(x.cliente || 'Sem nome') + '</b><span style="font-size:13px;color:var(--ink2)">' + dt(x.criado) + '</span></span><small>' + st[1] + '</small></div>';
+        return '<div data-envio="' + esc(x.id) + '"' + (e ? ' data-pend="' + esc(x.id) + '"' : '') + (perdido ? ' data-perdido="' + esc(x.id) + '"' : '') + '><i class="' + st[0] + '"></i><span style="min-width:0"><b style="display:block;font-weight:600;overflow-wrap:anywhere">' + esc(nomeBonito(x.cliente) || 'Sem nome') + '</b><span style="font-size:13px;color:var(--ink2)">' + dt(x.criado) + '</span></span><small>' + st[1] + '</small></div>';
       }).join('') + '</div>' + (pend ? '<div class="barra" style="position:static;padding:10px 0 0;background:none"><button class="enviar" id="reenviar" style="background:var(--warn);height:52px;font-size:17px">Enviar agora</button></div>' : '') : '';
       if ($('fila')) $('fila').onclick = function(ev){
         var pr = ev.target.closest('[data-perdido]');
@@ -2353,7 +2364,7 @@ html[data-tema] body .gp-faixa-t span{font-size:13px!important;font-weight:600!i
     var ET = { sem_protocolo: ['warn', 'Preparando a ação'], protocolado: ['blue', 'Ação protocolada'], audiencia: ['ok', 'Audiência marcada'] };
     $('meus').innerHTML = '<div class="sec">Andamento no escritório · ' + l.length + '</div><div class="lista">' + l.slice(0, 30).map(function(c){
       var e = ET[c.etapa] || ET.sem_protocolo;
-      return '<div><i class="' + e[0] + '"></i>' + esc(c.nome) + '<small>' + e[1] + '</small></div>';
+      return '<div><i class="' + e[0] + '"></i>' + esc(nomeBonito(c.nome)) + '<small>' + e[1] + '</small></div>';
     }).join('') + '</div>';
   }
 
