@@ -3535,21 +3535,21 @@ section.vw-dash{gap:10px!important}
     if (cadAberto[ln.dataset.linha]) delete cadAberto[ln.dataset.linha]; else cadAberto[ln.dataset.linha] = 1;
     renderCad();
   });
-  /* Antigos x Novos (pela origem): antigos vieram da planilha, antes do aplicativo; novos entraram pelo aplicativo ou pelo botão Novo cliente */
-  function ehNovo(r){ return r.origem === 'campo' || r.origem === 'sistema'; }
+  /* Antigos x Novos: antigo é só o processo que veio da planilha antiga; toda outra ação é nova (a mesma pessoa pode ter várias ações) */
+  function ehNovo(r){ return !/planilha/i.test(String(r.origem || '')); }
   function todasRows(){ return state.todos || state.rows || []; }
-  state.base = (function(){ try { return localStorage.getItem('qe-base') || 'todos'; } catch(e){ return 'todos'; } })();
+  state.base = 'todos';   // sempre abre em Todos, para não esconder ninguém sem perceber
   function filtroBase(l){ l = l || []; return state.base === 'novos' ? l.filter(ehNovo) : state.base === 'antigos' ? l.filter(function(r){ return !ehNovo(r); }) : l; }
   function pintarBase(){
     var box = $('base-seg'); if (!box) return;
     var t = todasRows(), nN = t.filter(ehNovo).length;
     box.innerHTML = [['todos', 'Todos', t.length], ['antigos', 'Antigos', t.length - nN], ['novos', 'Novos', nN]].map(function(o){
-      return '<button type="button" data-base="' + o[0] + '" aria-pressed="' + (state.base === o[0]) + '" title="' + (o[0] === 'antigos' ? 'Vieram da planilha, antes do aplicativo' : o[0] === 'novos' ? 'Entraram pelo aplicativo ou pelo botão Novo cliente' : 'Todos os clientes') + '">' + o[1] + '<b>' + o[2] + '</b></button>';
+      return '<button type="button" data-base="' + o[0] + '" aria-pressed="' + (state.base === o[0]) + '" title="' + (o[0] === 'antigos' ? 'Processos que vieram da planilha antiga' : o[0] === 'novos' ? 'Ações novas (aplicativo, Novo cliente ou lançadas no sistema), mesmo de quem já foi cliente' : 'Todos os clientes') + '">' + o[1] + '<b>' + o[2] + '</b></button>';
     }).join('');
   }
   document.addEventListener('click', function(e){
     var b = e.target.closest('[data-base]'); if (!b) return;
-    state.base = b.dataset.base; try { localStorage.setItem('qe-base', state.base); } catch(err){}
+    state.base = b.dataset.base;
     state.rows = filtroBase(todasRows()); state.limit = 100; render();
   });
   function render(){ pintarBase(); renderAud(); renderCad(); renderStats(); renderPauta(); renderList(); renderLista(); renderPos(); renderRet(); renderProsp(); renderEquipe(); renderContest(); renderBusca(); renderClSessao(); renderFin(); if (typeof AV !== 'undefined' && AV && !AV.rodando) avMontar(); }
