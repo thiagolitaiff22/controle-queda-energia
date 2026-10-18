@@ -890,6 +890,17 @@ html[data-tema] body .sair{background:var(--card)!important;border:1px solid var
 html[data-tema] body .pp-cards{background:var(--card)!important;border-color:var(--line)!important}
 html[data-tema] body .pp + .pp{border-top-color:var(--line)!important}
 html[data-tema] body .eq-novo{border-color:var(--line2)!important;color:var(--kit)!important}
+
+/* sem caixa alta: títulos de seção com só a primeira letra maiúscula */
+html[data-tema] body .rot,html[data-tema] body .gp-sec,html[data-tema] body #gp-v .rot,html[data-tema] body #pag-v .rot,html[data-tema] body #eq-v .rot{text-transform:none!important;letter-spacing:0!important;font-size:13.5px!important;font-weight:600!important;color:var(--ink2)!important}
+html[data-tema] body .gp-faixa-t span,html[data-tema] body .kpi small,html[data-tema] body .auds .dia span,html[data-tema] body .doc .estrela{text-transform:none!important;letter-spacing:0!important}
+html[data-tema] body .gp-faixa-t span{font-size:13px!important;font-weight:600!important;color:rgba(255,255,255,.85)!important}
+/* resumo da aba Clientes (4 números) */
+.cli-resumo{margin-bottom:14px}
+.cli-resumo .gp-faixa-n{grid-template-columns:repeat(4,1fr)!important}
+.cli-resumo .gp-faixa-n button + button{padding-left:9px!important}
+.cli-resumo .gp-faixa-n b{font-size:19px!important}
+.cli-resumo .gp-faixa-n span{font-size:11px!important}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><script>try{var t=localStorage.getItem("campo_tema");if(!t)t="dark";document.documentElement.setAttribute("data-tema",t);}catch(e){document.documentElement.setAttribute("data-tema","light");}</script>
 </head>
@@ -928,7 +939,7 @@ html[data-tema] body .eq-novo{border-color:var(--line2)!important;color:var(--ki
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 48;
+  var APP_VERSAO = 49;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
@@ -1109,7 +1120,12 @@ html[data-tema] body .eq-novo{border-color:var(--line2)!important;color:var(--ki
     fotos = {}; completando = null; lsSet('campo_completando', ''); telaInicial();
   }
   // no aplicativo o nome do cliente aparece sempre em maiúsculas (no sistema fica 'Eliel dos Santos')
-  function maiusculas(d){ if (d && d.clientes) d.clientes.forEach(function(c){ if (c.nome) c.nome = String(c.nome).toUpperCase(); }); return d; }
+  function nomeBonito(n){
+    return String(n || '').toLowerCase().replace(/\s+/g, ' ').trim().split(' ').map(function(p, i){
+      return i > 0 && /^(da|de|do|das|dos|e)$/.test(p) ? p : p.charAt(0).toUpperCase() + p.slice(1);
+    }).join(' ');
+  }
+  function maiusculas(d){ if (d && d.clientes) d.clientes.forEach(function(c){ if (c.nome) c.nome = nomeBonito(c.nome); }); return d; }
   try { painel = maiusculas(JSON.parse(lsGet('campo_painel') || 'null')); } catch(e){}
   function montarCasca(){
     if ($('vista')) return;
@@ -1267,7 +1283,7 @@ html[data-tema] body .eq-novo{border-color:var(--line2)!important;color:var(--ki
       '<div class="chips" id="pag-f">' + [['apagar', 'A pagar'], ['pagas', 'Pagas'], ['todas', 'Todas']].map(function(f){ return '<button type="button" data-f="' + f[0] + '" aria-pressed="' + (gestFiltro === f[0]) + '">' + f[1] + '</button>'; }).join('') + '</div>' +
       (l.length ? '<div class="lista pag-l">' + l.map(function(c){
         var dois = c.saiu || c.p2;   // 2ª parte só aparece quando o processo sai (cliente recebeu)
-        return '<div><span class="nm"><b>' + esc(c.nome || '') + '</b><span>' + (c.protocolo ? 'protocolo ' + dataBR(c.protocolo) : esc(c.processo || '')) + '</span></span>' +
+        return '<div><span class="nm"><b>' + esc(nomeBonito(c.nome)) + '</b><span>' + (c.protocolo ? 'protocolo ' + dataBR(c.protocolo) : esc(c.processo || '')) + '</span></span>' +
           '<button type="button" class="pg-b' + (c.p1 ? ' ok' : '') + '" data-c="' + esc(c.id) + '" data-p="1">' + (c.p1 ? '✓ Pago<em>' + dataBR(c.p1) + '</em>' : 'Marcar pago') + '</button>' +
           (dois ? '<button type="button" class="pg-b' + (c.p2 ? ' ok' : '') + '" data-c="' + esc(c.id) + '" data-p="2">' + (c.p2 ? '✓ 2ª parte<em>' + dataBR(c.p2) + '</em>' : '2ª parte<em>saiu: a pagar</em>') + '</button>' : '') + '</div>';
       }).join('') + '</div>' : '<div class="vazio">' + (gestFiltro === 'apagar' ? 'Nada a pagar para ' + esc(primeiroNome(p.nome)) + '.' : 'Nenhuma indicação aqui.') + '</div>');
@@ -1338,7 +1354,7 @@ html[data-tema] body .eq-novo{border-color:var(--line2)!important;color:var(--ki
       '<div class="completar"><small>Completar documentos de</small><b>' + esc(completando.nome) + '</b><span>Tire só as fotos que estavam faltando e envie.</span><button type="button" id="cancelar-comp">Cancelar</button></div>' :
       (quem && quem.gestor ? '<div class="rot" style="margin-top:0">Cadastro para</div><label class="fone atribuir"><svg viewBox="0 0 24 24"><use href="#i-pessoa"/></svg><select id="atribuir">' + prospsGestor().map(function(p){ return '<option value="' + esc(p.id) + '"' + (p.id === atribuidoA() ? ' selected' : '') + '>' + esc(p.nome) + (p.id === quem.prospId ? ' (eu)' : '') + '</option>'; }).join('') + '</select></label>' : '') +
       '<div class="rot"' + (quem && quem.gestor ? '' : ' style="margin-top:0"') + '>Dados do cliente</div><div class="dados">' +
-        '<label class="fone' + (lsGet('campo_nome').trim() ? '' : ' falta') + '" id="l-nome"><svg viewBox="0 0 24 24"><use href="#i-pessoa"/></svg><input id="nome" autocomplete="off" autocapitalize="characters" placeholder="Nome completo do cliente" value="' + esc(lsGet('campo_nome')) + '"></label>' +
+        '<label class="fone' + (lsGet('campo_nome').trim() ? '' : ' falta') + '" id="l-nome"><svg viewBox="0 0 24 24"><use href="#i-pessoa"/></svg><input id="nome" autocomplete="off" autocapitalize="words" placeholder="Nome completo do cliente" value="' + esc(lsGet('campo_nome')) + '"></label>' +
         CAMPOS_DADOS.map(function(c){
           var v = lsGet('campo_' + c.k);
           return '<label class="fone' + (campoOk(c, v) ? '' : ' falta') + '" id="l-' + c.k + '"><svg viewBox="0 0 24 24"><use href="#' + c.ic + '"/></svg><input id="' + c.k + '" autocomplete="off"' + (c.num ? ' inputmode="numeric"' : ' autocapitalize="words"') + ' placeholder="' + c.ph + '" value="' + esc(v) + '"></label>';
@@ -1362,7 +1378,7 @@ html[data-tema] body .eq-novo{border-color:var(--line2)!important;color:var(--ki
     $('fone').addEventListener('blur', function(){ if (this.value.replace(/\D/g, '') === '55'){ this.value = ''; lsSet('campo_fone', ''); } });
     $('fone').addEventListener('input', function(){ this.value = mascaraTel(this.value); lsSet('campo_fone', this.value); });
     $('nome').addEventListener('input', function(){ lsSet('campo_nome', this.value); $('l-nome').classList.toggle('falta', !this.value.trim()); });
-    $('nome').addEventListener('blur', function(){ this.value = this.value.replace(/\s+/g, ' ').trim().toUpperCase(); lsSet('campo_nome', this.value); });
+    $('nome').addEventListener('blur', function(){ this.value = nomeBonito(this.value); lsSet('campo_nome', this.value); });
     CAMPOS_DADOS.forEach(function(c){
       var el = $(c.k);
       el.addEventListener('input', function(){
@@ -1540,7 +1556,10 @@ html[data-tema] body .eq-novo{border-color:var(--line2)!important;color:var(--ki
   var buscaProsp = '';
   function vistaClientes(){
     var cl = clientesPainel();
-    $('vista').innerHTML =
+    var nG = function(g){ return cl.filter(function(c){ return noGrupo(c, g); }).length; };
+    var resumo = '<div class="gp-faixa cli-resumo"><div class="gp-faixa-t"><span>' + (quem && quem.gestor ? 'Clientes do escritório' : 'Seus clientes') + ' · ' + cl.length + '</span><img src="img/logo-rl-icone.png" alt=""></div><div class="gp-faixa-n">' +
+      [['preparo', 'Preparação'], ['protocolado', 'Aguardando'], ['marcada', 'Audiência'], ['ganharam', 'Ganharam']].map(function(g){ return '<button type="button" data-cg="' + g[0] + '"><b>' + nG(g[0]) + '</b><span>' + g[1] + '</span></button>'; }).join('') + '</div></div>';
+    $('vista').innerHTML = resumo +
       '<label class="busca"><svg><use href="#i-busca"/></svg><input id="busca-cli" placeholder="Buscar cliente pelo nome" value="' + esc(buscaCli) + '" autocomplete="off"></label>' +
       '<div class="chips" id="chips">' + GRUPOS.map(function(g){ var n = cl.filter(function(c){ return noGrupo(c, g[0]); }).length; return (n || g[0] === 'todos' || g[0] === filtroCli) ? '<button type="button" data-g="' + g[0] + '" aria-pressed="' + (filtroCli === g[0]) + '">' + g[1] + '<b>' + n + '</b></button>' : ''; }).join('') + '</div>' +
       (buscaProsp ? '<button type="button" class="filtro-prosp" id="tira-prosp">Só de ' + esc(buscaProsp) + ' · mostrar todos ×</button>' : '') +
@@ -1558,6 +1577,7 @@ html[data-tema] body .eq-novo{border-color:var(--line2)!important;color:var(--ki
     }
     desenhar();
     $('busca-cli').addEventListener('input', function(){ buscaCli = this.value; desenhar(); });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-cg]'), function(b){ b.onclick = function(){ filtroCli = filtroCli === b.dataset.cg ? 'todos' : b.dataset.cg; vistaClientes(); }; });
     $('chips').addEventListener('click', function(e){ var b = e.target.closest('[data-g]'); if (!b) return; filtroCli = b.dataset.g; Array.prototype.forEach.call(this.children, function(x){ x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); }); desenhar(); });
     $('lista-cli').addEventListener('click', function(e){ var c = e.target.closest('[data-cli]'); if (c) fichaCli(c.dataset.cli); });
     mostrarFila();
