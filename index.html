@@ -1533,6 +1533,30 @@ section.vw-dash{gap:10px!important}
 .pag-quando{text-align:right}
 .pag-list .empty{padding:24px 20px}
 @media (max-width:600px){.pag-row{grid-template-columns:minmax(0,1fr) auto auto}}
+/* chave Antigos x Novos */
+.base-seg{display:flex;border:1px solid var(--line-2);border-radius:10px;overflow:hidden;align-self:center;background:var(--panel)}
+.base-seg button{border:0;background:none;padding:7px 14px;font:inherit;font-size:13px;font-weight:500;color:var(--ink-2);cursor:pointer;display:flex;gap:7px;align-items:center}
+.base-seg button + button{border-left:1px solid var(--line-2)}
+.base-seg button b{font-size:11.5px;font-weight:600;padding:1px 7px;border-radius:999px;background:var(--soft);color:var(--ink-2)}
+.base-seg button[aria-pressed="true"]{background:#0f2f7a;color:#fff;font-weight:600}
+.base-seg button[aria-pressed="true"] b{background:rgba(255,255,255,.18);color:#fff}
+/* barra de cima com a cara do aplicativo */
+#app .topnav{background:linear-gradient(90deg,#0a1a40,#0f2f7a);border-bottom:0;backdrop-filter:none;color:#fff;box-shadow:0 2px 10px rgba(10,26,64,.25)}
+#app .topnav .brand b{color:#fff}
+#app .topnav .brand span{color:#b9c8f0}
+#app .topnav .rl-logo{width:36px;height:36px;border-radius:11px;background:linear-gradient(140deg,#1d4fd7,#0f2f7a);display:grid;place-items:center;box-shadow:inset 0 0 0 1px rgba(255,255,255,.18),0 4px 12px rgba(0,0,0,.25);overflow:hidden}
+#app .topnav .rl-logo img{height:21px;width:auto;display:block}
+#app .topnav .nav button{color:rgba(255,255,255,.78);background:none}
+#app .topnav .nav button:hover{background:rgba(255,255,255,.08);color:#fff}
+#app .topnav .nav button[aria-selected="true"]{background:rgba(255,255,255,.16);color:#fff;font-weight:600}
+#app .topnav #sync{color:#b9c8f0}
+#app .topnav .theme-btn{color:#fff;background:transparent;border-color:rgba(255,255,255,.25)}
+#app .topnav .theme-btn:hover{background:rgba(255,255,255,.1)}
+#app .topnav #btn-novo{background:#fff;color:#0f2f7a;border-color:#fff}
+#app .topnav .side-foot{border-left-color:rgba(255,255,255,.2)}
+#app .topnav .side-foot b{color:#fff}
+#app .topnav .side-foot .linkbtn{color:#b9c8f0}
+#app .topnav .av{background:rgba(255,255,255,.16);color:#fff}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -1602,7 +1626,7 @@ section.vw-dash{gap:10px!important}
 
 <div class="app" id="app" hidden>
   <header class="topnav">
-    <div class="brand"><div class="logo"><svg class="i"><use href="#i-bolt"/></svg></div><div><b>Queda de Energia</b><span>Rodrigues Litaiff Advogados</span></div></div>
+    <div class="brand"><div class="logo rl-logo"><img src="img/logo-rl-icone.png" alt="RL"></div><div><b>Queda de Energia</b><span>Rodrigues Litaiff Advogados</span></div></div>
     <nav class="nav" role="tablist" aria-orientation="horizontal">
       <button class="tab" role="tab" id="tab-cad" aria-selected="false" type="button" title="Cadastro"><svg class="i"><use href="#i-plus"/></svg><span>Cadastro</span></button>
       <button class="tab" role="tab" id="tab-novo" aria-selected="false" type="button" title="Novo cliente"><svg class="i"><use href="#i-users"/></svg><span>Novo cliente</span></button>
@@ -1622,7 +1646,7 @@ section.vw-dash{gap:10px!important}
   </header>
   <div class="main">
     <div class="content">
-      <div class="ph"><div><h1 id="pg-tit">Clientes</h1><p id="pg-sub">Controle geral e avisos · Ações contra a Âmbar Energia, Alvarães/AM</p></div></div>
+      <div class="ph"><div><h1 id="pg-tit">Clientes</h1><p id="pg-sub">Controle geral e avisos · Ações contra a Âmbar Energia, Alvarães/AM</p></div><div class="base-seg" id="base-seg" role="group" aria-label="Antigos ou novos"></div></div>
 
   <div class="banner" id="banner" hidden></div>
 
@@ -2553,7 +2577,7 @@ section.vw-dash{gap:10px!important}
   var petFila = false;
   function peticoesAutomaticas(){
     if (petFila) return;
-    var r = state.rows.filter(noCadastro).filter(function(x){
+    var r = todasRows().filter(noCadastro).filter(function(x){
       return x.pastaId && !faltaPeticao(x).length && !petGerando[x.id] && petFalhou[x.id] !== chavePeticao(x) && (!x.peticaoUrl || x.peticaoChave !== chavePeticao(x));
     })[0];
     if (!r) return;
@@ -2562,13 +2586,13 @@ section.vw-dash{gap:10px!important}
   }
   document.addEventListener('click', function(e){
     var b = e.target.closest('[data-act="peticao"]'); if (!b) return;
-    var r = state.rows.filter(function(x){ return x.id === b.dataset.id; })[0]; if (r){ delete petFalhou[r.id]; gerarPeticao(r, false); }
+    var r = todasRows().filter(function(x){ return x.id === b.dataset.id; })[0]; if (r){ delete petFalhou[r.id]; gerarPeticao(r, false); }
   });
   // planilha do Cadastro: endereço, UC e período editados na própria linha (salva ao sair do campo)
   document.addEventListener('focusout', function(e){ if (e.target.classList && e.target.classList.contains('cel-in')) setTimeout(function(){ if (cadPendente) renderCad(); }, 0); });
   document.addEventListener('change', async function(e){
     var el = e.target.closest('[data-cad-campo]'); if (!el) return;
-    var r = state.rows.filter(function(x){ return x.id === el.dataset.id; })[0]; if (!r) return;
+    var r = todasRows().filter(function(x){ return x.id === el.dataset.id; })[0]; if (!r) return;
     var campo = el.dataset.cadCampo, v = el.value.replace(/\s+/g, ' ').trim();
     if (campo === 'periodo') v = v.toUpperCase();
     if (campo === 'uc') v = normUC(v);
@@ -2594,7 +2618,7 @@ section.vw-dash{gap:10px!important}
   // cliente sem pasta: acha a pasta com o nome dele no Drive (ou cria) e liga ao cadastro
   document.addEventListener('click', async function(e){
     var b = e.target.closest('[data-pasta-cad]'); if (!b) return;
-    var r = state.rows.filter(function(x){ return x.id === b.dataset.pastaCad; })[0]; if (!r) return;
+    var r = todasRows().filter(function(x){ return x.id === b.dataset.pastaCad; })[0]; if (!r) return;
     b.disabled = true;
     try {
       var u = await ensureFolder(r.id, r.nome, true);
@@ -2606,7 +2630,7 @@ section.vw-dash{gap:10px!important}
   // Cadastro: cliente sem pasta ligada → procura no Drive a pasta com o nome dele e liga (só procura, nunca cria). Um por vez, uma vez por sessão.
   var pastasProcuradas = {}, filaPastas = Promise.resolve();
   function ligarPastasQueFaltam(){
-    (state.rows || []).filter(function(r){ return noCadastro(r) && !r.pastaUrl && String(r.nome || '').trim() && !pastasProcuradas[r.id]; }).forEach(function(r){
+    todasRows().filter(function(r){ return noCadastro(r) && !r.pastaUrl && String(r.nome || '').trim() && !pastasProcuradas[r.id]; }).forEach(function(r){
       pastasProcuradas[r.id] = true;
       filaPastas = filaPastas.then(function(){ return ensureFolder(r.id, r.nome, true); }).catch(function(){});
     });
@@ -3316,7 +3340,7 @@ section.vw-dash{gap:10px!important}
       if (!nome) return falha('Informe o nome completo do cliente.', $('nc-nome'));
       if (cpf && !cpfValido(cpf)) return falha('Este CPF não existe. Confira os números.', $('nc-cpf'));
       if (tel && !/^\+55 \(\d{2}\) \d{4,5}-\d{4}$/.test(tel)) return falha('O telefone está incompleto. Use DDD e número.', $('nc-tel'));
-      var dig = cpf.replace(/\D/g, ''), dup = dig ? state.rows.filter(function(x){ return String(x.cpf || '').replace(/\D/g, '') === dig; })[0] : null;
+      var dig = cpf.replace(/\D/g, ''), dup = dig ? todasRows().filter(function(x){ return String(x.cpf || '').replace(/\D/g, '') === dig; })[0] : null;
       // mesmo CPF pode ter várias ações: não bloqueia, só avisa depois de salvar
       erro.hidden = true;
       var agora = new Date().toISOString();
@@ -3333,7 +3357,7 @@ section.vw-dash{gap:10px!important}
         toast('Cliente cadastrado: ' + data.nome + (dup ? ' (este CPF já tinha outra ação: ' + dup.nome + ')' : '') + '. Criando a pasta no Drive…');
         f.reset(); ncDlg.close();
         // mesma pessoa com outra ação: pasta própria ("NOME - 2ª AÇÃO"), para não misturar documentos nem trocar a petição da outra ação
-        var nAcoes = dig ? state.rows.filter(function(x){ return x.id !== id && String(x.cpf || '').replace(/D/g, '') === dig; }).length : 0;
+        var nAcoes = dig ? todasRows().filter(function(x){ return x.id !== id && String(x.cpf || '').replace(/\D/g, '') === dig; }).length : 0;
         var nomePasta = nAcoes ? data.nome + ' - ' + (nAcoes + 1) + 'ª AÇÃO' : data.nome;
         ensureFolder(id, nomePasta).then(function(u){ if (u) toast('Pasta criada no Drive: ' + nomePasta); }).catch(function(e2){ toast('Cliente salvo, mas a pasta não foi criada: ' + driveErr(e2)); });
       } catch(err){ falha(errMsg(err)); }
@@ -3526,7 +3550,24 @@ section.vw-dash{gap:10px!important}
     if (cadAberto[ln.dataset.linha]) delete cadAberto[ln.dataset.linha]; else cadAberto[ln.dataset.linha] = 1;
     renderCad();
   });
-  function render(){ renderAud(); renderCad(); renderStats(); renderPauta(); renderList(); renderLista(); renderPos(); renderRet(); renderProsp(); renderEquipe(); renderContest(); renderBusca(); renderClSessao(); renderFin(); if (typeof AV !== 'undefined' && AV && !AV.rodando) avMontar(); }
+  /* Antigos x Novos (pela origem): antigos vieram da planilha, antes do aplicativo; novos entraram pelo aplicativo ou pelo botão Novo cliente */
+  function ehNovo(r){ return r.origem === 'campo' || r.origem === 'sistema'; }
+  function todasRows(){ return state.todos || state.rows || []; }
+  state.base = (function(){ try { return localStorage.getItem('qe-base') || 'todos'; } catch(e){ return 'todos'; } })();
+  function filtroBase(l){ l = l || []; return state.base === 'novos' ? l.filter(ehNovo) : state.base === 'antigos' ? l.filter(function(r){ return !ehNovo(r); }) : l; }
+  function pintarBase(){
+    var box = $('base-seg'); if (!box) return;
+    var t = todasRows(), nN = t.filter(ehNovo).length;
+    box.innerHTML = [['todos', 'Todos', t.length], ['antigos', 'Antigos', t.length - nN], ['novos', 'Novos', nN]].map(function(o){
+      return '<button type="button" data-base="' + o[0] + '" aria-pressed="' + (state.base === o[0]) + '" title="' + (o[0] === 'antigos' ? 'Vieram da planilha, antes do aplicativo' : o[0] === 'novos' ? 'Entraram pelo aplicativo ou pelo botão Novo cliente' : 'Todos os clientes') + '">' + o[1] + '<b>' + o[2] + '</b></button>';
+    }).join('');
+  }
+  document.addEventListener('click', function(e){
+    var b = e.target.closest('[data-base]'); if (!b) return;
+    state.base = b.dataset.base; try { localStorage.setItem('qe-base', state.base); } catch(err){}
+    state.rows = filtroBase(todasRows()); state.limit = 100; render();
+  });
+  function render(){ pintarBase(); renderAud(); renderCad(); renderStats(); renderPauta(); renderList(); renderLista(); renderPos(); renderRet(); renderProsp(); renderEquipe(); renderContest(); renderBusca(); renderClSessao(); renderFin(); if (typeof AV !== 'undefined' && AV && !AV.rodando) avMontar(); }
   var clQ = '';
   // stage of each process, derived from what is already recorded (no extra typing)
   var ETAPAS = [
@@ -4724,7 +4765,7 @@ section.vw-dash{gap:10px!important}
   }
   var nomesAcertados = {}, filaNomes = Promise.resolve();
   function acertarNomesDoApp(){
-    (state.rows || []).forEach(function(r){
+    todasRows().forEach(function(r){
       var n = String(r.nome || '');
       if (nomesAcertados[r.id] || !/[A-ZÀ-Ý]{2}/.test(n) || n !== n.toUpperCase()) return;
       nomesAcertados[r.id] = true;
@@ -4733,7 +4774,7 @@ section.vw-dash{gap:10px!important}
   }
   async function deleteRow(id){
     if (state.db){ await col().doc(id).delete(); }
-    else { state.rows = state.rows.filter(function(r){ return r.id !== id; }); render(); }
+    else { state.rows = todasRows().filter(function(r){ return r.id !== id; }); render(); }
   }
   function errMsg(e){
     if (e && (e.code === 'invalid_argument' || e.code === 'permission')) return 'Você não tem permissão para fazer isso. Fale com um administrador.';
@@ -4833,7 +4874,7 @@ section.vw-dash{gap:10px!important}
     var v = $('f-cpf').value, h = $('h-cpf');
     if (digits(v).length < 11){ h.textContent = ''; h.className = 'hint'; return; }
     var ok = cpfValido(v);
-    var dup = state.rows.filter(function(x){ return x.id !== state.editing && digits(x.cpf) === digits(v); })[0];
+    var dup = todasRows().filter(function(x){ return x.id !== state.editing && digits(x.cpf) === digits(v); })[0];
     if (dup){ h.textContent = 'Este CPF já está cadastrado para ' + dup.nome + '. Confira antes de salvar.'; h.className = 'hint bad'; return; }
     h.textContent = ok ? 'CPF válido' : 'CPF inválido: confira os dígitos'; h.className = 'hint ' + (ok ? 'good' : 'bad');
   }
@@ -5913,7 +5954,7 @@ section.vw-dash{gap:10px!important}
     if (f.data === 'admin'){ lhStatus(); rgCarregar(); djStatus(); avMontar(); cpStatus(); clStatus(); }
     function carimbo(){ var n = new Date(); $('sync').textContent = 'Atualizado: ' + n.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ', ' + n.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); }
     function caiu(){ $('sync').textContent = 'Conexão interrompida'; banner('A conexão com a base foi interrompida. Recarregue a página.'); }
-    watchTable('clientes', function(rows){ state.rows = rows; banner(''); carimbo(); render(); acertarNomesDoApp(); ligarPastasQueFaltam(); }, caiu);
+    watchTable('clientes', function(rows){ state.todos = rows; state.rows = filtroBase(rows); banner(''); carimbo(); render(); acertarNomesDoApp(); ligarPastasQueFaltam(); }, caiu);
     watchTable('prospectadores', function(rows){ state.prosp = rows; render(); }, function(){});
     watchTable('equipe', function(rows){
       state.equipe = rows;
