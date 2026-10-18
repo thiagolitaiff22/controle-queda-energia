@@ -1538,25 +1538,11 @@ section.vw-dash{gap:10px!important}
 .base-seg button{border:0;background:none;padding:7px 14px;font:inherit;font-size:13px;font-weight:500;color:var(--ink-2);cursor:pointer;display:flex;gap:7px;align-items:center}
 .base-seg button + button{border-left:1px solid var(--line-2)}
 .base-seg button b{font-size:11.5px;font-weight:600;padding:1px 7px;border-radius:999px;background:var(--soft);color:var(--ink-2)}
-.base-seg button[aria-pressed="true"]{background:#0f2f7a;color:#fff;font-weight:600}
-.base-seg button[aria-pressed="true"] b{background:rgba(255,255,255,.18);color:#fff}
-/* barra de cima com a cara do aplicativo */
-#app .topnav{background:linear-gradient(90deg,#0a1a40,#0f2f7a);border-bottom:0;backdrop-filter:none;color:#fff;box-shadow:0 2px 10px rgba(10,26,64,.25)}
-#app .topnav .brand b{color:#fff}
-#app .topnav .brand span{color:#b9c8f0}
-#app .topnav .rl-logo{width:36px;height:36px;border-radius:11px;background:linear-gradient(140deg,#1d4fd7,#0f2f7a);display:grid;place-items:center;box-shadow:inset 0 0 0 1px rgba(255,255,255,.18),0 4px 12px rgba(0,0,0,.25);overflow:hidden}
+.base-seg button[aria-pressed="true"]{background:var(--soft);color:var(--ink);font-weight:600}
+.base-seg button[aria-pressed="true"] b{background:var(--ink);color:var(--panel)}
+/* barra de cima: neutra como antes, só a logo RL do aplicativo */
+#app .topnav .rl-logo{width:36px;height:36px;border-radius:11px;background:linear-gradient(140deg,#1d4fd7,#0f2f7a);display:grid;place-items:center;box-shadow:0 2px 8px rgba(15,47,122,.25);overflow:hidden}
 #app .topnav .rl-logo img{height:21px;width:auto;display:block}
-#app .topnav .nav button{color:rgba(255,255,255,.78);background:none}
-#app .topnav .nav button:hover{background:rgba(255,255,255,.08);color:#fff}
-#app .topnav .nav button[aria-selected="true"]{background:rgba(255,255,255,.16);color:#fff;font-weight:600}
-#app .topnav #sync{color:#b9c8f0}
-#app .topnav .theme-btn{color:#fff;background:transparent;border-color:rgba(255,255,255,.25)}
-#app .topnav .theme-btn:hover{background:rgba(255,255,255,.1)}
-#app .topnav #btn-novo{background:#fff;color:#0f2f7a;border-color:#fff}
-#app .topnav .side-foot{border-left-color:rgba(255,255,255,.2)}
-#app .topnav .side-foot b{color:#fff}
-#app .topnav .side-foot .linkbtn{color:#b9c8f0}
-#app .topnav .av{background:rgba(255,255,255,.16);color:#fff}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
