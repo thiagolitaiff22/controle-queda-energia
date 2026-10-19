@@ -1555,6 +1555,18 @@ section.vw-dash{gap:10px!important}
 .ret-cont .nq-btn{font-size:12px;color:var(--ink-3)}
 .ret-cont .nq-btn:hover{color:var(--red)}
 .ret-q.nq{color:var(--red)}
+
+/* Cadastro: botão de documentos e escolha completa/falta; etiqueta de renovação */
+.docs-btn{border:0;background:none;font:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:4px;padding:0}
+.docs-btn svg.i{width:13px;height:13px;opacity:.7}
+.docs-btn:hover{text-decoration:underline}
+#dlg-docs .docs-op{display:flex;flex-direction:column;gap:8px;margin:12px 0}
+#dlg-docs .docs-op label{display:grid;grid-template-columns:20px 1fr;column-gap:8px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer}
+#dlg-docs .docs-op label span{grid-column:2;font-size:12.5px;color:var(--ink-2)}
+#dlg-docs .docs-quais{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:4px 0 6px;padding:10px 12px;border:1px dashed var(--line-2);border-radius:10px;font-size:13.5px}
+#dlg-docs .docs-quais label{display:flex;gap:8px;align-items:center;cursor:pointer}
+.tag-renov{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:600;color:#2563eb;background:rgba(37,99,235,.12);text-decoration:none;vertical-align:1px}
+a.tag-renov:hover{background:rgba(37,99,235,.2)}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -2474,7 +2486,18 @@ section.vw-dash{gap:10px!important}
   document.addEventListener('blur', function(e){ if (e.target && e.target.id === 'f-rg' && e.target.value.trim()) e.target.value = formatarRG(e.target.value); }, true);
   // documentos que o prospectador não fotografou (o aplicativo grava em faltaDocs)
   var DOC_FALTA = { procuracao: 'Procuração', rg_frente: 'RG', cpf: 'CPF', luz: 'Talão de luz', cliente: 'Foto do cliente' };
-  function faltaDocs(r){ return (Array.isArray(r.faltaDocs) ? r.faltaDocs : []).filter(function(k){ return DOC_FALTA[k]; }); }
+  // renovação: o mesmo CPF já teve ação protocolada antes desta (os documentos pessoais estão na pasta da ação anterior)
+  var renovCache = { arr: null, map: null };
+  function acaoAnterior(r){
+    var t = todasRows();
+    if (renovCache.arr !== t){ renovCache.arr = t; renovCache.map = {}; t.forEach(function(x){ var d = digits(x.cpf); if (d.length === 11 && !x.descartado && String(x.processo || '').trim()) (renovCache.map[d] = renovCache.map[d] || []).push(x); }); }
+    var d = digits(r.cpf); if (d.length !== 11) return null;
+    var ref = String(r.protocolo || r.criadoEm || '9999').slice(0, 10);
+    return (renovCache.map[d] || []).filter(function(x){ return x.id !== r.id && String(x.protocolo || x.criadoEm || '').slice(0, 10) < ref; })
+      .sort(function(a, b){ return String(b.protocolo || '').localeCompare(String(a.protocolo || '')); })[0] || null;
+  }
+  function ehRenovacao(r){ return r.renovacao === true || !!acaoAnterior(r); }
+  function faltaDocs(r){ var l = (Array.isArray(r.faltaDocs) ? r.faltaDocs : []).filter(function(k){ return DOC_FALTA[k]; }); return ehRenovacao(r) ? l.filter(function(k){ return k === 'luz'; }) : l; }
   // coluna Documentos do Cadastro: o que o prospectador ainda precisa mandar, um por etiqueta
   // "completa" só com prova: o aplicativo mandou tudo, ou o escritório conferiu a pasta e marcou na ficha
   function docsConferidos(r){ return !faltaDocs(r).length && (r.docsCompletos === true || (r.origem === 'campo' && Array.isArray(r.faltaDocs))); }
@@ -3428,11 +3451,50 @@ section.vw-dash{gap:10px!important}
   }
   // documentos em uma palavra (cabe na planilha); o que falta aparece ao passar o mouse
   function docCurto(r){
-    var f = faltaDocs(r);
-    if (f.length) return '<span class="pet-st erro-t" title="Faltam: ' + esc(faltaTexto(r)) + '">Faltam ' + f.length + '</span>';
-    if (docsConferidos(r)) return '<span class="pet-st ok" style="cursor:default;text-decoration:none">Completos</span>';
-    return '<span class="pet-st aviso-t" title="Ninguém conferiu a pasta ainda">Conferir</span>';
+    var f = faltaDocs(r), t, cls;
+    if (f.length){ t = 'Faltam ' + f.length; cls = 'erro-t'; }
+    else if (docsConferidos(r)){ t = 'Completos'; cls = 'ok'; }
+    else { t = 'Conferir'; cls = 'aviso-t'; }
+    return '<button type="button" class="pet-st docs-btn ' + cls + '" data-docs-menu="' + esc(r.id) + '" title="' + esc(f.length ? 'Faltam: ' + faltaTexto(r) + '. ' : '') + 'Clique para marcar completa ou o que falta">' + t + '<svg class="i"><use href="#i-chev"/></svg></button>';
   }
+  /* escolher: documentação completa (vai para Prontos para protocolar) ou o que falta (vai para Faltam documentos) */
+  function abrirDocs(r){
+    var dl = $('dlg-docs');
+    if (!dl){
+      dl = document.createElement('dialog'); dl.id = 'dlg-docs'; dl.className = 'prot-card';
+      dl.innerHTML = '<h3>Documentos</h3><p class="prot-nome"></p>' +
+        '<div class="docs-op"><label><input type="radio" name="docs-st" value="ok"> <b>Documentação completa</b><span>vai para Prontos para protocolar</span></label>' +
+        '<label><input type="radio" name="docs-st" value="falta"> <b>Faltam documentos</b><span>vai para Faltam documentos</span></label></div>' +
+        '<div class="docs-quais" id="docs-quais">' + Object.keys(DOC_FALTA).map(function(k){ return '<label><input type="checkbox" value="' + k + '"> ' + DOC_FALTA[k] + '</label>'; }).join('') + '</div>' +
+        '<p class="prot-data" id="docs-nota"></p>' +
+        '<div class="prot-acoes"><button type="button" class="tb-btn" id="docs-cancelar">Cancelar</button><button type="button" class="btn primary" id="docs-salvar">Salvar</button></div>';
+      document.body.appendChild(dl);
+      dl.addEventListener('change', function(e){ if (e.target.name === 'docs-st') $('docs-quais').hidden = e.target.value !== 'falta'; });
+      $('docs-cancelar').addEventListener('click', function(){ dl.close(); });
+      $('docs-salvar').addEventListener('click', async function(){
+        var rr = state.rows.filter(function(x){ return x.id === dl.dataset.id; })[0]; if (!rr) return dl.close();
+        var st = (dl.querySelector('input[name="docs-st"]:checked') || {}).value;
+        var quais = Array.prototype.map.call(dl.querySelectorAll('#docs-quais input:checked'), function(i){ return i.value; });
+        if (st === 'falta' && !quais.length) return toast('Marque o que está faltando');
+        this.disabled = true;
+        try {
+          await patchRow(rr.id, st === 'ok' ? { docsCompletos: true, faltaDocs: [], atualizadoEm: new Date().toISOString() } : { docsCompletos: false, faltaDocs: quais, atualizadoEm: new Date().toISOString() });
+          dl.close(); toast(st === 'ok' ? rr.nome + ': documentação completa' : rr.nome + ': faltam ' + quais.map(function(k){ return DOC_FALTA[k]; }).join(', '));
+        } catch(err){ toast(errMsg(err)); }
+        finally { this.disabled = false; }
+      });
+    }
+    dl.dataset.id = r.id;
+    var f = faltaDocs(r), ren = ehRenovacao(r);
+    dl.querySelector('.prot-nome').textContent = r.nome + (ren ? ' · renovação' : '');
+    dl.querySelector('input[value="ok"]').checked = !f.length && docsConferidos(r);
+    dl.querySelector('input[value="falta"]').checked = !!f.length;
+    Array.prototype.forEach.call(dl.querySelectorAll('#docs-quais input'), function(i){ i.checked = f.indexOf(i.value) >= 0; });
+    $('docs-quais').hidden = !f.length;
+    $('docs-nota').textContent = ren ? 'Cliente de renovação: os documentos pessoais estão na pasta da ação anterior; normalmente só falta o talão de luz atualizado.' : '';
+    dl.showModal();
+  }
+  document.addEventListener('click', function(e){ var b = e.target.closest('[data-docs-menu]'); if (!b) return; var r = state.rows.filter(function(x){ return x.id === b.dataset.docsMenu; })[0]; if (r) abrirDocs(r); });
   function petCell(r){
     if (petGerando[r.id]) return '<button type="button" class="tb-btn pet-btn" disabled><span class="pet-gira"></span>Gerando…</button>';
     if (!r.pastaId) return '<span class="pet-st" title="Ligue a pasta do Drive (ícone + ao lado do nome)">Sem pasta</span>';
@@ -3512,6 +3574,7 @@ section.vw-dash{gap:10px!important}
         '<div class="c-name"><div class="name">' + (/^data:image\/(jpeg|png);base64,/.test(r.fotoCliente || '') ? '<img class="av-foto" src="' + r.fotoCliente + '" alt="">' : '<span class="av-ini" aria-hidden="true">' + esc(iniciais(r.nome)) + '</span>') +
           // clicar no nome copia o nome; clicar no CPF copia o CPF (sem botõezinhos); a pasta fica na ficha (só aparece aqui quando falta ligar)
           '<button type="button" class="nome-abrir copiavel" data-copiar-nome="' + esc(r.nome) + '" title="Clique para copiar o nome">' + esc(r.nome) + '</button>' +
+          (function(){ if (!ehRenovacao(r)) return ''; var a = acaoAnterior(r); return a && a.pastaUrl ? '<a class="tag-renov" href="' + esc(a.pastaUrl) + '" target="_blank" rel="noopener" title="Cliente de renovação: abrir a pasta da ação anterior (' + esc(a.processo || '') + ') com os documentos">Renovação</a>' : '<span class="tag-renov" title="Cliente de renovação">Renovação</span>'; })() +
           (r.pastaUrl ? pastaIco(r) : '<button type="button" class="pasta-falta" data-pasta-cad="' + esc(r.id) + '" title="Pasta não ligada ao cadastro: clique para procurar a pasta dela no Drive" aria-label="Ligar pasta de ' + esc(r.nome) + '"><svg class="i"><use href="#i-folder"/></svg>+</button>') + '</div><div class="addr">' + (r.cpf ? '<button type="button" class="copiavel cpf-txt" data-copiar-cpf="' + esc(r.cpf) + '" title="Clique para copiar o CPF">CPF ' + esc(r.cpf) + '</button>' : 'CPF não informado') + '</div></div>' +
         '<div><span class="lbl">Celular</span>' + telCell(r, true) + '</div>' +
         celCad(r, 'periodo', 'Período da ação') +   // endereço e UC: a IA preenche pelo talão; correção pelo lápis
