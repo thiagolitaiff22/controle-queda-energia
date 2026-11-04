@@ -5288,7 +5288,7 @@ a.rep-st.ok{text-decoration:none}
       ch.getDatasetMeta(0).data.forEach(function(b, k){ c.fillText(String(ch.data.datasets[0].data[k]), b.x + 8, b.y); }); c.restore(); } };
     grafico('pn-fun', { type: 'bar', data: { labels: FUN.map(function(f){ return f[0]; }), datasets: [{ data: FUN.map(function(f){ return f[1]; }), backgroundColor: FUN.map(function(f, k){ return k < 5 ? alfa(corP('--blue'), 1 - k * .12) : corP(['--purple', '--amber', '--red'][k - 5]); }), borderRadius: 6, borderSkipped: false, barThickness: 22 }] }, options: oh, plugins: [rotulos] });
     grafico('pn-pro', { type: 'bar', data: { labels: pk, datasets: [{ data: pk.map(function(n){ return P[n]; }), backgroundColor: corP('--purple'), borderRadius: 6, borderSkipped: false, barThickness: 20 }] }, options: oh, plugins: [rotulos] });
-    var orr = baseOpts();
+    var orr = baseOpts(); orr.scales.y.grace = '14%';
     grafico('pn-ren', { type: 'bar', data: { labels: ['Já liberados'].concat(mesesR.map(function(m){ var p = m.split('-'); return MESES_P[+p[1] - 1] + '/' + p[0].slice(2); })),
       datasets: [{ label: 'Clientes', data: [rLib].concat(porMes), backgroundColor: [corP('--green')].concat(porMes.map(function(){ return alfa(corP('--blue'), .85); })), borderRadius: 6, borderSkipped: false, maxBarThickness: 46 }] },
       options: orr, plugins: [{ id: 'rotRen', afterDatasetsDraw: function(ch){ var c = ch.ctx; c.save(); c.font = '600 12px ' + Chart.defaults.font.family; c.fillStyle = corP('--ink'); c.textAlign = 'center';
