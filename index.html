@@ -1811,6 +1811,23 @@ a.rep-st.ok{text-decoration:none}
 .pn-erro{margin:0;color:var(--red);font-size:13px}
 @media (max-width:1100px){ .pn-grid{grid-template-columns:1fr} #view-painel .pn-kpis{grid-template-columns:repeat(2,minmax(0,1fr))} }
 @media (max-width:560px){ .pn-rosca{flex-direction:column;align-items:stretch} .pn-rosca .pn-box{align-self:center} }
+
+/* Painel: dinheiro e todos os clientes */
+.pn-filtros{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.pn-filtros .search{width:280px;max-width:100%}
+.pn-tab-wrap{overflow-x:auto;margin:0 -20px}
+.pn-tab{width:100%;min-width:820px}
+.pn-tab th:first-child,.pn-tab td:first-child{padding-left:20px}
+.pn-tab th:last-child,.pn-tab td:last-child{padding-right:20px}
+.pn-tab td{padding:9px 14px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:middle}
+.pn-tab td.nome small{display:block;color:var(--ink-3);font-size:11.5px;margin-top:1px}
+.pn-abrir{border:0;background:none;padding:0;font:inherit;font-weight:600;color:var(--ink);cursor:pointer;text-align:left}
+.pn-abrir:hover{text-decoration:underline}
+.pn-sit{display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+.pn-sit i{width:8px;height:8px;border-radius:50%;flex:none}
+.pn-din{font-size:12px;font-weight:600;white-space:nowrap}
+.pn-din.ok{color:var(--green)} .pn-din.warn{color:var(--amber)} .pn-din.blue{color:var(--blue)}
+.pn-mais{align-self:center;border-radius:999px!important;padding:7px 16px}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -1939,8 +1956,8 @@ a.rep-st.ok{text-decoration:none}
         </div>
         <div class="pn-grid">
           <div class="card pn-card">
-            <div class="pn-top"><div><b>Funil do processo</b><small>Quantos clientes chegaram a cada etapa</small></div></div>
-            <div class="pn-box" style="height:270px"><canvas id="pn-fun"></canvas></div>
+            <div class="pn-top"><div><b>Funil do processo</b><small>Quantos clientes chegaram a cada etapa e como terminaram as audiências</small></div></div>
+            <div class="pn-box" style="height:320px"><canvas id="pn-fun"></canvas></div>
           </div>
           <div class="card pn-card">
             <div class="pn-top"><div><b>Situação dos clientes</b><small>Onde está cada cliente agora</small></div></div>
@@ -1956,6 +1973,12 @@ a.rep-st.ok{text-decoration:none}
             <div class="pn-top"><div><b>Clientes por prospectador</b><small>Quem trouxe mais clientes</small></div></div>
             <div class="pn-box" id="pn-pro-box"><canvas id="pn-pro"></canvas></div>
           </div>
+        </div>
+        <div class="card pn-card">
+          <div class="pn-top"><div><b>Todos os clientes</b><small id="pn-cli-sub"></small></div>
+            <div class="pn-filtros"><div class="search tb-busca"><svg class="i"><use href="#i-search"/></svg><input id="pn-q" type="search" placeholder="Buscar por nome, CPF ou processo"></div><select id="pn-f" class="tb-sel" aria-label="Situação"></select><button type="button" class="tb-btn" id="pn-xlsx"><svg class="i"><use href="#i-file"/></svg>Baixar planilha</button></div></div>
+          <div class="pn-tab-wrap"><table class="ct-tbl pn-tab"><thead id="pn-cli-head"></thead><tbody id="pn-cli-body"></tbody></table></div>
+          <button type="button" class="btn pn-mais" id="pn-mais" hidden></button>
         </div>
       </section>
 
@@ -5164,7 +5187,15 @@ a.rep-st.ok{text-decoration:none}
       card('i-users', 'Clientes na base', rows.length, (rows.length - prot.length) + ' ainda em cadastro') +
       card('i-file', 'Protocolados', prot.length, rows.length ? Math.round(prot.length / rows.length * 100) + '% da base' : '—') +
       card('i-cal', 'Audiências realizadas', realiz.length, 'clientes que já passaram pela audiência') +
-      card('i-check', 'Procedência', julg ? Math.round(proc.length / julg * 100) + '%' : '—', proc.length + ' procedentes · ' + improc.length + ' improcedentes', '--green');
+      card('i-check', 'Procedência', realiz.length ? Math.round(proc.length / realiz.length * 100) + '%' : '—', proc.length + ' procedentes · ' + rows.filter(function(r){ return resAud(r) === 'conclusos'; }).length + ' conclusos · ' + rows.filter(function(r){ return resAud(r) === 'faltou'; }).length + ' faltaram · ' + improc.length + ' improcedentes', '--green');
+
+    pnSitDe = function(r){
+      var ra = resAud(r);
+      if (r.arquivado) return 6; if (!String(r.processo || '').trim()) return 0; if (!r.audData) return 1; if (!jaRealizada(r)) return 2;
+      if (ra === 'procedente') return 4; if (ra === 'improcedente' || ra === 'faltou') return 5; return 3;
+    };
+    pnLista = rows;
+    renderPainelClientes();
 
     // evolução mês a mês (últimos 12 meses)
     var hoje = new Date(), meses = [];
@@ -5176,7 +5207,7 @@ a.rep-st.ok{text-decoration:none}
     $('pn-evo-leg').innerHTML = SER.map(function(s){ return '<div><span><i style="background:' + s.c + '"></i>' + s.l + '</span><b class="tnum">' + soma(s.d) + '</b></div>'; }).join('');
 
     // situação de cada cliente agora
-    var SIT = [['Em cadastro', '--ink-3'], ['Aguardando pauta', '--amber'], ['Audiência marcada', '--blue'], ['Aguardando sentença', '--purple'], ['Procedente', '--green'], ['Improcedente ou faltou', '--red'], ['Arquivado', '--line-2']];
+    var SIT = [['Em cadastro', '--ink-3'], ['Aguardando pauta', '--amber'], ['Audiência marcada', '--blue'], ['Conclusos', '--purple'], ['Procedente', '--green'], ['Faltou ou improcedente', '--red'], ['Arquivado', '--line-2']];
     var nSit = [0, 0, 0, 0, 0, 0, 0];
     rows.forEach(function(r){
       var ra = resAud(r);
@@ -5191,9 +5222,7 @@ a.rep-st.ok{text-decoration:none}
     $('pn-sit-leg').innerHTML = SIT.map(function(s, k){ return nSit[k] ? '<div><span><i style="background:' + corP(s[1]) + '"></i>' + s[0] + '</span><b class="tnum">' + nSit[k] + '</b></div>' : ''; }).join('');
 
     // funil
-    var caiu = proc.filter(function(r){ return r.recebimento && r.recebimento.data; }).length;
-    var repassado = proc.filter(function(r){ return r.repasse && r.repasse.data && !(r.repasse.asaas && r.repasse.asaas.status !== 'DONE'); }).length;
-    var FUN = [['Clientes', rows.length], ['Protocolados', prot.length], ['Com audiência', rows.filter(function(r){ return r.audData; }).length], ['Audiência realizada', realiz.length], ['Procedentes', proc.length], ['Dinheiro caiu', caiu], ['Repassados', repassado]];
+    var FUN = [['Clientes', rows.length], ['Protocolados', prot.length], ['Com audiência', rows.filter(function(r){ return r.audData; }).length], ['Audiência realizada', realiz.length], ['Procedentes', proc.length], ['Conclusos', rows.filter(function(r){ return resAud(r) === 'conclusos'; }).length], ['Faltaram', rows.filter(function(r){ return resAud(r) === 'faltou'; }).length], ['Improcedentes', improc.length]];
 
     // resultado por audiência (já realizadas)
     var S = {}; realiz.forEach(function(r){ var k = chaveSessao(r); (S[k] = S[k] || { p: 0, c: 0, f: 0, i: 0 }); var x = resAud(r); if (x === 'procedente') S[k].p++; else if (x === 'faltou') S[k].f++; else if (x === 'improcedente') S[k].i++; else S[k].c++; });
@@ -5217,13 +5246,70 @@ a.rep-st.ok{text-decoration:none}
     var oh = baseOpts(); oh.indexAxis = 'y'; oh.scales = { x: { display: false, beginAtZero: true, grace: '12%' }, y: { grid: { display: false }, border: { display: false }, ticks: { color: corP('--ink-2'), font: { size: 12 } } } };
     var rotulos = { id: 'rotulos', afterDatasetsDraw: function(ch){ var c = ch.ctx; c.save(); c.font = '600 12px ' + Chart.defaults.font.family; c.fillStyle = corP('--ink'); c.textBaseline = 'middle';
       ch.getDatasetMeta(0).data.forEach(function(b, k){ c.fillText(String(ch.data.datasets[0].data[k]), b.x + 8, b.y); }); c.restore(); } };
-    grafico('pn-fun', { type: 'bar', data: { labels: FUN.map(function(f){ return f[0]; }), datasets: [{ data: FUN.map(function(f){ return f[1]; }), backgroundColor: FUN.map(function(f, k){ return alfa(corP('--blue'), 1 - k * .1); }), borderRadius: 6, borderSkipped: false, barThickness: 22 }] }, options: oh, plugins: [rotulos] });
+    grafico('pn-fun', { type: 'bar', data: { labels: FUN.map(function(f){ return f[0]; }), datasets: [{ data: FUN.map(function(f){ return f[1]; }), backgroundColor: FUN.map(function(f, k){ return k < 5 ? alfa(corP('--blue'), 1 - k * .12) : corP(['--purple', '--amber', '--red'][k - 5]); }), borderRadius: 6, borderSkipped: false, barThickness: 22 }] }, options: oh, plugins: [rotulos] });
     grafico('pn-pro', { type: 'bar', data: { labels: pk, datasets: [{ data: pk.map(function(n){ return P[n]; }), backgroundColor: corP('--purple'), borderRadius: 6, borderSkipped: false, barThickness: 20 }] }, options: oh, plugins: [rotulos] });
     var os = baseOpts(); os.scales.x.stacked = true; os.scales.y.stacked = true;
     os.plugins.legend = { display: true, position: 'top', align: 'end', labels: { color: corP('--ink-2'), usePointStyle: true, pointStyle: 'circle', boxWidth: 8, boxHeight: 8, font: { size: 11.5 } } };
     var barra = function(l, k, c){ return { label: l, data: sk.map(function(x){ return S[x][k]; }), backgroundColor: corP(c), borderRadius: 4, borderSkipped: false, maxBarThickness: 38 }; };
-    grafico('pn-res', { type: 'bar', data: { labels: rotS, datasets: [barra('Procedentes', 'p', '--green'), barra('Aguardando sentença', 'c', '--purple'), barra('Faltaram', 'f', '--amber'), barra('Improcedentes', 'i', '--red')] }, options: os });
+    grafico('pn-res', { type: 'bar', data: { labels: rotS, datasets: [barra('Procedentes', 'p', '--green'), barra('Conclusos', 'c', '--purple'), barra('Faltaram', 'f', '--amber'), barra('Improcedentes', 'i', '--red')] }, options: os });
   }
+
+
+  /* Painel: tabela com todos os clientes */
+  var pnSitDe = function(){ return 0; }, pnLista = [], pnQ = '', pnF = '', pnLimite = 60;
+  var PN_SIT = [['Em cadastro', '--ink-3'], ['Aguardando pauta', '--amber'], ['Audiência marcada', '--blue'], ['Conclusos', '--purple'], ['Procedente', '--green'], ['Faltou ou improcedente', '--red'], ['Arquivado', '--line-2']];
+  function pnResultado(r){ var ra = resAud(r); return ra === 'procedente' ? 'Procedente' : ra === 'conclusos' ? 'Concluso' : ra === 'faltou' ? 'Faltou' : ra === 'improcedente' ? 'Improcedente' : (r.audData && jaRealizada(r) ? 'Sem resultado lançado' : '—'); }
+  function pnFiltrados(){
+    var q = norm(pnQ), qd = digits(pnQ);
+    return pnLista.filter(function(r){
+      if (pnF !== '' && String(pnSitDe(r)) !== pnF) return false;
+      return !q || norm(r.nome).indexOf(q) >= 0 || (qd.length >= 3 && (digits(r.cpf).indexOf(qd) >= 0 || digits(r.processo).indexOf(qd) >= 0));
+    }).sort(function(a, b){ return String(a.nome || '').localeCompare(String(b.nome || ''), 'pt'); });
+  }
+  function renderPainelClientes(){
+    if (!$('pn-cli-body')) return;
+    var cont = [0, 0, 0, 0, 0, 0, 0];
+    pnLista.forEach(function(r){ cont[pnSitDe(r)]++; });
+    $('pn-f').innerHTML = '<option value="">Todas as situações · ' + pnLista.length + '</option>' + PN_SIT.map(function(x, k){ return cont[k] ? '<option value="' + k + '">' + x[0] + ' · ' + cont[k] + '</option>' : ''; }).join('');
+    $('pn-f').value = pnF;
+    var l = pnFiltrados();
+    $('pn-cli-sub').textContent = l.length + (l.length === 1 ? ' cliente' : ' clientes') + (pnF !== '' || pnQ ? ' no filtro' : ' na base') + ' · clique no nome para abrir a ficha';
+    $('pn-cli-head').innerHTML = '<tr><th>Cliente</th><th>Processo</th><th>Prospectador</th><th>Audiência</th><th>Situação</th><th>Resultado</th></tr>';
+    $('pn-cli-body').innerHTML = l.slice(0, pnLimite).map(function(r){
+      var k = pnSitDe(r);
+      return '<tr><td class="nome"><button type="button" class="pn-abrir" data-pn="' + esc(r.id) + '">' + esc(r.nome || 'Sem nome') + '</button><small>' + esc(r.cpf ? 'CPF ' + r.cpf : '') + '</small></td>' +
+        '<td class="n">' + esc(r.processo || '—') + '</td><td>' + esc(prospName(r.responsavelId) || '—') + '</td>' +
+        '<td class="n">' + (r.audData ? fmtShort(r.audData) + (r.audHora ? ' · ' + esc(r.audHora) : '') : '—') + '</td>' +
+        '<td><span class="pn-sit"><i style="background:var(' + PN_SIT[k][1] + ')"></i>' + PN_SIT[k][0] + '</span></td>' +
+        '<td class="small">' + pnResultado(r) + '</td></tr>';
+    }).join('') || '<tr><td colspan="7" class="ct-mais small">Nenhum cliente neste filtro.</td></tr>';
+    var resto = l.length - pnLimite;
+    $('pn-mais').hidden = resto <= 0; if (resto > 0) $('pn-mais').textContent = 'Mostrar mais ' + Math.min(resto, 200) + ' de ' + resto;
+  }
+  $('pn-q').addEventListener('input', function(){ pnQ = this.value.trim(); pnLimite = 60; renderPainelClientes(); });
+  $('pn-f').addEventListener('change', function(){ pnF = this.value; pnLimite = 60; renderPainelClientes(); });
+  $('pn-mais').addEventListener('click', function(){ pnLimite += 200; renderPainelClientes(); });
+  $('pn-cli-body').addEventListener('click', function(e){ var b = e.target.closest('[data-pn]'); if (!b) return; var r = todasRows().filter(function(x){ return x.id === b.dataset.pn; })[0]; if (r) openForm(r); });
+  $('pn-xlsx').addEventListener('click', async function(){
+    var b = this; b.disabled = true;
+    try {
+      var X = await loadExcel(), l = pnFiltrados();
+      var wb = new X.Workbook(), ws = wb.addWorksheet('Clientes', { views: [{ state: 'frozen', ySplit: 1, showGridLines: false }], pageSetup: { paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
+      var cols = ['Nome', 'CPF', 'Processo', 'Contato', 'Endereço', 'Prospectador', 'Protocolo', 'Audiência', 'Situação', 'Resultado'];
+      ws.columns = cols.map(function(c){ return { header: c, width: c === 'Nome' || c === 'Endereço' ? 38 : c === 'Processo' ? 27 : 17 }; });
+      ws.getRow(1).eachCell(function(c){ c.font = { bold: true, color: { argb: 'FFFFFFFF' } }; c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF111827' } }; });
+      ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: cols.length } };
+      l.forEach(function(r){
+        
+        ws.addRow([r.nome || '', r.cpf || '', r.processo || '', r.contato || '', r.endereco || '', prospName(r.responsavelId) || '', r.protocolo ? fmtDate(r.protocolo) : '', r.audData ? fmtDate(r.audData) + (r.audHora ? ' ' + r.audHora : '') : '', PN_SIT[pnSitDe(r)][0], pnResultado(r)]);
+      });
+      var buf = await wb.xlsx.writeBuffer(), a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+      a.download = 'Panorama dos clientes ' + iso(new Date()) + '.xlsx'; document.body.appendChild(a); a.click(); a.remove();
+      toast('Planilha baixada: ' + l.length + ' clientes');
+    } catch(err){ toast('Não foi possível gerar a planilha: ' + (err.message || err)); }
+    finally { b.disabled = false; }
+  });
 
   /* ---------- Audiências: Pauta (PROJUDI) · Contestações · Resultados ---------- */
   var audModo = 'pauta', pautaAberta = {};
