@@ -1176,6 +1176,14 @@ html[data-tema] body .pg-b b{white-space:nowrap;overflow:hidden;text-overflow:el
 html[data-tema] body .pag-l .pg-partes{padding:0!important;margin:10px 0 0!important}
 html[data-tema] body .pag-l .pg-b small{display:block!important;padding:0!important;margin:0!important;background:none!important;border:0!important;border-radius:0!important;font-size:11px!important;color:var(--lv-i3)!important;max-width:100%!important;white-space:nowrap!important}
 html[data-tema] body .pag-l .pg-b{margin:0!important;padding:9px 11px!important}
+html[data-tema] body .pg-din{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.1)}
+html[data-tema] body .pg-din > div{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:9px 10px;min-width:0}
+html[data-tema] body .pg-din span{display:block;font-size:11px;color:rgba(255,255,255,.55)}
+html[data-tema] body .pg-din b{display:block;font-size:15px;font-weight:700;color:#fff;margin-top:2px;white-space:nowrap;letter-spacing:-.01em}
+html[data-tema] body .pg-din small{display:block;font-size:10.5px;color:rgba(255,255,255,.45);margin-top:1px}
+html[data-tema] body .pg-din .deve b{color:#fca5a5}
+html[data-tema] body .pg-din .zero b{color:#6ee7b7}
+html[data-tema] body .pg-din .pago b{color:#6ee7b7}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><script>try{var t=localStorage.getItem("campo_tema");if(!t)t="dark";document.documentElement.setAttribute("data-tema",t);}catch(e){document.documentElement.setAttribute("data-tema","light");}</script>
 </head>
@@ -1214,7 +1222,7 @@ html[data-tema] body .pag-l .pg-b{margin:0!important;padding:9px 11px!important}
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 57;
+  var APP_VERSAO = 58;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
@@ -1569,8 +1577,11 @@ html[data-tema] body .pag-l .pg-b{margin:0!important;padding:9px 11px!important}
   function contaPag(itens){
     var n = itens.length, p1 = itens.filter(function(c){ return c.p1; }).length, sai = itens.filter(function(c){ return c.saiu || c.p2; }).length, p2 = itens.filter(function(c){ return c.p2; }).length;
     var partes = n + sai, pagas = p1 + p2;
-    return { n: n, p1: p1, sai: sai, p2: p2, partes: partes, pagas: pagas, falta: partes - pagas, pct: partes ? Math.round(pagas / partes * 100) : 0 };
+    var depois = itens.filter(function(c){ return !c.saiu && !c.p2; }).length;
+    return { n: n, p1: p1, sai: sai, p2: p2, partes: partes, pagas: pagas, falta: partes - pagas, depois: depois, pct: partes ? Math.round(pagas / partes * 100) : 0 };
   }
+  var VALOR_PARTE = 25;   // R$ 25 no protocolo e R$ 25 quando o processo sai
+  function reais(v){ return 'R$ ' + (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
   function resumoPag(t, titulo){
     return '<div class="pg-resumo"><div class="pg-resumo-t"><span>' + titulo + '</span><b>' + (t.partes ? t.pct + '% pago' : '—') + '</b></div>' +
       '<div class="pg-bar"><i style="width:' + t.pct + '%"></i></div>' +
@@ -1579,6 +1590,11 @@ html[data-tema] body .pag-l .pg-b{margin:0!important;padding:9px 11px!important}
         '<div><b>' + t.p1 + '<small>/' + t.n + '</small></b><span>Pagas no protocolo</span></div>' +
         '<div><b>' + t.p2 + '<small>/' + t.sai + '</small></b><span>Pagas quando saiu</span></div>' +
         '<div class="' + (t.falta ? 'falta' : 'ok') + '"><b>' + t.falta + '</b><span>' + (t.falta === 1 ? 'Parte a pagar' : 'Partes a pagar') + '</span></div>' +
+      '</div>' +
+      '<div class="pg-din">' +
+        '<div class="' + (t.falta ? 'deve' : 'zero') + '"><span>Devendo agora</span><b>' + reais(t.falta * VALOR_PARTE) + '</b></div>' +
+        '<div><span>A pagar quando sair</span><b>' + reais(t.depois * VALOR_PARTE) + '</b><small>' + t.depois + ' × ' + reais(VALOR_PARTE) + '</small></div>' +
+        '<div class="pago"><span>Já pago</span><b>' + reais(t.pagas * VALOR_PARTE) + '</b></div>' +
       '</div></div>';
   }
   function listaProspsPag(){
@@ -1597,7 +1613,7 @@ html[data-tema] body .pag-l .pg-b{margin:0!important;padding:9px 11px!important}
         var t = x.t;
         return '<button type="button" class="pp pg-pp" data-pagp="' + esc(x.p.id) + '"><span class="pp-av">' + esc(ini(x.p.nome)) + '</span>' +
           '<span class="pp-t"><b>' + esc(x.p.nome) + '</b>' +
-          (t.n ? '<span>' + t.n + (t.n === 1 ? ' indicação' : ' indicações') + ' · pago ' + t.pagas + ' de ' + t.partes + (t.partes === 1 ? ' parte' : ' partes') + '</span><span class="pg-bar pg-bar-s"><i style="width:' + t.pct + '%"></i></span>' : '<span>ainda sem indicação protocolada' + (x.p.avulso ? ' · só indicou' : '') + '</span>') + '</span>' +
+          (t.n ? '<span>' + t.n + (t.n === 1 ? ' indicação' : ' indicações') + ' · ' + (t.falta ? 'deve ' + reais(t.falta * VALOR_PARTE) + ' agora' : 'em dia') + (t.depois ? ' · ' + reais(t.depois * VALOR_PARTE) + ' quando sair' : '') + '</span><span class="pg-bar pg-bar-s"><i style="width:' + t.pct + '%"></i></span>' : '<span>ainda sem indicação protocolada' + (x.p.avulso ? ' · só indicou' : '') + '</span>') + '</span>' +
           '<span class="pp-s ' + (t.falta ? 'ap' : t.n ? 'ok' : 'novo') + '">' + (t.falta ? t.falta + ' a pagar' : t.n ? 'tudo pago' : 'novo') + '</span><span class="pp-seta">›</span></button>';
       }).join('') + '</div>';
   }
