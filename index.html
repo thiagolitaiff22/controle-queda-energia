@@ -2005,8 +2005,8 @@ a.rep-st.ok{text-decoration:none}
           </div>
         </div>
         <div class="card pn-card">
-          <div class="pn-top"><div><b>Levas lado a lado</b><small>Cada leva é um mutirão de audiências (início de abril, início de julho e fim de novembro). Quem é cadastrado até a pauta sair entra na leva em formação; depois disso, vai para a seguinte. Clique numa leva para ver o Painel só dela.</small></div></div>
-          <div class="pn-tab-wrap"><table class="ct-tbl pn-tab pn-lv-tab"><thead><tr><th>Leva</th><th>Semana das audiências</th><th class="dir">Clientes</th><th class="dir">Procedentes</th><th class="dir">Conclusos</th><th class="dir">Ausências</th><th class="dir">Improcedentes</th><th class="dir">Procedência</th><th class="dir">Já renovaram</th></tr></thead><tbody id="pn-lv-body"></tbody></table></div>
+          <div class="pn-top"><div><b>Levas lado a lado</b><small>Cada leva é um mutirão de audiências: Leva 1 em março, Leva 2 em julho e Leva 3 em novembro (em 2026 a Leva 2 foi em outubro). Quem é cadastrado até a pauta sair entra na leva em formação; depois disso, vai para a seguinte. Clique numa leva para ver o Painel só dela.</small></div></div>
+          <div class="pn-tab-wrap"><table class="ct-tbl pn-tab pn-lv-tab"><thead><tr><th>Leva</th><th>Audiências</th><th class="dir">Clientes</th><th class="dir">Procedentes</th><th class="dir">Conclusos</th><th class="dir">Ausências</th><th class="dir">Improcedentes</th><th class="dir">Procedência</th><th class="dir">Já renovaram</th></tr></thead><tbody id="pn-lv-body"></tbody></table></div>
         </div>
         <div class="card pn-card">
           <div class="pn-top"><div><b>Todos os clientes</b><small id="pn-cli-sub"></small></div>
@@ -5325,12 +5325,17 @@ a.rep-st.ok{text-decoration:none}
   function semanaAud(r){
     if (!r.audData) return 'sem';
     var d = parseDate(String(r.audData).slice(0, 10)); if (!d) return 'sem';
-    d.setDate(d.getDate() - (d.getDay() + 6) % 7); return iso(d);
+    var m = d.getMonth(), n = m <= 3 ? 1 : m <= 9 ? 2 : 3;
+    return d.getFullYear() + '-' + n;
   }
-  function rotuloSemana(seg){
-    var a = parseDate(seg), b = new Date(a); b.setDate(a.getDate() + 4);
-    var dd = function(x){ return String(x.getDate()).padStart(2, '0'); }, mm = function(x){ return String(x.getMonth() + 1).padStart(2, '0'); };
-    return a.getMonth() === b.getMonth() ? dd(a) + ' a ' + dd(b) + '/' + mm(b) + '/' + b.getFullYear() : dd(a) + '/' + mm(a) + ' a ' + dd(b) + '/' + mm(b) + '/' + b.getFullYear();
+  var LEVA_MES = { 1: 'março', 2: 'julho', 3: 'novembro' };
+  function rotuloLeva(k){ var p = k.split('-'); return 'Leva ' + p[1] + '/' + p[0]; }
+  function proximaLeva(k){ var p = k.split('-'), a = +p[0], n = +p[1] + 1; if (n > 3){ n = 1; a++; } return a + '-' + n; }
+  function faixaDatas(rs){
+    var ds = rs.map(function(r){ return String(r.audData).slice(0, 10); }).sort(), a = ds[0], b = ds[ds.length - 1];
+    if (!a) return '';
+    var fa = fmtDate(a), fb = fmtDate(b);
+    return a === b ? fa : a.slice(0, 7) === b.slice(0, 7) ? fa.slice(0, 2) + ' a ' + fb : fa.slice(0, 5) + ' a ' + fb;
   }
   function pintarLevas(todos){
     var g = {}; todos.forEach(function(r){ var k = semanaAud(r); (g[k] = g[k] || []).push(r); });
@@ -5339,18 +5344,19 @@ a.rep-st.ok{text-decoration:none}
     var porCpf = {};
     todasRows().forEach(function(x){ var d = digits(x.cpf); if (d.length === 11) (porCpf[d] = porCpf[d] || []).push(String(x.protocolo || x.criadoEm || '').slice(0, 10)); });
     var renovou = function(r){ var d = digits(r.cpf), p = String(r.protocolo || '').slice(0, 10); return !!(d.length === 11 && p && (porCpf[d] || []).some(function(q){ return q > p; })); };
-    // leva em formação: quem ainda não tem audiência entra no próximo mutirão (início de abril, início de julho ou fim de novembro)
-    var ult = semanas.length ? parseDate(semanas[semanas.length - 1]) : today(), MUT = [[3, 'início de abril'], [6, 'início de julho'], [10, 'fim de novembro']], prev = '';
-    for (var ai = 0; ai < 3 && !prev; ai++){ var ano = ult.getFullYear() + ai; MUT.forEach(function(m){ if (!prev && (ano > ult.getFullYear() || m[0] > ult.getMonth())) prev = m[1] + '/' + ano; }); }
-    var rotForm = 'Leva ' + (semanas.length + 1) + ' · em formação';
+    // leva em formação: quem ainda não tem audiência entra no próximo mutirão
+    var hojeL = today(), atual = hojeL.getFullYear() + '-' + (hojeL.getMonth() <= 3 ? 1 : hojeL.getMonth() <= 9 ? 2 : 3);
+    var ultK = semanas.length ? semanas[semanas.length - 1] : '';
+    var formK = !ultK ? atual : (ultK < atual ? atual : proximaLeva(ultK));
+    var rotForm = rotuloLeva(formK) + ' · em formação', prev = LEVA_MES[formK.split('-')[1]] + '/' + formK.split('-')[0];
     var chip = function(k, rot, n){ return '<button type="button" data-pnlv="' + k + '" aria-pressed="' + (pnLeva === k) + '">' + rot + ' <b>' + n + '</b></button>'; };
     $('pn-levas').innerHTML = chip('', 'Todas as levas', todos.length) +
-      semanas.map(function(k, i){ return chip(k, 'Leva ' + (i + 1) + ' · ' + rotuloSemana(k), g[k].length); }).join('') +
+      semanas.map(function(k){ return chip(k, rotuloLeva(k) + ' · ' + faixaDatas(g[k]), g[k].length); }).join('') +
       (g.sem ? chip('sem', rotForm + (prev ? ' (' + prev + ')' : ''), g.sem.length) : '');
     var conta = function(rs, x){ return rs.filter(function(r){ return resAud(r) === x; }).length; };
     $('pn-lv-body').innerHTML = semanas.map(function(k, i){
       var rs = g[k], p = conta(rs, 'procedente'), realiz = rs.filter(function(r){ return jaRealizada(r); }).length;
-      return '<tr class="pn-lv' + (pnLeva === k ? ' on' : '') + '" data-pnlv="' + k + '"><td class="nome">Leva ' + (i + 1) + '</td><td>' + rotuloSemana(k) + '</td><td class="dir n">' + rs.length + '</td>' +
+      return '<tr class="pn-lv' + (pnLeva === k ? ' on' : '') + '" data-pnlv="' + k + '"><td class="nome">' + rotuloLeva(k) + '</td><td>' + faixaDatas(g[k]) + '</td><td class="dir n">' + rs.length + '</td>' +
         '<td class="dir n" style="color:var(--green)">' + p + '</td><td class="dir n">' + conta(rs, 'conclusos') + '</td><td class="dir n">' + conta(rs, 'faltou') + '</td><td class="dir n">' + conta(rs, 'improcedente') + '</td>' +
         '<td class="dir n"><b>' + (realiz ? Math.round(p / realiz * 100) + '%' : 'audiência por vir') + '</b></td><td class="dir n">' + rs.filter(renovou).length + '</td></tr>';
     }).join('') + (g.sem ? '<tr class="pn-lv' + (pnLeva === 'sem' ? ' on' : '') + '" data-pnlv="sem"><td class="nome">' + rotForm + '</td><td class="small">próximo mutirão' + (prev ? ': ' + prev : '') + '</td><td class="dir n">' + g.sem.length + '</td><td colspan="6" class="small dir">aguardando a pauta; quem for cadastrado depois que a pauta sair fica para a leva seguinte</td></tr>' : '');
