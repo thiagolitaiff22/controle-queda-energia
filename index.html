@@ -1698,6 +1698,30 @@ body{font-family:var(--font)}
   #app .content{padding:20px 16px 40px}
 }
 
+
+/* Asaas no Financeiro */
+.fin-etapas{display:flex;flex-wrap:wrap;gap:8px}
+.fin-etapas button{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink-2);border-radius:999px!important;padding:7px 14px;font:inherit;font-size:13px;font-weight:500;cursor:pointer}
+.fin-etapas button b{font-size:12px;font-weight:600;padding:1px 8px;border-radius:999px;background:var(--soft);color:var(--ink)}
+.fin-etapas button[aria-pressed="true"]{border-color:var(--ink);color:var(--ink)}
+.fin-etapas button[aria-pressed="true"] b{background:var(--ink);color:var(--bg)}
+.fin-etapas .seta{color:var(--ink-3);align-self:center}
+.fin-asaas{border:1px solid var(--line);border-radius:6px;background:var(--panel);padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.fin-asaas .as-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.fin-asaas .as-top b{font-size:14px}
+.fin-asaas .as-top small{color:var(--ink-3)}
+.fin-asaas .as-top .btn{margin-left:auto;padding:6px 12px;font-size:12.5px}
+.as-mov{display:grid;grid-template-columns:90px 120px minmax(0,1.3fr) minmax(0,1.6fr) auto auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:13px}
+.as-mov .v{font-weight:600;font-variant-numeric:tabular-nums}
+.as-mov .d{color:var(--ink-3);font-size:12px;overflow-wrap:anywhere}
+.as-mov select{width:100%;min-width:0;height:32px;font-size:12.5px}
+.as-mov .btn{padding:5px 10px;font-size:12px}
+@media (max-width:900px){ .as-mov{grid-template-columns:1fr 1fr} .as-mov .d,.as-mov select{grid-column:1/-1} }
+.rep-st.bad{color:var(--red)}
+a.rep-st.ok{text-decoration:none}
+.rep-pixl{display:flex;gap:8px}
+.rep-pixl select{flex:0 0 120px}
+.rep-pixl input{flex:1;min-width:0}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -1971,7 +1995,9 @@ body{font-family:var(--font)}
           <span class="tb-fim" id="fin-count"></span>
         </div>
         <div hidden><button type="button" id="fin-aud-ant"></button><button type="button" id="fin-aud-prox"></button><span id="fin-aud-info"></span></div>
+        <div class="fin-asaas" id="fin-asaas" hidden></div>
         <div class="stats fin-stats" id="fin-stats"></div>
+        <div class="fin-etapas" id="fin-etapas" role="group" aria-label="Etapa do dinheiro"></div>
         <div class="fin-regra" id="fin-regra"></div>
         <div class="fin-anual" hidden>
           <div class="card ct-tab"><table class="ct-tbl fin-tbl"><thead><tr><th>Mês</th><th class="dir">Processos recebidos</th><th class="dir">Valor que caiu</th><th class="dir">Faturamento (honorários)</th><th class="dir">Repassado aos clientes</th><th class="dir">Prospectadores</th><th class="dir">Líquido</th></tr></thead><tbody id="fin-ano-body"></tbody></table></div>
@@ -2076,6 +2102,15 @@ body{font-family:var(--font)}
             <div class="pw"><input id="cl-chave" type="text" class="mask" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore placeholder="Cole aqui a chave (começa com sk-)"></div>
             <div class="integ-btns"><button class="btn lh-save" type="submit" id="cl-salvar"><svg class="i"><use href="#i-save"/></svg>Salvar</button><button type="button" class="btn" id="cl-testar"><svg class="i"><use href="#i-sync"/></svg>Testar</button></div>
             <small class="integ-s" id="cl-status">Verificando…</small>
+          </form>
+        </div>
+        <div class="card integ" data-painel="asaas">
+          <div><p class="integ-d">Lê o extrato da conta do Asaas de hora em hora e mostra no Financeiro o que caiu e de quem é; o repasse ao cliente sai por Pix pelo Asaas, com o comprovante salvo no cliente. A chave fica em Asaas › Integrações › Chave de API; fica guardada no banco e só a função do Asaas lê.</p></div>
+          <form id="form-as" class="integ-form" novalidate autocomplete="off">
+            <label for="as-chave">Chave da API do Asaas</label>
+            <div class="pw"><input id="as-chave" type="text" class="mask" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore placeholder="Cole aqui a chave (começa com $aact_)"></div>
+            <div class="integ-btns"><button class="btn lh-save" type="submit" id="as-salvar"><svg class="i"><use href="#i-save"/></svg>Salvar</button><button type="button" class="btn" id="as-testar"><svg class="i"><use href="#i-sync"/></svg>Testar</button><button type="button" class="btn" id="as-ler"><svg class="i"><use href="#i-sync"/></svg>Ler extrato agora</button></div>
+            <small class="integ-s" id="as-status">Verificando…</small>
           </form>
         </div>
         <div class="card integ" data-painel="celular">
@@ -2295,7 +2330,7 @@ body{font-family:var(--font)}
           <option value="transferencia">Transferência bancária</option>
         </select>
       </div>
-      <div class="field full" id="rep-pix-box"><label for="rep-pix">Chave Pix usada</label><input id="rep-pix" autocomplete="off" placeholder="CPF, telefone, e-mail ou chave aleatória"></div>
+      <div class="field full" id="rep-pix-box"><label for="rep-pix">Chave Pix</label><div class="rep-pixl"><select id="rep-pixtipo" aria-label="Tipo da chave"><option value="cpf">CPF</option><option value="celular">Celular</option><option value="email">E-mail</option><option value="aleatoria">Aleatória</option><option value="cnpj">CNPJ</option></select><input id="rep-pix" autocomplete="off" placeholder="CPF, telefone, e-mail ou chave aleatória"></div></div>
       <div class="rep-terceiro field full" id="rep-terc-box" hidden>
         <div class="rep-aviso">Para pagar outra pessoa, o cliente assina antes o <b>termo de autorização</b> (botão abaixo).</div>
         <div class="rep-grid">
@@ -2313,7 +2348,8 @@ body{font-family:var(--font)}
       <div class="right">
         <button class="btn danger-txt" type="button" id="rep-desfazer" hidden>Desfazer pagamento</button>
         <button class="btn" type="button" id="rep-cancel">Cancelar</button>
-        <button class="btn primary" type="submit" id="rep-save">Registrar pagamento</button>
+        <button class="btn" type="submit" id="rep-save">Já paguei por fora</button>
+        <button class="btn primary" type="button" id="rep-asaas"><svg class="i"><use href="#i-cash"/></svg>Enviar Pix pelo Asaas</button>
       </div>
     </div>
   </form>
@@ -4081,6 +4117,8 @@ body{font-family:var(--font)}
       return '<div class="card stat"><div class="stat-h"><svg class="i"><use href="#' + ico + '"/></svg>' + rot + '</div><div class="stat-v tnum' + (cls ? ' ' + cls : '') + '">' + v + '</div><div class="stat-c">' + cap + '</div>' +
         '<div class="stat-viz"><div class="bar"><span style="width:' + Math.max(0, Math.min(100, p)) + '%;background:var(' + cor + ')"></span></div></div></div>';
     };
+    $('fin-etapas').hidden = $('fin-asaas').hidden = finParte !== 'receita';
+    if (finParte === 'receita') pintarAsaas();
     if (finParte === 'prosp'){ renderFinProsp(base, card); return; }
     if (finParte === 'resultado'){ renderFinResultado(base, card, taxa); return; }
     if (finParte === 'anual'){ renderFinAnual(card); return; }
@@ -4095,7 +4133,8 @@ body{font-family:var(--font)}
     var nPag = function(k){ return proc.filter(function(r){ return k === '' ? true : k === '-' ? !r.pagamento : r.pagamento === k; }).length; };
     $('fin-pag-sel').innerHTML = '<option value="">Todos os pagamentos · ' + proc.length + '</option><option value="-">Sem informação · ' + nPag('-') + '</option>' + Object.keys(PAG).map(function(k){ return '<option value="' + k + '">' + esc2(PAG[k][0]) + ' · ' + nPag(k) + '</option>'; }).join('');
     $('fin-pag-sel').value = finPag; $('fin-pag-sel').classList.toggle('ativo', !!finPag);
-    var lista = proc.filter(function(r){ return (!finPag || (finPag === '-' ? !r.pagamento : r.pagamento === finPag)) && buscaCliente(r, finQ); })
+    pintarEtapasFin(proc);
+    var lista = proc.filter(function(r){ return (!finEtapa || etapaFin(r) === finEtapa) && (!finPag || (finPag === '-' ? !r.pagamento : r.pagamento === finPag)) && buscaCliente(r, finQ); })
       .sort(function(a, b){ return String(a.nome).localeCompare(String(b.nome), 'pt'); });
     $('fin-count').textContent = lista.length + (lista.length === 1 ? ' procedente' : ' procedentes');
     body.innerHTML = lista.map(function(r){
@@ -4114,6 +4153,10 @@ body{font-family:var(--font)}
   var FORMAS = { pix_cliente: 'Pix na conta do próprio cliente', pix_terceiro: 'Pix para outra pessoa autorizada', dinheiro: 'dinheiro em mãos', transferencia: 'transferência bancária' };
   function repasseCell(r){
     var rc = r.recebimento, rp = r.repasse;
+    var ax = rp && rp.asaas;
+    if (ax && !asAnda(ax.status) && ax.status !== 'DONE') return '<span class="rep-st bad" title="' + esc(ax.motivo || '') + '">Pix não saiu</span> <button type="button" class="rep-btn" data-rep="pagar" data-id="' + esc(r.id) + '">Tentar de novo</button>';
+    if (ax && asAnda(ax.status)) return '<span class="rep-st warn" title="O Asaas está processando o Pix">Pix em andamento</span>';
+    if (ax && ax.comprovante) return '<a class="rep-st ok" href="' + esc(ax.comprovante) + '" target="_blank" rel="noopener" title="Abrir o comprovante do Pix">Pago ' + fmtShort(rp.data) + ' · comprovante</a>';
     if (rp && rp.data) return '<button type="button" class="rep-st ok" data-rep="pagar" data-id="' + esc(r.id) + '" title="Ver pagamento e gerar recibo">Pago ' + fmtShort(rp.data) + ' · ' + esc((FORMAS[rp.forma] || '').split(' ')[0] || '') + '</button>';
     if (rc && rc.data) return '<span class="rep-st warn">Caiu ' + fmtShort(rc.data) + '</span> <button type="button" class="rep-btn" data-rep="pagar" data-id="' + esc(r.id) + '">Pagar cliente</button>';
     return '<button type="button" class="rep-btn" data-rep="caiu" data-id="' + esc(r.id) + '">Caiu na conta</button>';
@@ -4138,7 +4181,7 @@ body{font-family:var(--font)}
     $('rep-data').value = rp.data || iso(new Date());
     $('rep-valor').value = moedaTxt(rp.valor || bruto * (1 - FIN_ESCRITORIO));
     $('rep-forma').value = rp.forma || 'pix_cliente';
-    $('rep-pix').value = rp.chavePix || '';
+    $('rep-pix').value = rp.chavePix || r.cpf || ''; $('rep-pixtipo').value = rp.tipoChave || 'cpf';
     $('rep-tnome').value = rp.terceiroNome || ''; $('rep-tcpf').value = rp.terceiroCpf || ''; $('rep-tpar').value = rp.terceiroParentesco || '';
     $('rep-test').value = rp.testemunha || '';
     $('rep-desfazer').hidden = !rp.data;
@@ -4149,6 +4192,7 @@ body{font-family:var(--font)}
     $('rep-terc-box').hidden = f !== 'pix_terceiro'; $('rep-termo').hidden = f !== 'pix_terceiro';
     $('rep-pix-box').hidden = f !== 'pix_cliente' && f !== 'pix_terceiro';
     $('rep-test-box').hidden = f !== 'dinheiro';
+    $('rep-asaas').hidden = f !== 'pix_cliente' && f !== 'pix_terceiro';
   }
   $('rep-forma').addEventListener('change', formaUI);
   $('rec-valor').addEventListener('input', function(){ $('rec-conta').innerHTML = contaRec(moedaNum(this.value)); });
@@ -4195,6 +4239,134 @@ body{font-family:var(--font)}
     var r = state.rows.filter(function(x){ return x.id === b.dataset.id; })[0]; if (!r) return;
     if (b.dataset.rep === 'caiu') abrirRec(r); else abrirRep(r);
   }, true);
+
+  /* ---------- Asaas: etapas do dinheiro, o que caiu na conta e Pix de repasse ---------- */
+  var finEtapa = '';
+  function asAnda(st){ return ['PENDING', 'BANK_PROCESSING', 'AWAITING_TRANSFER_AUTHORIZATION', 'SCHEDULED'].indexOf(st) >= 0; }
+  function etapaFin(r){
+    var rp = r.repasse, ax = rp && rp.asaas;
+    if (ax && asAnda(ax.status)) return 'andamento';
+    if (rp && rp.data && !(ax && ax.status !== 'DONE')) return 'repassado';
+    if (r.recebimento && r.recebimento.data) return 'repassar';
+    return 'aguardando';
+  }
+  var ETAPAS_FIN = [['aguardando', 'Aguardando o dinheiro'], ['repassar', 'Caiu · repassar'], ['andamento', 'Pix em andamento'], ['repassado', 'Repassado']];
+  function pintarEtapasFin(proc){
+    if (!ETAPAS_FIN) return;
+    var n = {}; proc.forEach(function(r){ var e = etapaFin(r); n[e] = (n[e] || 0) + 1; });
+    $('fin-etapas').innerHTML = ETAPAS_FIN.map(function(e, i){
+      return (i ? '<span class="seta">›</span>' : '') + '<button type="button" data-fe="' + e[0] + '" aria-pressed="' + (finEtapa === e[0]) + '">' + e[1] + ' <b>' + (n[e[0]] || 0) + '</b></button>';
+    }).join('');
+  }
+  $('fin-etapas').addEventListener('click', function(e){ var b = e.target.closest('[data-fe]'); if (!b) return; finEtapa = finEtapa === b.dataset.fe ? '' : b.dataset.fe; renderFin(); });
+
+  async function fnAsaas(body){
+    var r = await SB.functions.invoke('asaas', { body: body });
+    if (r.error){ var j = r.error.context && r.error.context.json ? await r.error.context.json().catch(function(){ return {}; }) : {}; throw new Error(j.erro || r.error.message); }
+    if (r.data && r.data.erro) throw new Error(r.data.erro);
+    return r.data || {};
+  }
+  function asTem(){ return $('as-chave').value.indexOf('•') === 0; }
+  var asMovs = null, asPedido = false;
+  async function carregarAsaas(){
+    if (!isAdmin()) return;
+    var r = await SB.from('asaas_mov').select('id,data,valor,descricao,tipo').eq('status', 'novo').order('data', { ascending: false }).limit(200);
+    asMovs = r.error ? [] : (r.data || []);
+    pintarAsaas();
+  }
+  function pintarAsaas(){
+    var box = $('fin-asaas'); if (!box) return;
+    if (!isAdmin()){ box.hidden = true; return; }
+    if (asMovs == null){ if (!asPedido){ asPedido = true; carregarAsaas(); } box.hidden = true; return; }
+    if (!asTem() && !asMovs.length){ box.hidden = true; return; }
+    box.hidden = finParte !== 'receita';
+    var semRec = todasRows().filter(function(r){ return resAud(r) === 'procedente' && !(r.recebimento && r.recebimento.data); });
+    box.innerHTML = '<div class="as-top"><b>Caiu no Asaas · identificar ' + asMovs.length + '</b><small>' +
+      (asMovs.length ? 'Entradas da conta que ainda não sabemos de quem são. Escolha o cliente ou marque que não é desta ação.' : 'Tudo o que caiu no Asaas já está ligado a um cliente. O extrato é lido de hora em hora.') +
+      '</small><button type="button" class="btn" data-as="ler"><svg class="i"><use href="#i-sync"/></svg>Ler extrato agora</button></div>' +
+      asMovs.map(function(m){
+        var v = Number(m.valor) || 0;
+        var opc = semRec.slice().sort(function(a, b){ return Math.abs(valorCond(a) - v) - Math.abs(valorCond(b) - v) || String(a.nome).localeCompare(String(b.nome), 'pt'); }).slice(0, 40)
+          .map(function(r){ return '<option value="' + esc(r.id) + '">' + esc(r.nome) + ' · ' + moedaTxt(valorCond(r)) + '</option>'; }).join('');
+        return '<div class="as-mov" data-mov="' + esc(m.id) + '"><span>' + fmtShort(m.data) + '</span><span class="v">' + moedaTxt(v) + '</span>' +
+          '<span class="d">' + esc(m.descricao || m.tipo || '') + '</span>' +
+          '<select aria-label="Cliente desta entrada"><option value="">De quem é? (procedentes sem dinheiro, pelo valor mais perto)</option>' + opc + '</select>' +
+          '<button type="button" class="btn primary" data-as="ligar">Ligar</button><button type="button" class="btn" data-as="ignorar" title="Entrada de outra área do escritório">Não é desta ação</button></div>';
+      }).join('');
+  }
+  $('fin-asaas').addEventListener('click', async function(e){
+    var b = e.target.closest('[data-as]'); if (!b) return;
+    if (b.dataset.as === 'ler'){ asLer(b); return; }
+    var linha = b.closest('[data-mov]'), id = linha.dataset.mov, m = (asMovs || []).filter(function(x){ return x.id === id; })[0];
+    b.disabled = true;
+    try {
+      if (b.dataset.as === 'ligar'){
+        var cli = linha.querySelector('select').value; if (!cli){ toast('Escolha o cliente desta entrada'); return; }
+        var r = await SB.rpc('asaas_vincular', { p_mov: id, p_cliente: cli }); if (r.error) throw r.error;
+        var c = todasRows().filter(function(x){ return x.id === cli; })[0];
+        toast('Ligado: ' + moedaTxt(m ? m.valor : 0) + ' caiu para ' + (c ? c.nome : 'o cliente'));
+      } else {
+        var r2 = await SB.rpc('asaas_ignorar', { p_mov: id, p_ignorar: true }); if (r2.error) throw r2.error;
+        toast('Entrada marcada como de outra área');
+      }
+      asMovs = asMovs.filter(function(x){ return x.id !== id; }); pintarAsaas();
+    } catch(err){ toast(errMsg(err)); } finally { b.disabled = false; }
+  });
+  async function asLer(b){
+    if (b) b.disabled = true; $('as-status').textContent = 'Lendo o extrato do Asaas…';
+    try {
+      var d = await fnAsaas({ acao: 'sincronizar' }), x = d.extrato || {};
+      toast(x.novas ? x.novas + ' entradas novas no Asaas' + (x.ligadas ? ', ' + x.ligadas + ' ligadas sozinhas ao cliente' : '') : 'Nada novo no extrato do Asaas');
+      await carregarAsaas();
+    } catch(err){ toast('Asaas: ' + err.message); }
+    finally { if (b) b.disabled = false; asStatus(); }
+  }
+
+  // integração (Configurações)
+  async function asStatus(){
+    var r = await SB.rpc('status_segredo', { p_nome: 'asaas' }), d = r.data && r.data[0];
+    if (d){ $('as-chave').value = '•'.repeat(24) + d.final; $('as-chave').classList.remove('mask'); }
+    $('as-status').textContent = d ? 'Chave cadastrada em ' + new Date(d.atualizado_em).toLocaleDateString('pt-BR') + '. O extrato é lido de hora em hora.' : 'Nenhuma chave cadastrada.';
+    if (asMovs != null) pintarAsaas();
+  }
+  $('as-chave').addEventListener('focus', function(){ if (this.value.indexOf('•') === 0) this.select(); });
+  $('as-chave').addEventListener('input', function(){ this.value = this.value.replace(/•/g, '').trim(); this.classList.add('mask'); });
+  $('form-as').addEventListener('submit', async function(e){
+    e.preventDefault(); var v = $('as-chave').value.replace(/•/g, '').trim();
+    if (v.indexOf('$aact_') !== 0){ toast('Cole a chave de API do Asaas (começa com $aact_)'); return; }
+    var r = await SB.rpc('salvar_segredo', { p_nome: 'asaas', p_valor: v });
+    if (r.error){ toast('Não foi possível salvar: ' + r.error.message); return; }
+    toast('Chave do Asaas salva'); asStatus();
+  });
+  $('as-testar').addEventListener('click', async function(){
+    this.disabled = true; $('as-status').textContent = 'Testando…';
+    try { var d = await fnAsaas({ acao: 'testar' }); $('as-status').textContent = 'Conectado ao Asaas' + (d.sandbox ? ' (ambiente de teste)' : '') + (d.saldo != null ? ' · saldo ' + moedaTxt(d.saldo) : '') + '.'; }
+    catch(err){ $('as-status').textContent = err.message; }
+    finally { this.disabled = false; }
+  });
+  $('as-ler').addEventListener('click', function(){ asLer(this); });
+  // asStatus() roda junto com as outras integrações, quando o admin entra
+
+  // Pix de repasse pelo Asaas (dentro do "Pagar o cliente")
+  $('rep-forma').addEventListener('change', function(){ $('rep-asaas').hidden = this.value !== 'pix_cliente' && this.value !== 'pix_terceiro'; });
+  $('rep-asaas').addEventListener('click', async function(){
+    if (!repCli) return;
+    var rp = lerRepasse(), tipo = $('rep-pixtipo').value, nomeTipo = $('rep-pixtipo').selectedOptions[0].textContent;
+    if (!rp.valor){ toast('Informe o valor do cliente'); return; }
+    if (!rp.chavePix){ toast('Informe a chave Pix'); return; }
+    if (rp.forma === 'pix_terceiro' && (!rp.terceiroNome || !rp.terceiroCpf)){ toast('Informe nome e CPF de quem recebe'); return; }
+    var quem = rp.forma === 'pix_terceiro' ? rp.terceiroNome + ' (autorizado por ' + repCli.nome + ')' : repCli.nome;
+    if (!confirm('Enviar agora um Pix de ' + moedaTxt(rp.valor) + ' pelo Asaas?\n\nPara: ' + quem + '\nChave (' + nomeTipo + '): ' + rp.chavePix + '\n\nO dinheiro sai da conta do Asaas.')) return;
+    this.disabled = true;
+    try {
+      var d = await fnAsaas({ acao: 'pagar', clienteId: repCli.id, valor: rp.valor, chave: rp.chavePix, tipoChave: tipo,
+        terceiroNome: rp.forma === 'pix_terceiro' ? rp.terceiroNome : '', terceiroCpf: rp.forma === 'pix_terceiro' ? rp.terceiroCpf : '', terceiroParentesco: rp.forma === 'pix_terceiro' ? rp.terceiroParentesco : '',
+        descricao: 'Repasse processo ' + (repCli.processo || '') });
+      dlgRep.close();
+      toast(d.autorizar ? 'Pix criado: autorize no aplicativo do Asaas para ele sair' : d.status === 'DONE' ? 'Pix enviado' + (d.favorecido ? ' para ' + d.favorecido : '') : 'Pix enviado ao Asaas' + (d.favorecido ? ' · favorecido: ' + d.favorecido : '') + '. O comprovante aparece quando o banco concluir.');
+    } catch(err){ toast(err.message); }
+    finally { this.disabled = false; }
+  });
 
   /* valor por extenso (reais) */
   function extenso(v){
@@ -4341,6 +4513,7 @@ body{font-family:var(--font)}
     datajud: '<svg viewBox="0 0 40 40"><rect width="40" height="40" rx="9" fill="#334155"/><path d="M20 10v20M14 30h12M11 15h18M11 15l-3 7a3 3 0 0 0 6 0zM29 15l-3 7a3 3 0 0 0 6 0z" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     claude: '<svg viewBox="0 0 40 40"><rect width="40" height="40" rx="9" fill="#10A37F"/><path d="M11 13.5a3.5 3.5 0 0 1 3.5-3.5h11a3.5 3.5 0 0 1 3.5 3.5v8a3.5 3.5 0 0 1-3.5 3.5H18l-5 4v-4h-.5A1.5 1.5 0 0 1 11 23.5z" fill="none" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"/><path d="M16 17.5h8M16 21h5" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>',
     drive: '<svg viewBox="0 0 40 40"><path d="M15 6h10l11 19h-10z" fill="#FBBC04"/><path d="M15 6L4 25l5 9 11-19z" fill="#0F9D58"/><path d="M9 34h22l5-9H14z" fill="#4285F4"/></svg>',
+    asaas: '<svg viewBox="0 0 40 40"><rect width="40" height="40" rx="9" fill="#0030B9"/><path d="M12 27l8-15 8 15M15.5 21.5h9" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     celular: '<svg viewBox="0 0 40 40"><rect width="40" height="40" rx="9" fill="#7C3AED"/><rect x="14" y="9" width="12" height="22" rx="2.5" fill="none" stroke="#fff" stroke-width="2.4"/><path d="M18.5 26.5h3" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>'
   };
   var IG = [
@@ -4350,6 +4523,7 @@ body{font-family:var(--font)}
     { k: 'datajud', t: 'Tribunal (DataJud)', d: 'Consulta os processos no TJAM todo dia às 7h: audiência, sentença, alvará.', ajuda: 'Chave pública do CNJ.' },
     { k: 'claude', t: 'IA (ChatGPT)', d: 'Só confere quais documentos estão na pasta do cliente (botão Conferir documentos). Não preenche dados.', ajuda: 'Clique para colar a chave da API do ChatGPT.' },
     { k: 'drive', t: 'Google Drive', d: 'Cria a pasta de cada cliente em 1. CLIENTES e move para Protocolados quando há processo.', ajuda: 'Funciona pelo script do Google do Cadastro pelo celular.', painel: 'celular' },
+    { k: 'asaas', t: 'Asaas', d: 'Mostra no Financeiro o que caiu na conta e de quem é; o repasse ao cliente sai por Pix pelo Asaas.', ajuda: 'Chave de API do Asaas (Asaas › Integrações).' },
     { k: 'celular', t: 'Cadastro pelo celular', d: 'O prospectador tira as fotos dos documentos e o cliente cai em Sem protocolo.', ajuda: 'O link de cada prospectador fica no cartão dele, em Prospectadores.' }
   ];
   var igScript = null; // resposta do script do Google (Drive e Claude)
@@ -4358,6 +4532,7 @@ body{font-family:var(--font)}
     if (k === 'regua') return /^Desligar/.test($('rg-ligar').textContent);
     if (k === 'lembrete') return !$('av-parar').hidden;
     if (k === 'datajud') return $('dj-chave').value.indexOf('•') === 0;
+    if (k === 'asaas') return $('as-chave').value.indexOf('•') === 0;
     if (k === 'celular') return !!(cpUrl || $('cp-url').value.trim());
     if (k === 'drive') return !!(igScript && igScript.ok);
     if (k === 'claude') return igScript && igScript.ia ? igScript.ia === 'ChatGPT' : (!!(igScript && igScript.claude) || clTem);
@@ -4402,7 +4577,7 @@ body{font-family:var(--font)}
   $('ig-fechar').addEventListener('click', fecharInteg);
   $('ig-grid').addEventListener('click', function(e){ var b = e.target.closest('[data-ig]'); if (b) abrirInteg(b.dataset.ig); });
   // os status de cada integração mudam quando as verificações terminam
-  ['lh-status', 'dj-status', 'rg-status', 'cp-status', 'av-status', 'cl-status'].forEach(function(id){
+  ['lh-status', 'as-status', 'dj-status', 'rg-status', 'cp-status', 'av-status', 'cl-status'].forEach(function(id){
     var el = $(id); if (el && window.MutationObserver) new MutationObserver(function(){ if (id === 'cp-status') igTestarScript(); else pintarInteg(); }).observe(el, { childList: true, characterData: true, subtree: true });
   });
   pintarInteg();
@@ -6234,7 +6409,7 @@ body{font-family:var(--font)}
     if (iniciado){ render(); return; }
     iniciado = true;
     state.db = DB;
-    if (f.data === 'admin'){ lhStatus(); rgCarregar(); djStatus(); avMontar(); cpStatus(); clStatus(); }
+    if (f.data === 'admin'){ lhStatus(); rgCarregar(); djStatus(); asStatus(); avMontar(); cpStatus(); clStatus(); }
     function carimbo(){ var n = new Date(); $('sync').textContent = 'Atualizado: ' + n.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ', ' + n.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); }
     function caiu(){ $('sync').textContent = 'Conexão interrompida'; banner('A conexão com a base foi interrompida. Recarregue a página.'); }
     watchTable('clientes', function(rows){ state.todos = rows; state.rows = filtroBase(rows); banner(''); carimbo(); render(); acertarNomesDoApp(); ligarPastasQueFaltam(); }, caiu);
