@@ -1841,6 +1841,18 @@ a.rep-st.ok{text-decoration:none}
 .pn-ren-b b{font-size:22px;font-weight:700;min-width:48px;color:var(--ink)}
 .pn-ren-b span{font-size:13px}
 @media (max-width:900px){ .pn-ren{grid-template-columns:1fr} }
+
+/* Painel: seletor de levas */
+.pn-levas{display:flex;flex-wrap:wrap;gap:8px}
+.pn-levas button{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink-2);border-radius:999px!important;padding:7px 14px;font:inherit;font-size:13px;font-weight:500;cursor:pointer}
+.pn-levas button b{font-size:12px;font-weight:600;padding:1px 8px;border-radius:999px;background:var(--soft);color:var(--ink)}
+.pn-levas button:hover{border-color:var(--line-2);color:var(--ink)}
+.pn-levas button[aria-pressed="true"]{border-color:var(--ink);color:var(--ink)}
+.pn-levas button[aria-pressed="true"] b{background:var(--ink);color:var(--bg)}
+.pn-lv{cursor:pointer}
+.pn-lv:hover td{background:var(--hover)}
+.pn-lv.on td{background:var(--soft)}
+.pn-lv-tab{min-width:900px}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -1961,6 +1973,7 @@ a.rep-st.ok{text-decoration:none}
       </section>
 
       <section id="view-painel" class="vw-dash pn" hidden style="display:flex;flex-direction:column;gap:18px">
+        <div class="pn-levas" id="pn-levas" role="group" aria-label="Leva"></div>
         <div class="stats pn-kpis" id="pn-kpis"></div>
         <p class="pn-erro" id="pn-erro" hidden>Não foi possível carregar os gráficos. Confira a internet e recarregue a página.</p>
         <div class="card pn-card">
@@ -1990,6 +2003,10 @@ a.rep-st.ok{text-decoration:none}
             <div class="pn-top"><div><b>Clientes por prospectador</b><small>Quem trouxe mais clientes</small></div></div>
             <div class="pn-box" id="pn-pro-box"><canvas id="pn-pro"></canvas></div>
           </div>
+        </div>
+        <div class="card pn-card">
+          <div class="pn-top"><div><b>Levas lado a lado</b><small>Cada leva é uma semana de audiências. Compare o resultado de uma leva com a outra; clique numa leva para ver o Painel só dela.</small></div></div>
+          <div class="pn-tab-wrap"><table class="ct-tbl pn-tab pn-lv-tab"><thead><tr><th>Leva</th><th>Semana das audiências</th><th class="dir">Clientes</th><th class="dir">Procedentes</th><th class="dir">Conclusos</th><th class="dir">Ausências</th><th class="dir">Improcedentes</th><th class="dir">Procedência</th><th class="dir">Já renovaram</th></tr></thead><tbody id="pn-lv-body"></tbody></table></div>
         </div>
         <div class="card pn-card">
           <div class="pn-top"><div><b>Todos os clientes</b><small id="pn-cli-sub"></small></div>
@@ -5194,7 +5211,9 @@ a.rep-st.ok{text-decoration:none}
   var MESES_P = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
   async function renderPainel(){
     if (state.view !== 'g' || !$('view-painel')) return;
-    var rows = todasRows().filter(function(r){ return !r.descartado; });
+    var todosP = todasRows().filter(function(r){ return !r.descartado; });
+    pintarLevas(todosP);
+    var rows = pnLeva === '' ? todosP : todosP.filter(function(r){ return semanaAud(r) === pnLeva; });
     var prot = rows.filter(function(r){ return String(r.processo || '').trim(); });
     var realiz = rows.filter(function(r){ return r.audData && jaRealizada(r); });
     var proc = rows.filter(function(r){ return resAud(r) === 'procedente'; }), improc = rows.filter(function(r){ return resAud(r) === 'improcedente'; });
@@ -5299,6 +5318,44 @@ a.rep-st.ok{text-decoration:none}
     grafico('pn-res', { type: 'bar', data: { labels: rotS, datasets: [barra('Procedentes', 'p', '--green'), barra('Conclusos', 'c', '--purple'), barra('Faltaram', 'f', '--amber'), barra('Improcedentes', 'i', '--red')] }, options: os });
   }
 
+
+
+  /* Painel: levas (cada leva = uma semana de audiências) */
+  var pnLeva = '';
+  function semanaAud(r){
+    if (!r.audData) return 'sem';
+    var d = parseDate(String(r.audData).slice(0, 10)); if (!d) return 'sem';
+    d.setDate(d.getDate() - (d.getDay() + 6) % 7); return iso(d);
+  }
+  function rotuloSemana(seg){
+    var a = parseDate(seg), b = new Date(a); b.setDate(a.getDate() + 4);
+    var dd = function(x){ return String(x.getDate()).padStart(2, '0'); }, mm = function(x){ return String(x.getMonth() + 1).padStart(2, '0'); };
+    return a.getMonth() === b.getMonth() ? dd(a) + ' a ' + dd(b) + '/' + mm(b) + '/' + b.getFullYear() : dd(a) + '/' + mm(a) + ' a ' + dd(b) + '/' + mm(b) + '/' + b.getFullYear();
+  }
+  function pintarLevas(todos){
+    var g = {}; todos.forEach(function(r){ var k = semanaAud(r); (g[k] = g[k] || []).push(r); });
+    var semanas = Object.keys(g).filter(function(k){ return k !== 'sem'; }).sort();
+    if (pnLeva && !g[pnLeva]) pnLeva = '';
+    var porCpf = {};
+    todasRows().forEach(function(x){ var d = digits(x.cpf); if (d.length === 11) (porCpf[d] = porCpf[d] || []).push(String(x.protocolo || x.criadoEm || '').slice(0, 10)); });
+    var renovou = function(r){ var d = digits(r.cpf), p = String(r.protocolo || '').slice(0, 10); return !!(d.length === 11 && p && (porCpf[d] || []).some(function(q){ return q > p; })); };
+    var chip = function(k, rot, n){ return '<button type="button" data-pnlv="' + k + '" aria-pressed="' + (pnLeva === k) + '">' + rot + ' <b>' + n + '</b></button>'; };
+    $('pn-levas').innerHTML = chip('', 'Todas as levas', todos.length) +
+      semanas.map(function(k, i){ return chip(k, 'Leva ' + (i + 1) + ' · ' + rotuloSemana(k), g[k].length); }).join('') +
+      (g.sem ? chip('sem', 'Sem audiência ainda', g.sem.length) : '');
+    var conta = function(rs, x){ return rs.filter(function(r){ return resAud(r) === x; }).length; };
+    $('pn-lv-body').innerHTML = semanas.map(function(k, i){
+      var rs = g[k], p = conta(rs, 'procedente'), realiz = rs.filter(function(r){ return jaRealizada(r); }).length;
+      return '<tr class="pn-lv' + (pnLeva === k ? ' on' : '') + '" data-pnlv="' + k + '"><td class="nome">Leva ' + (i + 1) + '</td><td>' + rotuloSemana(k) + '</td><td class="dir n">' + rs.length + '</td>' +
+        '<td class="dir n" style="color:var(--green)">' + p + '</td><td class="dir n">' + conta(rs, 'conclusos') + '</td><td class="dir n">' + conta(rs, 'faltou') + '</td><td class="dir n">' + conta(rs, 'improcedente') + '</td>' +
+        '<td class="dir n"><b>' + (realiz ? Math.round(p / realiz * 100) + '%' : 'audiência por vir') + '</b></td><td class="dir n">' + rs.filter(renovou).length + '</td></tr>';
+    }).join('') + (g.sem ? '<tr class="pn-lv' + (pnLeva === 'sem' ? ' on' : '') + '" data-pnlv="sem"><td class="nome">Sem audiência ainda</td><td class="small">aguardando pauta</td><td class="dir n">' + g.sem.length + '</td><td colspan="6" class="small dir">a leva é definida quando a audiência for marcada</td></tr>' : '');
+  }
+  $('view-painel').addEventListener('click', function(e){
+    var b = e.target.closest('[data-pnlv]'); if (!b) return;
+    pnLeva = b.dataset.pnlv === pnLeva && b.tagName === 'TR' ? '' : b.dataset.pnlv; pnRes = ''; pnF = ''; pnLimite = 60;
+    renderPainel(); if (b.tagName === 'TR') window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
 
   /* Painel: tabela com todos os clientes */
   var pnSitDe = function(){ return 0; }, pnLista = [], pnQ = '', pnF = '', pnRes = '', pnLimite = 60;
@@ -6017,7 +6074,7 @@ a.rep-st.ok{text-decoration:none}
   });
   var VIEWS = { g: ['tab-painel', 'view-painel'], d: ['tab-cad', 'view-cad'], n: ['tab-novo', 'view-novo'], c: ['tab-clientes', 'view-clientes'], f: ['tab-fin', 'view-fin'], r: ['tab-ret', 'view-ret'], t: ['tab-ct', 'view-ct'], h: ['tab-aud', 'view-aud'], e: ['tab-equipe', 'view-equipe'] };
   var TITULOS = {
-    g: ['Painel', 'Visão geral da Queda de Energia em gráficos: protocolos, audiências, resultados e prospectadores'],
+    g: ['Painel', 'Visão geral da Queda de Energia por leva (cada leva é uma semana de audiências): resultados, renovação e todos os clientes'],
     d: ['Cadastro', 'Clientes em cadastro, ainda sem protocolo · Ações contra a Âmbar Energia, Alvarães/AM'],
     n: ['Novo cliente', 'Cadastro direto no sistema, sem fotos: só os dados do cliente'],
     c: ['Controle', 'Processos protocolados: avisos e audiências até a audiência acontecer'],
