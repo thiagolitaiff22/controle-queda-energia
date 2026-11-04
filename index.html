@@ -1787,7 +1787,11 @@ a.rep-st.ok{text-decoration:none}
 }
 
 /* Painel (gráficos no estilo do BI de vendas) */
-#view-painel .pn-kpis{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+#view-painel .pn-kpis{grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
+#view-painel .pn-kpi-f{text-align:left;font:inherit;color:inherit;cursor:pointer}
+#view-painel .pn-kpi-f:hover{border-color:var(--line-2)!important}
+#view-painel .pn-kpi-f.on{border-color:var(--ink)!important;box-shadow:0 0 0 1px var(--ink) inset}
+@media (max-width:1400px){ #view-painel .pn-kpis{grid-template-columns:repeat(3,minmax(0,1fr))} }
 #view-painel .pn-kpi{padding:16px 18px;border:1px solid var(--line)!important;background:var(--panel)!important;border-radius:8px!important}
 #view-painel .pn-kpi .stat-h{font-size:13px;font-weight:600;color:var(--ink);text-transform:none;letter-spacing:0}
 #view-painel .pn-kpi .stat-v{font-size:26px;margin-top:8px}
@@ -5183,11 +5187,16 @@ a.rep-st.ok{text-decoration:none}
     var proc = rows.filter(function(r){ return resAud(r) === 'procedente'; }), improc = rows.filter(function(r){ return resAud(r) === 'improcedente'; });
     var julg = proc.length + improc.length;
     var card = function(ico, rot, v, cap, cor){ return '<div class="card stat pn-kpi"><div class="stat-h"><svg class="i"><use href="#' + ico + '"/></svg>' + rot + '</div><div class="stat-v tnum"' + (cor ? ' style="color:var(' + cor + ')"' : '') + '>' + v + '</div><div class="stat-c">' + cap + '</div></div>'; };
+    var nConc = rows.filter(function(r){ return resAud(r) === 'conclusos'; }).length, nFalt = rows.filter(function(r){ return resAud(r) === 'faltou'; }).length;
+    var pct = function(n){ return realiz.length ? Math.round(n / realiz.length * 100) + '% das audiências realizadas' : '—'; };
+    var cardF = function(res, ico, rot, v, cap, cor){ return '<button type="button" class="card stat pn-kpi pn-kpi-f' + (pnRes === res ? ' on' : '') + '" data-pnres="' + res + '" title="Ver quem são na lista de clientes"><div class="stat-h"><svg class="i"><use href="#' + ico + '"/></svg>' + rot + '</div><div class="stat-v tnum" style="color:var(' + cor + ')">' + v + '</div><div class="stat-c">' + cap + '</div></button>'; };
     $('pn-kpis').innerHTML =
-      card('i-users', 'Clientes na base', rows.length, (rows.length - prot.length) + ' ainda em cadastro') +
-      card('i-file', 'Protocolados', prot.length, rows.length ? Math.round(prot.length / rows.length * 100) + '% da base' : '—') +
-      card('i-cal', 'Audiências realizadas', realiz.length, 'clientes que já passaram pela audiência') +
-      card('i-check', 'Procedência', realiz.length ? Math.round(proc.length / realiz.length * 100) + '%' : '—', proc.length + ' procedentes · ' + rows.filter(function(r){ return resAud(r) === 'conclusos'; }).length + ' conclusos · ' + rows.filter(function(r){ return resAud(r) === 'faltou'; }).length + ' faltaram · ' + improc.length + ' improcedentes', '--green');
+      card('i-users', 'Clientes na base', rows.length, prot.length + ' protocolados · ' + (rows.length - prot.length) + ' em cadastro') +
+      card('i-cal', 'Audiências realizadas', realiz.length, (rows.length - realiz.length) + ' ainda sem audiência') +
+      cardF('procedente', 'i-check', 'Procedentes', proc.length, pct(proc.length), '--green') +
+      cardF('conclusos', 'i-clock', 'Conclusos', nConc, 'aguardando sentença · ' + pct(nConc), '--purple') +
+      cardF('faltou', 'i-bellx', 'Ausências', nFalt, 'faltaram à audiência · ' + pct(nFalt), '--amber') +
+      cardF('improcedente', 'i-scale', 'Improcedentes', improc.length, pct(improc.length), '--red');
 
     pnSitDe = function(r){
       var ra = resAud(r);
@@ -5256,13 +5265,14 @@ a.rep-st.ok{text-decoration:none}
 
 
   /* Painel: tabela com todos os clientes */
-  var pnSitDe = function(){ return 0; }, pnLista = [], pnQ = '', pnF = '', pnLimite = 60;
+  var pnSitDe = function(){ return 0; }, pnLista = [], pnQ = '', pnF = '', pnRes = '', pnLimite = 60;
   var PN_SIT = [['Em cadastro', '--ink-3'], ['Aguardando pauta', '--amber'], ['Audiência marcada', '--blue'], ['Conclusos', '--purple'], ['Procedente', '--green'], ['Faltou ou improcedente', '--red'], ['Arquivado', '--line-2']];
   function pnResultado(r){ var ra = resAud(r); return ra === 'procedente' ? 'Procedente' : ra === 'conclusos' ? 'Concluso' : ra === 'faltou' ? 'Faltou' : ra === 'improcedente' ? 'Improcedente' : (r.audData && jaRealizada(r) ? 'Sem resultado lançado' : '—'); }
   function pnFiltrados(){
     var q = norm(pnQ), qd = digits(pnQ);
     return pnLista.filter(function(r){
       if (pnF !== '' && String(pnSitDe(r)) !== pnF) return false;
+      if (pnRes && resAud(r) !== pnRes) return false;
       return !q || norm(r.nome).indexOf(q) >= 0 || (qd.length >= 3 && (digits(r.cpf).indexOf(qd) >= 0 || digits(r.processo).indexOf(qd) >= 0));
     }).sort(function(a, b){ return String(a.nome || '').localeCompare(String(b.nome || ''), 'pt'); });
   }
@@ -5273,7 +5283,7 @@ a.rep-st.ok{text-decoration:none}
     $('pn-f').innerHTML = '<option value="">Todas as situações · ' + pnLista.length + '</option>' + PN_SIT.map(function(x, k){ return cont[k] ? '<option value="' + k + '">' + x[0] + ' · ' + cont[k] + '</option>' : ''; }).join('');
     $('pn-f').value = pnF;
     var l = pnFiltrados();
-    $('pn-cli-sub').textContent = l.length + (l.length === 1 ? ' cliente' : ' clientes') + (pnF !== '' || pnQ ? ' no filtro' : ' na base') + ' · clique no nome para abrir a ficha';
+    $('pn-cli-sub').textContent = l.length + (l.length === 1 ? ' cliente' : ' clientes') + (pnRes ? ' · ' + ({ procedente: 'procedentes', conclusos: 'conclusos', faltou: 'ausências', improcedente: 'improcedentes' })[pnRes] : '') + (pnF !== '' || pnQ || pnRes ? ' no filtro' : ' na base') + ' · clique no nome para abrir a ficha';
     $('pn-cli-head').innerHTML = '<tr><th>Cliente</th><th>Processo</th><th>Prospectador</th><th>Audiência</th><th>Situação</th><th>Resultado</th></tr>';
     $('pn-cli-body').innerHTML = l.slice(0, pnLimite).map(function(r){
       var k = pnSitDe(r);
@@ -5288,6 +5298,9 @@ a.rep-st.ok{text-decoration:none}
   }
   $('pn-q').addEventListener('input', function(){ pnQ = this.value.trim(); pnLimite = 60; renderPainelClientes(); });
   $('pn-f').addEventListener('change', function(){ pnF = this.value; pnLimite = 60; renderPainelClientes(); });
+  $('pn-kpis').addEventListener('click', function(e){ var b = e.target.closest('[data-pnres]'); if (!b) return; pnRes = pnRes === b.dataset.pnres ? '' : b.dataset.pnres; pnF = ''; pnLimite = 60;
+    Array.prototype.forEach.call(this.querySelectorAll('[data-pnres]'), function(x){ x.classList.toggle('on', x.dataset.pnres === pnRes); });
+    renderPainelClientes(); if (pnRes) $('pn-cli-body').closest('.pn-card').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
   $('pn-mais').addEventListener('click', function(){ pnLimite += 200; renderPainelClientes(); });
   $('pn-cli-body').addEventListener('click', function(e){ var b = e.target.closest('[data-pn]'); if (!b) return; var r = todasRows().filter(function(x){ return x.id === b.dataset.pn; })[0]; if (r) openForm(r); });
   $('pn-xlsx').addEventListener('click', async function(){
