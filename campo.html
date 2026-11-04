@@ -1184,6 +1184,19 @@ html[data-tema] body .pg-din small{display:block;font-size:10.5px;color:rgba(255
 html[data-tema] body .pg-din .deve b{color:#fca5a5}
 html[data-tema] body .pg-din .zero b{color:#6ee7b7}
 html[data-tema] body .pg-din .pago b{color:#6ee7b7}
+
+/* menos balões: situações, etiquetas e valores em texto com ponto */
+html[data-tema] body .lista small{background:none!important;border:0!important;padding:0!important;color:var(--lv-i2)!important;font-weight:500!important}
+html[data-tema] body .pp-s{background:none!important;border:0!important;padding:0!important;font-size:12px!important}
+html[data-tema] body .pp-s.novo{color:var(--lv-i3)!important}
+html[data-tema] body .sinc{background:none!important;border:0!important;padding:0 4px!important}
+html[data-tema] body .pg-din > div{background:none!important;border:0!important;border-left:1px solid rgba(255,255,255,.1)!important;border-radius:0!important;padding:0 0 0 12px!important}
+html[data-tema] body .pg-din > div:first-child{border-left:0!important;padding-left:0!important}
+html[data-tema] body .pg-din{gap:0!important}
+html[data-tema] body .ag-st{background:none!important;border:0!important;padding:0!important}
+html[data-tema] body .rn-nota{font-size:12.5px;color:var(--lv-i3);margin:2px 2px 14px;line-height:1.45}
+html[data-tema] body .rn-l > div{cursor:pointer}
+html[data-tema] body .rn-wa{flex:none;font-size:12.5px;font-weight:600;color:var(--lv-i1);text-decoration:none;padding:6px 0 6px 10px}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><script>try{var t=localStorage.getItem("campo_tema");if(!t)t="dark";document.documentElement.setAttribute("data-tema",t);}catch(e){document.documentElement.setAttribute("data-tema","light");}</script>
 </head>
@@ -1222,7 +1235,7 @@ html[data-tema] body .pg-din .pago b{color:#6ee7b7}
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 58;
+  var APP_VERSAO = 59;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
@@ -1452,7 +1465,7 @@ html[data-tema] body .pg-din .pago b{color:#6ee7b7}
   function telaInicial(){
     montarCasca();
     $('topo-nome').textContent = (quem && quem.nome) || 'Prospectador';
-    Array.prototype.forEach.call(document.querySelectorAll('#abas [data-aba]'), function(b){ b.setAttribute('aria-current', b.dataset.aba === (aba === 'agenda' ? 'painel' : aba) ? 'true' : 'false'); });
+    Array.prototype.forEach.call(document.querySelectorAll('#abas [data-aba]'), function(b){ b.setAttribute('aria-current', b.dataset.aba === (aba === 'agenda' || aba === 'renovar' ? 'painel' : aba) ? 'true' : 'false'); });
     $('vista').className = 'vista' + (aba === 'novo' ? ' novo' : '');
     $('vista').onclick = null;   // cada aba põe o seu próprio clique
     document.body.classList.toggle('na-novo', aba === 'novo');
@@ -1462,6 +1475,7 @@ html[data-tema] body .pg-din .pago b{color:#6ee7b7}
     if (aba === 'pag' && quem && quem.gestor) return vistaPag();
     if (aba === 'equipe' && quem && quem.gestor) return vistaEquipe();
     if (aba === 'agenda' && quem && quem.gestor) return vistaAgenda();
+    if (aba === 'renovar' && quem && quem.gestor) return vistaRenovar();
     vistaNovo();
   }
   /* ---------- gestor: pagamentos das indicações (R$ 25 no protocolo e R$ 25 quando sai) ---------- */
@@ -1597,7 +1611,51 @@ html[data-tema] body .pg-din .pago b{color:#6ee7b7}
         '<div class="pago"><span>Já pago</span><b>' + reais(t.pagas * VALOR_PARTE) + '</b></div>' +
       '</div></div>';
   }
-  function listaProspsPag(){
+
+  /* ---------- gestor: quem pode renovar (o número "Renovar" do Painel) ---------- */
+  var renovL = null;
+  try { renovL = JSON.parse(lsGet('campo_renovar') || 'null'); } catch(e){}
+  function renovAprox(){
+    // sem a consulta do servidor: mesma regra com os dados do painel (pode incluir quem já foi contatado)
+    var hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    return ((painel && painel.clientes) || []).filter(function(c){
+      if (!c.protocolado) return false;
+      var falt = c.comparecimento === 'faltou' || c.resultado === 'ausente';
+      if (falt && c.audData) return true;
+      if (!c.protocolo) return false;
+      var p = String(c.protocolo).slice(0, 10).split('-'), d = new Date(+p[0], +p[1] - 1 + 5, +p[2]);
+      return d <= hoje;
+    }).map(function(c){
+      var falt = c.comparecimento === 'faltou' || c.resultado === 'ausente', p = String(c.protocolo || '').slice(0, 10).split('-');
+      return { id: c.id, nome: c.nome, contato: c.contato, prosp: c.prosp, faltou: falt, aud: c.audData, liberou: falt ? c.audData : (p.length === 3 ? new Date(+p[0], +p[1] - 1 + 5, +p[2]).toISOString().slice(0, 10) : '') };
+    });
+  }
+  function vistaRenovar(){
+    var desenhar = function(lista, aprox){
+      lista = (lista || []).slice().sort(function(a, b){ return String(a.nome).localeCompare(String(b.nome)); });
+      var falt = lista.filter(function(c){ return c.faltou; }).length;
+      $('vista').innerHTML = '<div id="rn-v"><button type="button" class="pag-volta" data-volta-painel="1">‹ Painel</button>' +
+        '<div class="pag-cab"><b>Podem renovar</b><span>' + lista.length + (lista.length === 1 ? ' cliente' : ' clientes') + (falt ? ' · ' + falt + ' faltaram à audiência' : '') + '</span></div>' +
+        '<p class="rn-nota">Já passaram 5 meses do protocolo (ou faltaram à audiência), ainda não foram procurados e não entraram com outra ação. ' + (aprox ? 'Lista aproximada: ainda falta instalar a consulta do servidor.' : '') + '</p>' +
+        (lista.length ? '<div class="lista rn-l">' + lista.map(function(c){
+          var tel = String(c.contato || '').replace(/\D/g, '');
+          return '<div data-cli="' + esc(c.id) + '"><i class="' + (c.faltou ? 'red' : 'ok') + '"></i><span class="nm"><b>' + esc(nomeBonito(c.nome)) + '</b><span>' +
+            (c.faltou ? 'faltou na audiência' + (c.aud ? ' de ' + dataBR(c.aud).slice(0, 5) : '') : 'liberado desde ' + dataBR(c.liberou)) + (c.prosp ? ' · ' + esc(c.prosp) : '') + '</span></span>' +
+            (tel.length >= 10 ? '<a class="rn-wa" href="https://wa.me/55' + tel.replace(/^55/, '') + '" target="_blank" rel="noopener" aria-label="WhatsApp de ' + esc(c.nome) + '">WhatsApp</a>' : '') + '</div>';
+        }).join('') + '</div>' : '<div class="vazio">Ninguém para renovar agora.</div>') + '</div>';
+      $('vista').onclick = function(e){
+        if (e.target.closest('.rn-wa')) return;
+        if (e.target.closest('[data-volta-painel]')) return irPara('painel');
+        var c = e.target.closest('[data-cli]'); if (c) fichaCli(c.dataset.cli);
+      };
+    };
+    desenhar(renovL || renovAprox(), !renovL);
+    if (navigator.onLine === false) return;
+    rpc('campo_gestor_renovar', { p_token: token }).then(function(d){
+      if (Array.isArray(d)){ renovL = d; lsSet('campo_renovar', JSON.stringify(d)); if (aba === 'renovar') desenhar(d, false); }
+    }).catch(function(){});
+  }
+  function listaProspsPag(comResumo){
     // todos da equipe (Equipe/BI), com as indicações protocoladas de cada um (Pagamentos)
     var porId = {}; (gest || []).forEach(function(p){ porId[p.id] = p; });
     var base = (equipe && equipe.length ? equipe : (gp && gp.prospectadores) || gest || []).map(function(p){ var g = porId[p.id]; return { id: p.id, nome: p.nome, avulso: p.avulso, itens: (g && g.itens) || [] }; });
@@ -1607,8 +1665,7 @@ html[data-tema] body .pg-din .pago b{color:#6ee7b7}
     if (!ps.length) return '<div class="vazio">' + (navigator.onLine === false ? 'Sem internet agora.' : 'Carregando…') + '</div>';
     var todos = []; base.forEach(function(p){ todos = todos.concat(p.itens); });
     var ini = function(n){ var p = String(n || '').replace(/^(dr\.?|dra\.?|dona|seu)\s+/i, '').trim().split(/\s+/); return ((p[0] || '').charAt(0) + (p.length > 1 ? p[p.length - 1].charAt(0) : '')).toUpperCase(); };
-    return resumoPag(contaPag(todos), 'Pagamentos das indicações') +
-      '<div class="rot">Prospectadores · toque no nome para marcar o pagamento</div>' +
+    return (comResumo ? resumoPag(contaPag(todos), 'Pagamentos das indicações') + '<div class="rot">Prospectadores · toque no nome para marcar o pagamento</div>' : '') +
       '<div class="pp-cards">' + ps.map(function(x){
         var t = x.t;
         return '<button type="button" class="pp pg-pp" data-pagp="' + esc(x.p.id) + '"><span class="pp-av">' + esc(ini(x.p.nome)) + '</span>' +
@@ -1640,7 +1697,7 @@ html[data-tema] body .pg-din .pago b{color:#6ee7b7}
     var ps = gest.filter(function(p){ return p.itens && p.itens.length; });
     var p = ps.filter(function(x){ return x.id === gestProsp; })[0];
     if (!p && gestProsp){ var eq = (equipe || []).filter(function(x){ return x.id === gestProsp; })[0]; if (eq) p = { id: eq.id, nome: eq.nome, itens: [] }; }
-    if (!p){ gestProsp = ''; box.innerHTML = listaProspsPag(); return; }
+    if (!p){ gestProsp = ''; box.innerHTML = listaProspsPag(true); return; }
     var itens = p.itens;
     var l = itens.filter(function(c){ return gestFiltro === 'todas' || (gestFiltro === 'pagas' ? !gestAPagar(c) : gestAPagar(c)); })
       .sort(function(x, y){ return String(y.protocolo || '').localeCompare(String(x.protocolo || '')); });   // o que chegou agora primeiro
@@ -1875,14 +1932,14 @@ html[data-tema] body .pg-din .pago b{color:#6ee7b7}
         '<div class="gp-faixa"><div class="gp-faixa-t"><span>Escritório</span><img src="img/icone-energia.png" alt=""></div><div class="gp-faixa-n">' +
           '<button type="button" data-gir="preparo"><b>' + gp.emCadastro + '</b><span>Cadastro</span></button>' +
           '<button type="button" data-gir="protocolado"><b>' + gp.aguardando + '</b><span>Aguardando</span></button>' +
-          '<button type="button" data-gir="todos"><b>' + gp.renovar + '</b><span>Renovar</span></button>' +
+          '<button type="button" data-gir="renovar"><b>' + gp.renovar + '</b><span>Renovar ›</span></button>' +
         '</div></div>' +
         linhaAgenda() +
         '<div class="gp-sec">Prospectadores</div>' + listaProspsPag();
     }
     desenhar();
     $('vista').onclick = function(e){
-      var k = e.target.closest('[data-gir]'); if (k){ if (k.dataset.gir === 'pag') return irPara('pag'); filtroCli = k.dataset.gir; buscaCli = ''; return irPara('clientes'); }
+      var k = e.target.closest('[data-gir]'); if (k){ if (k.dataset.gir === 'pag') return irPara('pag'); if (k.dataset.gir === 'renovar') return irPara('renovar'); filtroCli = k.dataset.gir; buscaCli = ''; return irPara('clientes'); }
       var g = e.target.closest('[data-gp]'); if (g && false){ var pp = (gp.prospectadores || []).filter(function(x){ return x.id === g.dataset.gp; })[0]; if (pp){ filtroCli = 'todos'; buscaCli = ''; buscaProsp = pp.nome; return irPara('clientes'); } }
       var c = e.target.closest('[data-cli]'); if (c) fichaCli(c.dataset.cli);
     };
