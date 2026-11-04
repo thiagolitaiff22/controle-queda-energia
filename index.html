@@ -1573,6 +1573,124 @@ a.tag-renov:hover{background:rgba(37,99,235,.2)}
 #dlg-docs .docs-op label b{font-weight:600}
 #dlg-docs .docs-quais label{display:flex!important;align-items:center!important}
 #dlg-docs input[type=checkbox],#dlg-docs input[type=radio]{width:16px!important;height:16px!important;margin:0!important;flex:none;accent-color:#2563eb}
+
+/* ==========================================================================
+   04/11/2026: formato do BI de vendas (menu na lateral, topo com busca,
+   Adicionar e o usuário; cores azul-marinho; títulos sem caixa alta).
+   ========================================================================== */
+:root{
+  --bg:#ffffff; --chrome:#ffffff; --panel:hsl(216 30% 97.5%); --soft:hsl(216 28% 94%); --hover:hsl(218 40% 95%); --active:hsl(218 40% 95%);
+  --ink:hsl(222 45% 9%); --ink-2:hsl(215 14% 30%); --ink-3:hsl(215 12% 46%); --line:hsl(216 20% 89%); --line-2:hsl(216 16% 79%);
+  --primary:hsl(222 68% 12%); --on-primary:#ffffff;
+  --blue:hsl(217 82% 46%); --blue-soft:hsl(217 82% 46% / .1); --green:hsl(152 64% 34%); --green-soft:hsl(152 64% 34% / .1);
+  --amber:hsl(28 92% 48%); --amber-soft:hsl(28 92% 48% / .12); --red:hsl(4 74% 50%); --red-soft:hsl(4 74% 50% / .1); --purple:hsl(262 62% 54%);
+  --tile:hsl(216 24% 93%); --shadow:none;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:hsl(222 52% 8%); --chrome:hsl(222 64% 5.5%); --panel:hsl(222 46% 10.5%); --soft:hsl(222 42% 12.5%); --hover:hsl(222 45% 13%); --active:hsl(222 55% 13%);
+  --ink:hsl(216 18% 92%); --ink-2:hsl(215 12% 76%); --ink-3:hsl(215 10% 58%); --line:hsl(222 36% 16%); --line-2:hsl(222 28% 25%);
+  --primary:hsl(214 60% 62%); --on-primary:hsl(222 62% 7%);
+  --blue:hsl(213 92% 66%); --blue-soft:hsl(213 92% 66% / .14); --green:hsl(152 60% 50%); --green-soft:hsl(152 60% 50% / .14);
+  --amber:hsl(36 92% 58%); --amber-soft:hsl(36 92% 58% / .14); --red:hsl(4 82% 66%); --red-soft:hsl(4 82% 66% / .14); --purple:hsl(262 84% 74%);
+  --tile:hsl(222 42% 12.5%); --shadow:none;
+}}
+:root[data-theme="dark"]{
+  --bg:hsl(222 52% 8%); --chrome:hsl(222 64% 5.5%); --panel:hsl(222 46% 10.5%); --soft:hsl(222 42% 12.5%); --hover:hsl(222 45% 13%); --active:hsl(222 55% 13%);
+  --ink:hsl(216 18% 92%); --ink-2:hsl(215 12% 76%); --ink-3:hsl(215 10% 58%); --line:hsl(222 36% 16%); --line-2:hsl(222 28% 25%);
+  --primary:hsl(214 60% 62%); --on-primary:hsl(222 62% 7%);
+  --blue:hsl(213 92% 66%); --blue-soft:hsl(213 92% 66% / .14); --green:hsl(152 60% 50%); --green-soft:hsl(152 60% 50% / .14);
+  --amber:hsl(36 92% 58%); --amber-soft:hsl(36 92% 58% / .14); --red:hsl(4 82% 66%); --red-soft:hsl(4 82% 66% / .14); --purple:hsl(262 84% 74%);
+  --tile:hsl(222 42% 12.5%); --shadow:none;
+}
+body{font-family:var(--font)}
+
+/* casca: menu lateral + coluna principal */
+#app.app{display:grid;grid-template-columns:232px minmax(0,1fr);min-height:100%;background:var(--bg)}
+#app.app.collapsed{grid-template-columns:64px minmax(0,1fr)}
+#app .side{background:var(--chrome);border-right:1px solid var(--line);padding-bottom:16px;scrollbar-width:none}
+#app .side::-webkit-scrollbar{display:none}
+#app .side-top{height:56px;flex:none;display:flex;align-items:center;gap:8px;padding:0 8px 0 16px}
+#app .side-marca{flex:1;min-width:0;display:flex;align-items:center}
+#app .side-marca:hover{opacity:.8}
+#app .side-marca{color:var(--ink)}
+#app .logo-mask{display:block;width:100%;max-width:164px;aspect-ratio:900/138;background:currentColor;-webkit-mask:url(img/logo-rl-horizontal.png) center/contain no-repeat;mask:url(img/logo-rl-horizontal.png) center/contain no-repeat}
+#app .side .nav{padding:4px 0;gap:0}
+#app .nav-lbl{margin:12px 0 2px;padding:0 18px;font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+#app .nav-lbl:first-child{margin-top:4px}
+#app .side .nav button{position:relative;height:34px;padding:0 20px;gap:12px;border-radius:0!important;background:none;font-size:14px;font-weight:400;color:var(--ink-2)}
+#app .side .nav button:hover{background:none;color:var(--ink)}
+#app .side .nav button[aria-selected="true"]{background:none;color:var(--ink);font-weight:500}
+#app .side .nav button[aria-selected="true"]::before{content:"";position:absolute;left:0;top:6px;bottom:6px;width:3px;border-radius:0 3px 3px 0;background:var(--primary)}
+:root[data-theme="dark"] #app .side .nav button[aria-selected="true"]{color:#fff}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) #app .side .nav button[aria-selected="true"]{color:#fff} }
+#app.collapsed .side-marca,#app.collapsed .nav-lbl{display:none}
+#app.collapsed .side-top{justify-content:center;padding:0}
+#app.collapsed .side .nav button{justify-content:center;padding:0}
+#app.collapsed .side .nav button span{display:none}
+
+/* topo */
+#app .main{background:var(--bg)}
+#app .topbar{height:56px;padding:0 24px;gap:12px;justify-content:flex-start;border-bottom:0;background:var(--chrome);backdrop-filter:none;top:0;z-index:12}
+#app #btn-menu{display:none}
+#app .gbusca{position:relative;flex:0 1 300px;display:flex;align-items:center;gap:8px;height:38px;padding:0 14px;border:1px solid var(--line);border-radius:999px;background:var(--bg);color:var(--ink-3)}
+#app .gbusca:focus-within{border-color:var(--line-2)}
+#app .gbusca input{flex:1;min-width:0;border:0!important;outline:0;background:none!important;padding:0!important;height:100%;font-size:14px;color:var(--ink);box-shadow:none!important;border-radius:0!important}
+#app .gbusca input::placeholder{color:var(--ink-3)}
+#app .gbusca input::-webkit-search-cancel-button{display:none}
+#app .gb-lista{position:absolute;top:44px;left:0;width:min(460px,calc(100vw - 32px));max-height:420px;overflow:auto;background:var(--panel);border:1px solid var(--line-2);border-radius:8px;box-shadow:0 14px 40px rgba(0,0,0,.28);padding:4px;z-index:40}
+#app .gb-lista button{display:flex;flex-direction:column;align-items:flex-start;gap:1px;width:100%;border:0;background:none;text-align:left;padding:8px 10px;border-radius:6px;color:var(--ink)}
+#app .gb-lista button:hover,#app .gb-lista button.sel{background:var(--soft)}
+#app .gb-lista b{font-size:13.5px;font-weight:600}
+#app .gb-lista small{font-size:12px;color:var(--ink-3)}
+#app .gb-lista .gb-onde{color:var(--blue)}
+#app .gb-vazio{padding:12px;font-size:13px;color:var(--ink-3)}
+#app .topbar .top-right{margin-left:auto;gap:12px}
+#app .topbar .top-right small{font-size:11.5px;color:var(--ink-3)}
+#app .topbar #btn-novo:not([hidden]){display:inline-flex!important}
+#app .btn-add{border-radius:999px!important;padding:8px 18px;background:var(--primary);border-color:var(--primary);color:var(--on-primary);font-weight:500}
+#app .btn-add:hover{filter:brightness(1.08)}
+#app .topbar .side-foot{margin:0;padding:4px 14px 4px 4px;border:0;border-radius:999px;background:var(--soft);gap:9px}
+#app .topbar .side-foot > div:not(.av){display:flex;align-items:center;gap:10px}
+#app .topbar .side-foot b{font-size:13.5px;font-weight:500;max-width:220px}
+#app .topbar .side-foot .av{width:30px;height:30px;background:var(--primary)!important;color:var(--on-primary)!important;font-size:12.5px}
+#app .stat-c{font-family:var(--font);font-size:12px;letter-spacing:0}
+#app .topbar #btn-sair{font-size:12.5px;font-weight:500;color:var(--ink-3)}
+#app .topbar #btn-sair:hover{color:var(--red)}
+
+/* conteúdo */
+#app .content{padding:32px 40px 56px;max-width:1640px}
+#app .ph{border-bottom:0;padding-bottom:4px}
+#app .ph h1{font-size:20px;font-weight:600}
+#app .ph p{color:var(--ink-3)}
+.card,.btn,button.tb-btn,.tb-sel,.search,.search input,input:not([type=checkbox]):not([type=radio]),select,textarea,dialog,.vw-dash .card.stat,.cl-etapa-cards > button.card,.fb-painel,.integ,.ig-card,.eq-list{border-radius:6px!important}
+.card{background:var(--panel);border-color:var(--line)}
+.vw-dash .card.stat{border:1px solid var(--line)!important;background:var(--panel)!important}
+.vw-dash .card.stat .stat-h{font-size:13px!important;font-weight:600!important;color:var(--ink)!important}
+.vw-dash .card.stat .stat-h svg.i{color:var(--ink-2)}
+
+/* sem caixa alta nos títulos (como no BI de vendas) */
+.stat-h,.vw-dash .card.stat .stat-h,.row.head,.card.list .row.head > div,.ct-tbl th,.ct-resumo th,.ct-num thead th,.eyebrow,.sec-rot,.fb-lbl,.fb-painel label,.ct-sec,.ct-bars-head b,.section-lbl,.ficha-t,.pp-h,.lbl,.ct-aud-bar label,.ct-on{text-transform:none!important;letter-spacing:0!important}
+.row.head,.card.list .row.head > div,.ct-tbl th,.ct-resumo th,.ct-num thead th{font-size:12.5px!important;font-weight:600!important}
+.sec-rot{font-size:14px!important;font-weight:600!important;color:var(--ink)!important}
+
+/* tablet e celular: o menu abre por cima */
+@media (max-width:900px){
+  #app.app,#app.app.collapsed{grid-template-columns:minmax(0,1fr)}
+  #app .side{position:fixed;left:0;top:0;bottom:0;width:260px;z-index:30;transform:translateX(-100%);transition:transform .2s}
+  #app.open .side{transform:none}
+  #app.open .side-scrim{z-index:25}
+  #app.collapsed .side-marca,#app.collapsed .nav-lbl{display:revert}
+  #app.collapsed .side .nav button{justify-content:flex-start;padding:0 20px}
+  #app.collapsed .side .nav button span{display:revert}
+  #app #btn-side{display:none}
+  #app #btn-menu{display:grid}
+  #app .topbar{padding:0 12px;gap:8px}
+  #app .topbar .top-right small,#app .btn-add span,#app .topbar .side-foot b{display:none}
+  #app .btn-add{padding:8px 11px}
+  #app .content{padding:20px 16px 40px}
+}
+
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -1641,26 +1759,40 @@ a.tag-renov:hover{background:rgba(37,99,235,.2)}
 </div>
 
 <div class="app" id="app" hidden>
-  <header class="topnav">
-    <div class="brand"><div class="logo rl-logo"><img src="img/logo-rl-icone.png" alt="RL"></div><div><b>Queda de Energia</b><span>Rodrigues Litaiff Advogados</span></div></div>
-    <nav class="nav" role="tablist" aria-orientation="horizontal">
+  <aside class="side" id="side">
+    <div class="side-top">
+      <a class="side-marca" href="#" id="side-marca" title="Rodrigues Litaiff Advogados Associados"><span class="logo-mask" role="img" aria-label="Rodrigues Litaiff Advogados Associados"></span></a>
+      <button class="icon-btn" id="btn-side" type="button" aria-label="Esconder o menu" title="Esconder o menu"><svg class="i"><use href="#i-panel"/></svg></button>
+    </div>
+    <nav class="nav" role="tablist" aria-orientation="vertical">
+      <p class="nav-lbl">Queda de Energia</p>
       <button class="tab" role="tab" id="tab-cad" aria-selected="false" type="button" title="Cadastro"><svg class="i"><use href="#i-plus"/></svg><span>Cadastro</span></button>
       <button class="tab" role="tab" id="tab-novo" aria-selected="false" type="button" title="Novo cliente"><svg class="i"><use href="#i-users"/></svg><span>Novo cliente</span></button>
       <button class="tab" role="tab" id="tab-clientes" aria-selected="true" type="button" title="Controle"><svg class="i"><use href="#i-users"/></svg><span>Controle</span></button>
       <button class="tab" role="tab" id="tab-ct" aria-selected="false" type="button" title="Contestações"><svg class="i"><use href="#i-scale"/></svg><span>Contestações</span></button>
       <button class="tab" role="tab" id="tab-aud" aria-selected="false" type="button" title="Audiências"><svg class="i"><use href="#i-cal"/></svg><span>Audiências</span></button>
+      <p class="nav-lbl">Gestão</p>
       <button class="tab admin-only" role="tab" id="tab-fin" aria-selected="false" type="button" title="Financeiro"><svg class="i"><use href="#i-cash"/></svg><span>Financeiro</span></button>
       <button class="tab" role="tab" id="tab-ret" aria-selected="false" type="button" title="Nova ação"><svg class="i"><use href="#i-file"/></svg><span>Nova ação</span></button>
       <button class="tab admin-only" role="tab" id="tab-equipe" aria-selected="false" type="button" title="Configurações"><svg class="i"><use href="#i-gear"/></svg><span>Configurações</span></button>
     </nav>
-    <div class="top-right">
-      <small id="sync">Conectando à base…</small>
-      <button class="icon-btn theme-btn" id="btn-theme" type="button" aria-label="Modo escuro" title="Modo escuro"><svg class="i"><use id="theme-ico" href="#i-moon"/></svg></button>
-      <button class="btn primary" id="btn-novo" type="button"><svg class="i"><use href="#i-plus"/></svg>Novo cliente</button>
-      <div class="side-foot"><div class="av" id="me-av">E</div><div><b id="me"></b><button type="button" class="linkbtn" id="btn-sair">Sair</button></div></div>
-    </div>
-  </header>
+  </aside>
+  <div class="side-scrim" id="side-scrim"></div>
   <div class="main">
+    <header class="topbar">
+        <button class="icon-btn" id="btn-menu" type="button" aria-label="Abrir o menu" title="Abrir o menu"><svg class="i"><use href="#i-panel"/></svg></button>
+        <div class="gbusca" id="gbusca">
+          <svg class="i"><use href="#i-search"/></svg>
+          <input id="g-q" type="search" autocomplete="off" placeholder="Digite / para pesquisar" aria-label="Buscar cliente em toda a base">
+          <div class="gb-lista" id="g-lista" hidden></div>
+        </div>
+        <div class="top-right">
+          <small id="sync">Conectando à base…</small>
+          <button class="icon-btn theme-btn" id="btn-theme" type="button" aria-label="Modo escuro" title="Modo escuro"><svg class="i"><use id="theme-ico" href="#i-moon"/></svg></button>
+          <button class="btn primary btn-add" id="btn-novo" type="button"><svg class="i"><use href="#i-plus"/></svg><span>Adicionar</span></button>
+          <div class="side-foot"><div class="av" id="me-av">E</div><div><b id="me"></b><button type="button" class="linkbtn" id="btn-sair">Sair</button></div></div>
+        </div>
+      </header>
     <div class="content">
       <div class="ph"><div><h1 id="pg-tit">Clientes</h1><p id="pg-sub">Controle geral e avisos · Ações contra a Âmbar Energia, Alvarães/AM</p></div><div class="base-seg" id="base-seg" role="group" aria-label="Antigos ou novos"></div></div>
 
@@ -5886,6 +6018,56 @@ a.tag-renov:hover{background:rgba(37,99,235,.2)}
     b.addEventListener('click', function(){ var rec = !app.classList.contains('collapsed'); aplicar(rec); try { localStorage.setItem('qe-menu', rec ? '0' : '1'); } catch(e){} });
   })();
 
+  function ola(nome){ var p = String(nome || "").trim().split(/\s+/)[0] || ""; return "Olá, " + p.charAt(0).toUpperCase() + p.slice(1).toLowerCase(); }
+  /* ---------- menu do celular e busca do topo (formato do BI de vendas) ---------- */
+  (function(){
+    var app = $('app');
+    function fechar(){ app.classList.remove('open'); }
+    $('btn-menu').addEventListener('click', function(){ app.classList.toggle('open'); });
+    $('side-scrim').addEventListener('click', fechar);
+    Array.prototype.forEach.call(document.querySelectorAll('#side .nav button'), function(b){ b.addEventListener('click', fechar); });
+    $('side-marca').addEventListener('click', function(e){ e.preventDefault(); showTab('c'); fechar(); });
+
+    var q = $('g-q'), lista = $('g-lista'), achados = [], sel = -1;
+    function onde(r){
+      if (r.arquivado) return 'Arquivado';
+      if (r.descartado) return 'Descartado';
+      if (noCadastro(r)) return 'Cadastro';
+      if (noControle(r)) return 'Controle';
+      return 'Audiência realizada';
+    }
+    function pintar(){
+      var t = q.value.trim();
+      if (t.length < 2){ lista.hidden = true; achados = []; return; }
+      var n = norm(t), d = digits(t);
+      achados = todasRows().filter(function(r){
+        return norm(r.nome).indexOf(n) >= 0 || (d.length >= 3 && (digits(r.cpf).indexOf(d) >= 0 || digits(r.processo).indexOf(d) >= 0));
+      }).sort(function(a, b){ return String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR'); }).slice(0, 15);
+      if (sel >= achados.length) sel = achados.length - 1;
+      lista.innerHTML = achados.length ? achados.map(function(r, i){
+        var info = [r.cpf ? 'CPF ' + r.cpf : '', String(r.processo || '').trim() || 'Sem processo'].filter(Boolean).join(' · ');
+        return '<button type="button" data-i="' + i + '"' + (i === sel ? ' class="sel"' : '') + '><b>' + esc(r.nome || 'Sem nome') + '</b><small>' + esc(info) + ' · <span class="gb-onde">' + onde(r) + '</span></small></button>';
+      }).join('') : '<div class="gb-vazio">Nenhum cliente encontrado</div>';
+      lista.hidden = false;
+    }
+    function abrir(i){ var r = achados[i]; if (!r) return; lista.hidden = true; q.value = ''; q.blur(); openForm(r); }
+    q.addEventListener('input', function(){ sel = -1; pintar(); });
+    q.addEventListener('focus', pintar);
+    q.addEventListener('keydown', function(e){
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp'){ e.preventDefault(); if (!achados.length) return; sel = (sel + (e.key === 'ArrowDown' ? 1 : -1) + achados.length) % achados.length; pintar(); }
+      else if (e.key === 'Enter'){ e.preventDefault(); abrir(sel >= 0 ? sel : 0); }
+      else if (e.key === 'Escape'){ lista.hidden = true; q.blur(); }
+    });
+    lista.addEventListener('mousedown', function(e){ var b = e.target.closest('button[data-i]'); if (b){ e.preventDefault(); abrir(+b.dataset.i); } });
+    q.addEventListener('blur', function(){ setTimeout(function(){ lista.hidden = true; }, 120); });
+    document.addEventListener('keydown', function(e){
+      if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return;
+      var a = document.activeElement, tag = a && a.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (a && a.isContentEditable) || document.querySelector('dialog[open]')) return;
+      e.preventDefault(); q.focus();
+    });
+  })();
+
   /* ---------- light / dark ---------- */
   function currentTheme(){ return document.documentElement.getAttribute('data-theme') || (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); }
   function applyTheme(t){
@@ -6039,7 +6221,7 @@ a.tag-renov:hover{background:rgba(37,99,235,.2)}
     var p = await SB.from('equipe').select('*').eq('email', email).maybeSingle();
     state.me = { email: email, funcao: f.data, nome: (p.data && p.data.nome) || email };
     document.body.dataset.role = f.data;
-    $('me').textContent = state.me.nome + ' · ' + (FUNCAO[f.data] || f.data); $('me-av').textContent = String(state.me.nome || '?').trim().charAt(0).toUpperCase();
+    $('me').textContent = ola(state.me.nome); $('me').title = state.me.nome + ' · ' + (FUNCAO[f.data] || f.data); $('me-av').textContent = String(state.me.nome || '?').trim().charAt(0).toUpperCase();
     $('auth').hidden = true; $('app').hidden = false;
     try { var sv = sessionStorage.getItem('qe-view'); showTab(sv && VIEWS[sv] ? sv : state.view || 'c'); } catch(e){ showTab(state.view || 'c'); }
     if (iniciado){ render(); return; }
@@ -6054,7 +6236,7 @@ a.tag-renov:hover{background:rgba(37,99,235,.2)}
       state.equipe = rows;
       var eu = rows.filter(function(u){ return u.email === state.me.email; })[0];
       if (!eu || !eu.ativo){ sair(); return; }
-      if (eu.funcao !== state.me.funcao || eu.nome !== state.me.nome){ state.me.funcao = eu.funcao; state.me.nome = eu.nome; document.body.dataset.role = eu.funcao; $('me').textContent = eu.nome + ' · ' + (FUNCAO[eu.funcao] || eu.funcao); $('me-av').textContent = String(eu.nome || '?').trim().charAt(0).toUpperCase(); showTab(state.view); }
+      if (eu.funcao !== state.me.funcao || eu.nome !== state.me.nome){ state.me.funcao = eu.funcao; state.me.nome = eu.nome; document.body.dataset.role = eu.funcao; $('me').textContent = ola(eu.nome); $('me').title = eu.nome + ' · ' + (FUNCAO[eu.funcao] || eu.funcao); $('me-av').textContent = String(eu.nome || '?').trim().charAt(0).toUpperCase(); showTab(state.view); }
       renderEquipe();
     }, function(){}, function(x){ return x; }, 'email');
   }
