@@ -1722,6 +1722,15 @@ a.rep-st.ok{text-decoration:none}
 .rep-pixl{display:flex;gap:8px}
 .rep-pixl select{flex:0 0 120px}
 .rep-pixl input{flex:1;min-width:0}
+
+/* Audiências: Pauta · Contestações · Resultados */
+#tab-ct{display:none!important}
+.aud-sub{align-self:flex-start}
+.pauta-resumo{display:flex;flex-wrap:wrap;gap:8px 24px;font-size:13.5px;color:var(--ink-2)}
+.pauta-resumo b{color:var(--ink);font-size:16px;margin-right:4px}
+.pauta-row{grid-template-columns:minmax(0,2.4fr) repeat(4,minmax(0,1fr))!important;cursor:pointer}
+.pauta-row.head{cursor:default}
+.pauta-cli{grid-template-columns:minmax(0,2fr) minmax(0,1.4fr) minmax(0,1fr) auto!important}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -1965,6 +1974,7 @@ a.rep-st.ok{text-decoration:none}
       </section>
 
       <section id="view-ct" class="vw-dash" hidden style="display:flex;flex-direction:column;gap:14px">
+        <div class="res-rap aud-sub" role="tablist" aria-label="Parte de Audiências"><button type="button" data-aus="pauta" aria-pressed="false">Pauta</button><button type="button" data-aus="ct" aria-pressed="false">Contestações</button><button type="button" data-aus="res" aria-pressed="false">Resultados</button></div>
         <div hidden><button type="button" id="ct-aud-ant"></button><button type="button" id="ct-aud-prox"></button><span id="ct-aud-info"></span><button type="button" id="ct-geral"></button></div>
         <div class="sec-rot">Resumo por resultado</div>
         <div class="stats five ct-stats" id="ct-stats"></div>
@@ -2031,12 +2041,16 @@ a.rep-st.ok{text-decoration:none}
         </form>
       </section>
       <section id="view-aud" hidden style="display:flex;flex-direction:column;gap:18px">
+        <div class="res-rap aud-sub" role="tablist" aria-label="Parte de Audiências"><button type="button" data-aus="pauta" aria-pressed="false">Pauta</button><button type="button" data-aus="ct" aria-pressed="false">Contestações</button><button type="button" data-aus="res" aria-pressed="false">Resultados</button></div>
         <div class="fbar">
           <div class="search tb-busca"><svg class="i"><use href="#i-search"/></svg><input id="au-q" type="search" placeholder="Buscar cliente por nome ou CPF"></div>
+          <button type="button" class="tb-btn" id="au-pj" title="Abre o PROJUDI, lê as audiências marcadas e lança as datas no BI"><svg class="i"><use href="#i-scale"/></svg>Buscar pauta no PROJUDI</button>
+          <button type="button" class="tb-btn" id="au-rel" title="Planilha com todos os clientes de todas as audiências (marcadas e realizadas) e o resumo de cada audiência"><svg class="i"><use href="#i-file"/></svg>Relatório completo</button>
           <span class="tb-fim" id="au-count"></span>
         </div>
+        <div id="au-pauta"></div>
         <div class="card list" id="au-list"></div>
-        <p class="foot-note">Uma audiência vem para cá quando todos os clientes dela têm resultado lançado em Contestações (nenhum "sem resultado"). Clique numa audiência para ver os clientes.</p>
+        <p class="foot-note" id="au-nota">Uma audiência vem para cá quando todos os clientes dela têm resultado lançado em Contestações (nenhum "sem resultado"). Clique numa audiência para ver os clientes.</p>
       </section>
       <section id="view-ret" class="vw-dash" hidden style="display:flex;flex-direction:column;gap:18px">
         <div class="fbar">
@@ -4843,6 +4857,9 @@ a.rep-st.ok{text-decoration:none}
   var auAberta = {}, auQ = '';
   function renderAud(){
     var box = $('au-list'); if (!box) return;
+    pintarAudModo();
+    if (audModo === 'pauta'){ renderAudPauta(); return; }
+    $('au-pauta').innerHTML = '';
     var S = sessoesConcluidas(), ks = Object.keys(S).sort().reverse();
     var q = auQ.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(), qd = auQ.replace(/\D/g, '');
     var bate = function(r){ if (!q) return true; var n = String(r.nome || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); return n.indexOf(q) >= 0 || (qd.length >= 3 && String(r.cpf || '').replace(/\D/g, '').indexOf(qd) >= 0); };
@@ -4980,6 +4997,55 @@ a.rep-st.ok{text-decoration:none}
   $('ct-aud-sel').addEventListener('change', function(){ ctSessao = this.value; ctLimite = 200; renderContest(); });
   $('au-list').addEventListener('click', function(e){ var s = e.target.closest('[data-au]'); if (!s) return; var k = s.dataset.au; auAberta[k] = !auAberta[k]; renderAud(); });
   $('au-q').addEventListener('input', function(){ auQ = this.value.trim(); renderAud(); });
+  /* ---------- Audiências: Pauta (PROJUDI) · Contestações · Resultados ---------- */
+  var audModo = 'pauta', pautaAberta = {};
+  function pintarAudModo(){
+    var v = state.view === 't' ? 'ct' : audModo;
+    Array.prototype.forEach.call(document.querySelectorAll('.aud-sub [data-aus]'), function(b){ b.setAttribute('aria-pressed', String(b.dataset.aus === v)); });
+    var pauta = state.view === 'h' && audModo === 'pauta';
+    if ($('au-pj')) $('au-pj').hidden = !pauta;
+    if ($('au-nota')) $('au-nota').hidden = pauta;
+    if ($('au-list')) $('au-list').hidden = pauta;
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.aud-sub'), function(g){
+    g.addEventListener('click', function(e){
+      var b = e.target.closest('[data-aus]'); if (!b) return;
+      if (b.dataset.aus === 'ct'){ showTab('t'); return; }
+      audModo = b.dataset.aus; showTab('h'); renderAud();
+    });
+  });
+  $('tab-aud').addEventListener('click', function(){ audModo = 'pauta'; pintarAudModo(); renderAud(); });
+  $('au-pj').addEventListener('click', function(){ $('btn-pj').click(); });
+  function renderAudPauta(){
+    var DL = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+    var q = norm(auQ), qd = digits(auQ);
+    var bate = function(r){ return !q || norm(r.nome).indexOf(q) >= 0 || (qd.length >= 3 && (digits(r.cpf).indexOf(qd) >= 0 || digits(r.processo).indexOf(qd) >= 0)); };
+    var g = {};
+    todasRows().forEach(function(r){ if (!r.audData || r.arquivado) return; var n = daysUntil(r.audData); if (n == null || n < 0 || jaRealizada(r)) return; var k = chaveSessao(r); (g[k] = g[k] || []).push(r); });
+    var ks = Object.keys(g).sort();
+    if (q) ks = ks.filter(function(k){ return g[k].some(bate); });
+    var semPauta = todasRows().filter(function(r){ return noControle(r) && !r.audData; }).length;
+    var tot = 0; ks.forEach(function(k){ tot += g[k].length; });
+    $('au-count').textContent = ks.length + (ks.length === 1 ? ' audiência marcada' : ' audiências marcadas') + ' · ' + tot + ' clientes';
+    var h = '<div class="pauta-resumo"><span><b>' + ks.length + '</b> ' + (ks.length === 1 ? 'audiência marcada' : 'audiências marcadas') + '</span><span><b>' + tot + '</b> clientes com pauta</span><span><b>' + semPauta + '</b> protocolados aguardando pauta</span></div>';
+    h += '<div class="card list"><div class="row head pauta-row"><div>Audiência</div><div>Clientes</div><div>Online</div><div>Avisados</div><div>Falta avisar</div></div>';
+    if (!ks.length) h += '<div class="empty">' + (q ? 'Nenhuma audiência marcada com esse cliente.' : 'Nenhuma audiência marcada. Clique em <b>Buscar pauta no PROJUDI</b> para ler as audiências designadas.') + '</div>';
+    ks.forEach(function(k){
+      var rs = g[k], p = k.split('|'), n = daysUntil(p[0]), aberto = pautaAberta[k] || !!q;
+      var av = rs.filter(function(r){ return r.avisado; }).length, on = rs.filter(function(r){ return r.online; }).length;
+      var quando = n === 0 ? 'hoje' : n === 1 ? 'amanhã' : 'em ' + n + ' dias';
+      h += '<div class="row pauta-row au-sess' + (aberto ? ' aberto' : '') + '" data-pauta="' + esc(k) + '">' +
+        '<div><b>' + fmtDate(p[0]) + '</b> <span class="small">' + DL[parseDate(p[0]).getDay()] + (p[1] ? ' · ' + esc(p[1]) : '') + ' · ' + quando + '</span></div>' +
+        '<div class="tnum">' + rs.length + '</div><div class="tnum">' + (on || '—') + '</div><div class="tnum au-ok">' + av + '</div><div class="tnum' + (rs.length - av ? ' au-crit' : '') + '">' + (rs.length - av) + '</div></div>';
+      if (aberto) h += '<div class="au-clientes">' + rs.filter(bate).sort(function(a, b){ return String(a.nome).localeCompare(String(b.nome), 'pt'); }).map(function(r){
+        return '<div class="au-cli pauta-cli"><span>' + esc(r.nome) + (r.online ? ' <span class="small">· online</span>' : '') + '</span><span class="small tnum">' + esc(r.processo || '') + '</span>' +
+          '<span class="small">' + esc(r.contato || '') + '</span><span class="cad-sit ' + (r.avisado ? 'ok' : 'warn') + '">' + (r.avisado ? 'Avisado' : 'Não avisado') + '</span></div>';
+      }).join('') + '</div>';
+    });
+    $('au-pauta').innerHTML = h + '</div>';
+  }
+  $('au-pauta').addEventListener('click', function(e){ var s2 = e.target.closest('[data-pauta]'); if (!s2) return; var k = s2.dataset.pauta; pautaAberta[k] = !pautaAberta[k]; renderAudPauta(); });
+
   $('ct-aud-ant').addEventListener('click', function(){ var ks = ctSessoes(), p = ks.indexOf(ctSessao); ctSessao = p > 0 ? ks[p - 1] : (p < 0 ? ks[ks.length - 1] || '' : ctSessao); ctLimite = 200; renderContest(); });
   $('ct-aud-prox').addEventListener('click', function(){ var ks = ctSessoes(), p = ks.indexOf(ctSessao); ctSessao = p < 0 ? ks[0] || '' : (ks[p + 1] || ctSessao); ctLimite = 200; renderContest(); });
   $('ct-cart').addEventListener('click', function(e){ var b = e.target.closest('[data-tese]'); if (!b || b.disabled) return; ctFiltro = ctFiltro === b.dataset.tese ? '' : b.dataset.tese; ctLimite = 200; renderContest(); });
@@ -5575,8 +5641,8 @@ a.rep-st.ok{text-decoration:none}
     p: ['Pós-audiência', 'Resultados, conclusos, embargos e pagamentos'],
     f: ['Financeiro', 'Depois da audiência: condenações, previsão de pagamento, honorários e repasse'],
     r: ['Nova ação', 'Base de todos os clientes protocolados · quando cada um pode entrar com a nova ação (5 meses depois do protocolo)'],
-    t: ['Contestações', 'Audiências ainda com resultado a lançar: teses da Âmbar e resultado de cada cliente'],
-    h: ['Audiências', 'Histórico das audiências concluídas: quantos procedentes, conclusos, faltaram e improcedentes'],
+    t: ['Audiências', 'Contestações: teses da Âmbar e resultado de cada cliente das audiências a lançar'],
+    h: ['Audiências', 'Pauta marcada no PROJUDI, contestações e resultados'],
     e: ['Configurações', 'Equipe, integrações e prospectadores']
   };
   function showTab(which){
@@ -5585,6 +5651,8 @@ a.rep-st.ok{text-decoration:none}
     if (TITULOS[which]){ $('pg-tit').textContent = TITULOS[which][0]; $('pg-sub').textContent = TITULOS[which][1]; }
     $('btn-novo').hidden = which === 'e';
     Object.keys(VIEWS).forEach(function(k){ $(VIEWS[k][0]).setAttribute('aria-selected', k === which ? 'true' : 'false'); $(VIEWS[k][1]).hidden = k !== which; });
+    if (which === 't') $('tab-aud').setAttribute('aria-selected', 'true');
+    pintarAudModo();
     try { sessionStorage.setItem('qe-view', which); } catch(e){}
   }
   Object.keys(VIEWS).forEach(function(k){ $(VIEWS[k][0]).addEventListener('click', function(){ showTab(k); }); });
@@ -5920,6 +5988,56 @@ a.rep-st.ok{text-decoration:none}
     });
     return exceljsP;
   }
+  /* relatório completo dos clientes das audiências (todas, marcadas e realizadas) */
+  $('au-rel').addEventListener('click', async function(){
+    var b = this; b.disabled = true;
+    try {
+      var X = await loadExcel();
+      var RES = { procedente: 'Procedente', conclusos: 'Conclusos', faltou: 'Faltou', improcedente: 'Improcedente' };
+      var DL = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+      var todos = todasRows().filter(function(r){ return !!r.audData; }).sort(function(a, c){ return String(c.audData + (c.audHora || '')).localeCompare(String(a.audData + (a.audHora || ''))) || String(a.nome || '').localeCompare(String(c.nome || ''), 'pt'); });
+      var situacao = function(r){ var n = daysUntil(r.audData); if (n != null && n >= 0 && !jaRealizada(r)) return 'Marcada'; return RES[resAud(r)] || 'Sem resultado lançado'; };
+      var wb = new X.Workbook(); wb.creator = 'Rodrigues Litaiff Advogados';
+      var FONTE = 'Calibri', ESCURO = 'FF111827', CINZA = 'FF6B7280', fina = { style: 'thin', color: { argb: 'FFE5E7EB' } }, borda = { top: fina, bottom: fina, left: fina, right: fina };
+      function cabecalho(ws, cols, titulo, sub){
+        ws.mergeCells(1, 1, 1, cols.length); ws.getCell(1, 1).value = titulo; ws.getCell(1, 1).font = { name: FONTE, size: 16, bold: true, color: { argb: ESCURO } }; ws.getRow(1).height = 26;
+        ws.mergeCells(2, 1, 2, cols.length); ws.getCell(2, 1).value = sub; ws.getCell(2, 1).font = { name: FONTE, size: 10, color: { argb: CINZA } };
+        var c = ws.getRow(4); c.values = cols; c.height = 22;
+        c.eachCell(function(x){ x.font = { name: FONTE, size: 10.5, bold: true, color: { argb: 'FFFFFFFF' } }; x.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: ESCURO } }; x.alignment = { vertical: 'middle' }; x.border = borda; });
+        ws.autoFilter = { from: { row: 4, column: 1 }, to: { row: 4, column: cols.length } };
+        ws.views = [{ state: 'frozen', ySplit: 4, showGridLines: false }];
+      }
+      function linha(ws, vals, i){ var l = ws.addRow(vals); l.eachCell({ includeEmpty: true }, function(c){ c.font = { name: FONTE, size: 10.5 }; c.border = borda; c.alignment = { vertical: 'middle', wrapText: true }; if (i % 2) c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF7F8FA' } }; }); }
+      var hojeTxt = new Date().toLocaleDateString('pt-BR');
+      // 1) resumo por audiência
+      var g = {}; todos.forEach(function(r){ var k = chaveSessao(r); (g[k] = g[k] || []).push(r); });
+      var ws1 = wb.addWorksheet('Por audiência', { pageSetup: { paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
+      ws1.columns = [{ width: 14 }, { width: 9 }, { width: 9 }, { width: 10 }, { width: 10 }, { width: 12 }, { width: 11 }, { width: 10 }, { width: 13 }, { width: 11 }, { width: 13 }];
+      cabecalho(ws1, ['Data', 'Hora', 'Clientes', 'Avisados', 'Online', 'Procedentes', 'Conclusos', 'Faltaram', 'Improcedentes', 'Sem resultado', 'Procedência'], 'Relatório das audiências · Queda de Energia', 'Rodrigues Litaiff Advogados · gerado em ' + hojeTxt + ' · ' + Object.keys(g).length + ' audiências · ' + todos.length + ' clientes');
+      Object.keys(g).sort().reverse().forEach(function(k, i){
+        var rs = g[k], p = k.split('|'), c = { procedente: 0, conclusos: 0, faltou: 0, improcedente: 0, '': 0 };
+        rs.forEach(function(r){ c[resAud(r)]++; });
+        var julg = c.procedente + c.improcedente;
+        linha(ws1, [fmtDate(p[0]) + ' (' + DL[parseDate(p[0]).getDay()] + ')', p[1] || '', rs.length, rs.filter(function(r){ return r.avisado; }).length, rs.filter(function(r){ return r.online; }).length,
+          c.procedente, c.conclusos, c.faltou, c.improcedente, c[''], julg ? Math.round(c.procedente / julg * 100) + '%' : '—'], i);
+      });
+      // 2) todos os clientes, um por linha
+      var ws2 = wb.addWorksheet('Clientes', { pageSetup: { paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
+      ws2.columns = [{ width: 13 }, { width: 8 }, { width: 36 }, { width: 15 }, { width: 27 }, { width: 17 }, { width: 40 }, { width: 8 }, { width: 18 }, { width: 18 }, { width: 30 }, { width: 22 }];
+      cabecalho(ws2, ['Audiência', 'Hora', 'Nome', 'CPF', 'Processo', 'Contato', 'Endereço', 'Online', 'Aviso', 'Situação', 'Tese da contestação', 'Prospectador'], 'Clientes das audiências', 'Rodrigues Litaiff Advogados · gerado em ' + hojeTxt + ' · use o filtro de cada coluna para separar por audiência, situação ou prospectador');
+      todos.forEach(function(r, i){
+        var tc = comboDe(r), pr = prospById(r.responsavelId);
+        linha(ws2, [fmtDate(r.audData), r.audHora || '', r.nome || '', r.cpf || '', r.processo || '', r.contato || '', r.endereco || '', r.online ? 'Sim' : '',
+          r.avisado ? 'Avisado' + (r.meioAviso ? ' (' + (MEIOS[r.meioAviso] || r.meioAviso) + ')' : '') : sit(r) === 'sem_contato' ? 'Sem contato' : 'Não avisado',
+          situacao(r), tc ? nomeCombo(tc) : '', pr ? pr.nome : ''], i);
+      });
+      var buf = await wb.xlsx.writeBuffer();
+      var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+      a.download = 'Relatorio das audiencias ' + iso(new Date()) + '.xlsx'; document.body.appendChild(a); a.click(); a.remove();
+      toast('Relatório baixado: ' + Object.keys(g).length + ' audiências, ' + todos.length + ' clientes');
+    } catch(err){ toast('Não foi possível gerar o relatório: ' + (err.message || err)); }
+    finally { b.disabled = false; }
+  });
   /* planilha da audiência escolhida em Contestações: nome, endereço e celular, em ordem alfabética */
   $('ct-xlsx').addEventListener('click', async function(){
     if (!ctSessao) return;
