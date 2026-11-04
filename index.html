@@ -1624,8 +1624,12 @@ body{font-family:var(--font)}
 #app .side .nav button[aria-selected="true"]::before{content:"";position:absolute;left:0;top:6px;bottom:6px;width:3px;border-radius:0 3px 3px 0;background:var(--primary)}
 :root[data-theme="dark"] #app .side .nav button[aria-selected="true"]{color:#fff}
 @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) #app .side .nav button[aria-selected="true"]{color:#fff} }
-#app.collapsed .side-marca,#app.collapsed .nav-lbl{display:none}
-#app.collapsed .side-top{justify-content:center;padding:0}
+#app.collapsed .nav-lbl{display:none}
+#app.collapsed .side-top{flex-direction:column;justify-content:center;height:auto;padding:14px 0 8px;gap:10px}
+#app.collapsed .side-marca{flex:none}
+#app.collapsed .logo-mask{width:30px;height:30px;aspect-ratio:auto;-webkit-mask-image:url(img/logo-rl-icone.png);mask-image:url(img/logo-rl-icone.png)}
+#app #list .row{grid-template-columns:minmax(0,2.3fr) minmax(200px,1.35fr) minmax(0,1fr) minmax(0,1.5fr) minmax(0,1.4fr) 36px!important}
+#app #list .copia{white-space:nowrap}
 #app.collapsed .side .nav button{justify-content:center;padding:0}
 #app.collapsed .side .nav button span{display:none}
 
@@ -1684,6 +1688,9 @@ body{font-family:var(--font)}
   #app.collapsed .side .nav button{justify-content:flex-start;padding:0 20px}
   #app.collapsed .side .nav button span{display:revert}
   #app #btn-side{display:none}
+  #app.collapsed .side-top{flex-direction:row;height:56px;padding:0 8px 0 16px}
+  #app.collapsed .side-marca{flex:1}
+  #app.collapsed .logo-mask{width:100%;height:auto;aspect-ratio:900/138;-webkit-mask-image:url(img/logo-rl-horizontal.png);mask-image:url(img/logo-rl-horizontal.png)}
   #app #btn-menu{display:grid}
   #app .topbar{padding:0 12px;gap:8px}
   #app .topbar .top-right small,#app .btn-add span,#app .topbar .side-foot b{display:none}
