@@ -1785,6 +1785,32 @@ a.rep-st.ok{text-decoration:none}
   .pt-cli{grid-template-columns:1fr auto;padding-left:18px}
   .pt-cli .pt-sub{grid-column:1/-1}
 }
+
+/* Painel (gráficos no estilo do BI de vendas) */
+#view-painel .pn-kpis{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+#view-painel .pn-kpi{padding:16px 18px;border:1px solid var(--line)!important;background:var(--panel)!important;border-radius:8px!important}
+#view-painel .pn-kpi .stat-h{font-size:13px;font-weight:600;color:var(--ink);text-transform:none;letter-spacing:0}
+#view-painel .pn-kpi .stat-v{font-size:26px;margin-top:8px}
+#view-painel .pn-kpi .stat-c{font-family:var(--font);font-size:12px;color:var(--ink-3);margin-top:2px}
+.pn-card{padding:18px 20px;border-radius:8px!important;display:flex;flex-direction:column;gap:14px;min-width:0}
+.pn-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+.pn-top b{display:block;font-size:14.5px;font-weight:600}
+.pn-top small{display:block;font-size:12px;color:var(--ink-3);margin-top:2px}
+.pn-box{position:relative;width:100%}
+.pn-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.pn-leg{display:flex;flex-direction:column;gap:9px;font-size:12.5px;color:var(--ink-2);flex:1;min-width:0}
+.pn-leg > div{display:flex;justify-content:space-between;gap:12px;align-items:center}
+.pn-leg span{display:flex;align-items:center;gap:8px}
+.pn-leg i{width:8px;height:8px;border-radius:50%;display:inline-block;flex:none}
+.pn-leg b{font-size:13px;color:var(--ink)}
+.pn-leg-h{flex-direction:row;gap:22px;flex:none}
+.pn-leg-h > div{flex-direction:column;align-items:flex-start;gap:3px}
+.pn-leg-h b{font-size:18px;font-weight:700}
+.pn-rosca{display:flex;align-items:center;gap:28px;flex:1}
+.pn-rosca .pn-box{flex:none}
+.pn-erro{margin:0;color:var(--red);font-size:13px}
+@media (max-width:1100px){ .pn-grid{grid-template-columns:1fr} #view-painel .pn-kpis{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media (max-width:560px){ .pn-rosca{flex-direction:column;align-items:stretch} .pn-rosca .pn-box{align-self:center} }
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -1860,6 +1886,7 @@ a.rep-st.ok{text-decoration:none}
     </div>
     <nav class="nav" role="tablist" aria-orientation="vertical">
       <p class="nav-lbl">Queda de Energia</p>
+      <button class="tab" role="tab" id="tab-painel" aria-selected="false" type="button" title="Painel"><svg class="i"><use href="#i-grid"/></svg><span>Painel</span></button>
       <button class="tab" role="tab" id="tab-cad" aria-selected="false" type="button" title="Cadastro"><svg class="i"><use href="#i-plus"/></svg><span>Cadastro</span></button>
       <button class="tab" role="tab" id="tab-novo" aria-selected="false" type="button" title="Novo cliente"><svg class="i"><use href="#i-users"/></svg><span>Novo cliente</span></button>
       <button class="tab" role="tab" id="tab-clientes" aria-selected="true" type="button" title="Controle"><svg class="i"><use href="#i-users"/></svg><span>Controle</span></button>
@@ -1901,6 +1928,35 @@ a.rep-st.ok{text-decoration:none}
           <span class="fb-count tnum" id="cl-count"></span>
         </div></div>
         <div class="card list" id="cl-list"></div>
+      </section>
+
+      <section id="view-painel" class="vw-dash pn" hidden style="display:flex;flex-direction:column;gap:18px">
+        <div class="stats pn-kpis" id="pn-kpis"></div>
+        <p class="pn-erro" id="pn-erro" hidden>Não foi possível carregar os gráficos. Confira a internet e recarregue a página.</p>
+        <div class="card pn-card">
+          <div class="pn-top"><div><b>Evolução mês a mês</b><small>Protocolos, audiências realizadas e procedentes nos últimos 12 meses</small></div><div class="pn-leg pn-leg-h" id="pn-evo-leg"></div></div>
+          <div class="pn-box" style="height:280px"><canvas id="pn-evo"></canvas></div>
+        </div>
+        <div class="pn-grid">
+          <div class="card pn-card">
+            <div class="pn-top"><div><b>Funil do processo</b><small>Quantos clientes chegaram a cada etapa</small></div></div>
+            <div class="pn-box" style="height:270px"><canvas id="pn-fun"></canvas></div>
+          </div>
+          <div class="card pn-card">
+            <div class="pn-top"><div><b>Situação dos clientes</b><small>Onde está cada cliente agora</small></div></div>
+            <div class="pn-rosca"><div class="pn-box" style="height:200px;width:200px"><canvas id="pn-sit"></canvas></div><div class="pn-leg" id="pn-sit-leg"></div></div>
+          </div>
+        </div>
+        <div class="pn-grid">
+          <div class="card pn-card">
+            <div class="pn-top"><div><b>Resultado por audiência</b><small>As últimas audiências realizadas, cliente a cliente</small></div></div>
+            <div class="pn-box" style="height:280px"><canvas id="pn-res"></canvas></div>
+          </div>
+          <div class="card pn-card">
+            <div class="pn-top"><div><b>Clientes por prospectador</b><small>Quem trouxe mais clientes</small></div></div>
+            <div class="pn-box" id="pn-pro-box"><canvas id="pn-pro"></canvas></div>
+          </div>
+        </div>
       </section>
 
       <section id="view-cad" class="vw-dash" hidden style="display:flex;flex-direction:column;gap:18px">
@@ -3895,7 +3951,7 @@ a.rep-st.ok{text-decoration:none}
     state.base = b.dataset.base;
     state.rows = filtroBase(todasRows()); state.limit = 100; render();
   });
-  function render(){ pintarBase(); renderAud(); renderCad(); renderStats(); renderPauta(); renderList(); renderLista(); renderPos(); renderRet(); renderProsp(); renderEquipe(); renderContest(); renderBusca(); renderClSessao(); renderFin(); if (typeof AV !== 'undefined' && AV && !AV.rodando) avMontar(); }
+  function render(){ pintarBase(); renderAud(); renderCad(); renderStats(); renderPauta(); renderList(); renderLista(); renderPos(); renderRet(); renderProsp(); renderEquipe(); renderContest(); renderBusca(); renderClSessao(); renderFin(); renderPainel(); if (typeof AV !== 'undefined' && AV && !AV.rodando) avMontar(); }
   var clQ = '';
   // stage of each process, derived from what is already recorded (no extra typing)
   var ETAPAS = [
@@ -5051,6 +5107,124 @@ a.rep-st.ok{text-decoration:none}
   $('ct-aud-sel').addEventListener('change', function(){ ctSessao = this.value; ctLimite = 200; renderContest(); });
   $('au-list').addEventListener('click', function(e){ var s = e.target.closest('[data-au]'); if (!s) return; var k = s.dataset.au; auAberta[k] = !auAberta[k]; renderAud(); });
   $('au-q').addEventListener('input', function(){ auQ = this.value.trim(); renderAud(); });
+  /* ---------- Painel: gráficos no estilo do BI de vendas (área com degradê, rosca, barras arredondadas) ---------- */
+  var chartP = null, graficos = {};
+  function loadChart(){
+    if (window.Chart) return Promise.resolve(window.Chart);
+    if (!chartP) chartP = new Promise(function(res, rej){
+      var s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js';
+      s.onload = function(){ window.Chart ? res(window.Chart) : rej(new Error('load')); };
+      s.onerror = function(){ chartP = null; rej(new Error('load')); };
+      document.head.appendChild(s);
+    });
+    return chartP;
+  }
+  function corP(n){ return cssVar(n) || '#888'; }
+  function alfa(c, a){
+    var m = String(c).match(/hsl\(([^)]+)\)/);
+    if (m) return 'hsl(' + m[1].replace(/\s*\/.*$/, '') + ' / ' + a + ')';
+    var h = String(c).replace('#', ''); if (h.length === 3) h = h.split('').map(function(x){ return x + x; }).join('');
+    var n = parseInt(h, 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')';
+  }
+  function grafico(id, cfg){
+    if (graficos[id]) graficos[id].destroy();
+    var el = $(id); if (!el) return;
+    graficos[id] = new Chart(el.getContext('2d'), cfg);
+  }
+  function baseOpts(){
+    var muted = corP('--ink-3'), linha = corP('--line');
+    return {
+      responsive: true, maintainAspectRatio: false, animation: { duration: 400 },
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { display: false }, tooltip: {
+        backgroundColor: corP('--panel'), titleColor: corP('--ink'), bodyColor: corP('--ink-2'), borderColor: linha, borderWidth: 1,
+        cornerRadius: 12, padding: 10, boxPadding: 4, usePointStyle: true, titleFont: { size: 12, weight: '600' }, bodyFont: { size: 12 } } },
+      scales: {
+        x: { grid: { display: false }, border: { display: false }, ticks: { color: muted, font: { size: 11 } } },
+        y: { beginAtZero: true, grid: { color: linha }, border: { display: false, dash: [3, 4] }, ticks: { color: muted, font: { size: 11 }, precision: 0 } }
+      }
+    };
+  }
+  function degrade(cor, topo){
+    return function(ctx){
+      var a = ctx.chart.chartArea; if (!a) return alfa(cor, topo);
+      var g = ctx.chart.ctx.createLinearGradient(0, a.top, 0, a.bottom); g.addColorStop(0, alfa(cor, topo)); g.addColorStop(1, alfa(cor, 0)); return g;
+    };
+  }
+  var MESES_P = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  async function renderPainel(){
+    if (state.view !== 'g' || !$('view-painel')) return;
+    var rows = todasRows().filter(function(r){ return !r.descartado; });
+    var prot = rows.filter(function(r){ return String(r.processo || '').trim(); });
+    var realiz = rows.filter(function(r){ return r.audData && jaRealizada(r); });
+    var proc = rows.filter(function(r){ return resAud(r) === 'procedente'; }), improc = rows.filter(function(r){ return resAud(r) === 'improcedente'; });
+    var julg = proc.length + improc.length;
+    var card = function(ico, rot, v, cap, cor){ return '<div class="card stat pn-kpi"><div class="stat-h"><svg class="i"><use href="#' + ico + '"/></svg>' + rot + '</div><div class="stat-v tnum"' + (cor ? ' style="color:var(' + cor + ')"' : '') + '>' + v + '</div><div class="stat-c">' + cap + '</div></div>'; };
+    $('pn-kpis').innerHTML =
+      card('i-users', 'Clientes na base', rows.length, (rows.length - prot.length) + ' ainda em cadastro') +
+      card('i-file', 'Protocolados', prot.length, rows.length ? Math.round(prot.length / rows.length * 100) + '% da base' : '—') +
+      card('i-cal', 'Audiências realizadas', realiz.length, 'clientes que já passaram pela audiência') +
+      card('i-check', 'Procedência', julg ? Math.round(proc.length / julg * 100) + '%' : '—', proc.length + ' procedentes · ' + improc.length + ' improcedentes', '--green');
+
+    // evolução mês a mês (últimos 12 meses)
+    var hoje = new Date(), meses = [];
+    for (var i = 11; i >= 0; i--){ var d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1); meses.push(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')); }
+    var conta = function(lista, campo){ var c = {}; lista.forEach(function(r){ var m = String(r[campo] || '').slice(0, 7); c[m] = (c[m] || 0) + 1; }); return meses.map(function(m){ return c[m] || 0; }); };
+    var sProt = conta(prot.filter(function(r){ return r.protocolo; }), 'protocolo'), sAud = conta(realiz, 'audData'), sProc = conta(proc.filter(function(r){ return r.audData; }), 'audData');
+    var soma = function(a){ return a.reduce(function(x, y){ return x + y; }, 0); };
+    var SER = [{ l: 'Protocolados', d: sProt, c: corP('--blue'), a: .38 }, { l: 'Audiências realizadas', d: sAud, c: corP('--purple'), a: .24 }, { l: 'Procedentes', d: sProc, c: corP('--green'), a: .24 }];
+    $('pn-evo-leg').innerHTML = SER.map(function(s){ return '<div><span><i style="background:' + s.c + '"></i>' + s.l + '</span><b class="tnum">' + soma(s.d) + '</b></div>'; }).join('');
+
+    // situação de cada cliente agora
+    var SIT = [['Em cadastro', '--ink-3'], ['Aguardando pauta', '--amber'], ['Audiência marcada', '--blue'], ['Aguardando sentença', '--purple'], ['Procedente', '--green'], ['Improcedente ou faltou', '--red'], ['Arquivado', '--line-2']];
+    var nSit = [0, 0, 0, 0, 0, 0, 0];
+    rows.forEach(function(r){
+      var ra = resAud(r);
+      if (r.arquivado) nSit[6]++;
+      else if (!String(r.processo || '').trim()) nSit[0]++;
+      else if (!r.audData) nSit[1]++;
+      else if (!jaRealizada(r)) nSit[2]++;
+      else if (ra === 'procedente') nSit[4]++;
+      else if (ra === 'improcedente' || ra === 'faltou') nSit[5]++;
+      else nSit[3]++;
+    });
+    $('pn-sit-leg').innerHTML = SIT.map(function(s, k){ return nSit[k] ? '<div><span><i style="background:' + corP(s[1]) + '"></i>' + s[0] + '</span><b class="tnum">' + nSit[k] + '</b></div>' : ''; }).join('');
+
+    // funil
+    var caiu = proc.filter(function(r){ return r.recebimento && r.recebimento.data; }).length;
+    var repassado = proc.filter(function(r){ return r.repasse && r.repasse.data && !(r.repasse.asaas && r.repasse.asaas.status !== 'DONE'); }).length;
+    var FUN = [['Clientes', rows.length], ['Protocolados', prot.length], ['Com audiência', rows.filter(function(r){ return r.audData; }).length], ['Audiência realizada', realiz.length], ['Procedentes', proc.length], ['Dinheiro caiu', caiu], ['Repassados', repassado]];
+
+    // resultado por audiência (já realizadas)
+    var S = {}; realiz.forEach(function(r){ var k = chaveSessao(r); (S[k] = S[k] || { p: 0, c: 0, f: 0, i: 0 }); var x = resAud(r); if (x === 'procedente') S[k].p++; else if (x === 'faltou') S[k].f++; else if (x === 'improcedente') S[k].i++; else S[k].c++; });
+    var sk = Object.keys(S).sort().slice(-12);
+    var rotS = sk.map(function(k){ var p = k.split('|'); return fmtShort(p[0]) + (p[1] ? ' ' + p[1].replace(':00', 'h') : ''); });
+
+    // prospectadores
+    var P = {}; rows.forEach(function(r){ var n = prospName(r.responsavelId) || 'Sem prospectador'; P[n] = (P[n] || 0) + 1; });
+    var pk = Object.keys(P).sort(function(a, b){ return P[b] - P[a]; }).slice(0, 10);
+    $('pn-pro-box').style.height = Math.max(180, pk.length * 34 + 30) + 'px';
+
+    try { await loadChart(); } catch(e){ $('pn-erro').hidden = false; return; }
+    if (state.view !== 'g') return;
+    Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+    var o = baseOpts();
+    grafico('pn-evo', { type: 'line', data: { labels: meses.map(function(m){ var p = m.split('-'); return MESES_P[+p[1] - 1] + '/' + p[0].slice(2); }),
+      datasets: SER.map(function(s){ return { label: s.l, data: s.d, borderColor: s.c, backgroundColor: degrade(s.c, s.a), fill: true, tension: .4, borderWidth: 2.5, pointRadius: 0, pointHoverRadius: 4, pointHoverBorderWidth: 2, pointHoverBorderColor: corP('--panel'), pointHoverBackgroundColor: s.c }; }) },
+      options: o });
+    grafico('pn-sit', { type: 'doughnut', data: { labels: SIT.map(function(s){ return s[0]; }), datasets: [{ data: nSit, backgroundColor: SIT.map(function(s){ return corP(s[1]); }), borderWidth: 0, spacing: 3, borderRadius: 3 }] },
+      options: { responsive: true, maintainAspectRatio: false, cutout: '68%', plugins: { legend: { display: false }, tooltip: o.plugins.tooltip } } });
+    var oh = baseOpts(); oh.indexAxis = 'y'; oh.scales = { x: { display: false, beginAtZero: true, grace: '12%' }, y: { grid: { display: false }, border: { display: false }, ticks: { color: corP('--ink-2'), font: { size: 12 } } } };
+    var rotulos = { id: 'rotulos', afterDatasetsDraw: function(ch){ var c = ch.ctx; c.save(); c.font = '600 12px ' + Chart.defaults.font.family; c.fillStyle = corP('--ink'); c.textBaseline = 'middle';
+      ch.getDatasetMeta(0).data.forEach(function(b, k){ c.fillText(String(ch.data.datasets[0].data[k]), b.x + 8, b.y); }); c.restore(); } };
+    grafico('pn-fun', { type: 'bar', data: { labels: FUN.map(function(f){ return f[0]; }), datasets: [{ data: FUN.map(function(f){ return f[1]; }), backgroundColor: FUN.map(function(f, k){ return alfa(corP('--blue'), 1 - k * .1); }), borderRadius: 6, borderSkipped: false, barThickness: 22 }] }, options: oh, plugins: [rotulos] });
+    grafico('pn-pro', { type: 'bar', data: { labels: pk, datasets: [{ data: pk.map(function(n){ return P[n]; }), backgroundColor: corP('--purple'), borderRadius: 6, borderSkipped: false, barThickness: 20 }] }, options: oh, plugins: [rotulos] });
+    var os = baseOpts(); os.scales.x.stacked = true; os.scales.y.stacked = true;
+    os.plugins.legend = { display: true, position: 'top', align: 'end', labels: { color: corP('--ink-2'), usePointStyle: true, pointStyle: 'circle', boxWidth: 8, boxHeight: 8, font: { size: 11.5 } } };
+    var barra = function(l, k, c){ return { label: l, data: sk.map(function(x){ return S[x][k]; }), backgroundColor: corP(c), borderRadius: 4, borderSkipped: false, maxBarThickness: 38 }; };
+    grafico('pn-res', { type: 'bar', data: { labels: rotS, datasets: [barra('Procedentes', 'p', '--green'), barra('Aguardando sentença', 'c', '--purple'), barra('Faltaram', 'f', '--amber'), barra('Improcedentes', 'i', '--red')] }, options: os });
+  }
+
   /* ---------- Audiências: Pauta (PROJUDI) · Contestações · Resultados ---------- */
   var audModo = 'pauta', pautaAberta = {};
   function pintarAudModo(){
@@ -5702,8 +5876,9 @@ a.rep-st.ok{text-decoration:none}
     } catch(err){ toast(errMsg(err)); }
     finally { $('av-save').disabled = false; }
   });
-  var VIEWS = { d: ['tab-cad', 'view-cad'], n: ['tab-novo', 'view-novo'], c: ['tab-clientes', 'view-clientes'], f: ['tab-fin', 'view-fin'], r: ['tab-ret', 'view-ret'], t: ['tab-ct', 'view-ct'], h: ['tab-aud', 'view-aud'], e: ['tab-equipe', 'view-equipe'] };
+  var VIEWS = { g: ['tab-painel', 'view-painel'], d: ['tab-cad', 'view-cad'], n: ['tab-novo', 'view-novo'], c: ['tab-clientes', 'view-clientes'], f: ['tab-fin', 'view-fin'], r: ['tab-ret', 'view-ret'], t: ['tab-ct', 'view-ct'], h: ['tab-aud', 'view-aud'], e: ['tab-equipe', 'view-equipe'] };
   var TITULOS = {
+    g: ['Painel', 'Visão geral da Queda de Energia em gráficos: protocolos, audiências, resultados e prospectadores'],
     d: ['Cadastro', 'Clientes em cadastro, ainda sem protocolo · Ações contra a Âmbar Energia, Alvarães/AM'],
     n: ['Novo cliente', 'Cadastro direto no sistema, sem fotos: só os dados do cliente'],
     c: ['Controle', 'Processos protocolados: avisos e audiências até a audiência acontecer'],
@@ -5724,6 +5899,7 @@ a.rep-st.ok{text-decoration:none}
     Object.keys(VIEWS).forEach(function(k){ $(VIEWS[k][0]).setAttribute('aria-selected', k === which ? 'true' : 'false'); $(VIEWS[k][1]).hidden = k !== which; });
     if (which === 't') $('tab-aud').setAttribute('aria-selected', 'true');
     pintarAudModo();
+    if (which === 'g') renderPainel();
     try { sessionStorage.setItem('qe-view', which); } catch(e){}
   }
   Object.keys(VIEWS).forEach(function(k){ $(VIEWS[k][0]).addEventListener('click', function(){ showTab(k); }); });
