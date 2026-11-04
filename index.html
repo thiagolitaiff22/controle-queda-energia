@@ -1832,6 +1832,15 @@ a.rep-st.ok{text-decoration:none}
 .pn-din{font-size:12px;font-weight:600;white-space:nowrap}
 .pn-din.ok{color:var(--green)} .pn-din.warn{color:var(--amber)} .pn-din.blue{color:var(--blue)}
 .pn-mais{align-self:center;border-radius:999px!important;padding:7px 16px}
+
+/* Painel: renovação */
+.pn-ren{display:grid;grid-template-columns:260px minmax(0,1fr);gap:24px;align-items:center}
+.pn-ren-n{display:flex;flex-direction:column;gap:4px}
+.pn-ren-b{display:flex;align-items:baseline;gap:12px;border:0;background:none;padding:7px 10px;margin:0 -10px;border-radius:6px;text-align:left;font:inherit;color:var(--ink-2);cursor:pointer}
+.pn-ren-b:hover{background:var(--hover)}
+.pn-ren-b b{font-size:22px;font-weight:700;min-width:48px;color:var(--ink)}
+.pn-ren-b span{font-size:13px}
+@media (max-width:900px){ .pn-ren{grid-template-columns:1fr} }
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -1957,6 +1966,10 @@ a.rep-st.ok{text-decoration:none}
         <div class="card pn-card">
           <div class="pn-top"><div><b>Evolução mês a mês</b><small>Protocolos, audiências realizadas e procedentes nos últimos 12 meses</small></div><div class="pn-leg pn-leg-h" id="pn-evo-leg"></div></div>
           <div class="pn-box" style="height:280px"><canvas id="pn-evo"></canvas></div>
+        </div>
+        <div class="card pn-card">
+          <div class="pn-top"><div><b>Renovação · próxima leva</b><small>Quem pode entrar com a nova ação: 5 meses depois do protocolo (quem faltou pode na hora). Clique num número para ver os clientes em Nova ação.</small></div><button type="button" class="tb-btn" data-pnrf="">Abrir Nova ação</button></div>
+          <div class="pn-ren"><div class="pn-ren-n" id="pn-ren-n"></div><div class="pn-box" style="height:230px"><canvas id="pn-ren"></canvas></div></div>
         </div>
         <div class="pn-grid">
           <div class="card pn-card">
@@ -5206,6 +5219,24 @@ a.rep-st.ok{text-decoration:none}
     pnLista = rows;
     renderPainelClientes();
 
+    // renovação: mesma regra da aba Nova ação
+    var porCpf = {};
+    todasRows().forEach(function(x){ var d = digits(x.cpf); if (d.length === 11) (porCpf[d] = porCpf[d] || []).push(String(x.protocolo || x.criadoEm || '').slice(0, 10)); });
+    var renovouP = function(r){ var d = digits(r.cpf), p = String(r.protocolo || '').slice(0, 10); return !!(d.length === 11 && p && (porCpf[d] || []).some(function(q){ return q > p; })); };
+    var comR = rows.filter(function(r){ return r.arquivado || String(r.processo || '').trim() || r.protocolo; });
+    var foraR = function(r){ return r.naoRenovou || renovouP(r); };
+    var hojeIso = iso(today());
+    var rLib = comR.filter(function(r){ var e = retornoEm(r); return e && e <= hojeIso && !r.contatadoRetorno && !foraR(r); }).length;
+    var r30 = comR.filter(function(r){ var n = daysUntil(retornoEm(r)); return n > 0 && n <= 30 && !r.contatadoRetorno && !foraR(r); }).length;
+    var rCont = comR.filter(function(r){ return r.contatadoRetorno && !r.naoRenovou && !renovouP(r); }).length;
+    var rRen = comR.filter(renovouP).length, rNao = comR.filter(function(r){ return r.naoRenovou; }).length;
+    var mini = function(rf, v, rot, cor){ return '<button type="button" class="pn-ren-b" data-pnrf="' + rf + '"><b class="tnum"' + (cor ? ' style="color:var(' + cor + ')"' : '') + '>' + v + '</b><span>' + rot + '</span></button>'; };
+    $('pn-ren-n').innerHTML = mini('liberado', rLib, 'Podem entrar de novo agora', '--green') + mini('30', r30, 'Liberam nos próximos 30 dias', '--amber') +
+      mini('contatado', rCont, 'Já contatados') + mini('renovou', rRen, 'Renovaram', '--blue') + mini('naoquis', rNao, 'Não quiseram renovar');
+    // quantos liberam por mês (só quem ainda não foi resolvido nem contatado)
+    var mesesR = []; for (var mi = 0; mi < 6; mi++){ var dm = new Date(today().getFullYear(), today().getMonth() + mi, 1); mesesR.push(dm.getFullYear() + '-' + String(dm.getMonth() + 1).padStart(2, '0')); }
+    var porMes = mesesR.map(function(m){ return comR.filter(function(r){ var e = retornoEm(r); return e && e > hojeIso && e.slice(0, 7) === m && !r.contatadoRetorno && !foraR(r); }).length; });
+
     // evolução mês a mês (últimos 12 meses)
     var hoje = new Date(), meses = [];
     for (var i = 11; i >= 0; i--){ var d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1); meses.push(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')); }
@@ -5257,6 +5288,11 @@ a.rep-st.ok{text-decoration:none}
       ch.getDatasetMeta(0).data.forEach(function(b, k){ c.fillText(String(ch.data.datasets[0].data[k]), b.x + 8, b.y); }); c.restore(); } };
     grafico('pn-fun', { type: 'bar', data: { labels: FUN.map(function(f){ return f[0]; }), datasets: [{ data: FUN.map(function(f){ return f[1]; }), backgroundColor: FUN.map(function(f, k){ return k < 5 ? alfa(corP('--blue'), 1 - k * .12) : corP(['--purple', '--amber', '--red'][k - 5]); }), borderRadius: 6, borderSkipped: false, barThickness: 22 }] }, options: oh, plugins: [rotulos] });
     grafico('pn-pro', { type: 'bar', data: { labels: pk, datasets: [{ data: pk.map(function(n){ return P[n]; }), backgroundColor: corP('--purple'), borderRadius: 6, borderSkipped: false, barThickness: 20 }] }, options: oh, plugins: [rotulos] });
+    var orr = baseOpts();
+    grafico('pn-ren', { type: 'bar', data: { labels: ['Já liberados'].concat(mesesR.map(function(m){ var p = m.split('-'); return MESES_P[+p[1] - 1] + '/' + p[0].slice(2); })),
+      datasets: [{ label: 'Clientes', data: [rLib].concat(porMes), backgroundColor: [corP('--green')].concat(porMes.map(function(){ return alfa(corP('--blue'), .85); })), borderRadius: 6, borderSkipped: false, maxBarThickness: 46 }] },
+      options: orr, plugins: [{ id: 'rotRen', afterDatasetsDraw: function(ch){ var c = ch.ctx; c.save(); c.font = '600 12px ' + Chart.defaults.font.family; c.fillStyle = corP('--ink'); c.textAlign = 'center';
+        ch.getDatasetMeta(0).data.forEach(function(b, k){ var v = ch.data.datasets[0].data[k]; if (v) c.fillText(String(v), b.x, b.y - 6); }); c.restore(); } }] });
     var os = baseOpts(); os.scales.x.stacked = true; os.scales.y.stacked = true;
     os.plugins.legend = { display: true, position: 'top', align: 'end', labels: { color: corP('--ink-2'), usePointStyle: true, pointStyle: 'circle', boxWidth: 8, boxHeight: 8, font: { size: 11.5 } } };
     var barra = function(l, k, c){ return { label: l, data: sk.map(function(x){ return S[x][k]; }), backgroundColor: corP(c), borderRadius: 4, borderSkipped: false, maxBarThickness: 38 }; };
@@ -5301,6 +5337,10 @@ a.rep-st.ok{text-decoration:none}
   $('pn-kpis').addEventListener('click', function(e){ var b = e.target.closest('[data-pnres]'); if (!b) return; pnRes = pnRes === b.dataset.pnres ? '' : b.dataset.pnres; pnF = ''; pnLimite = 60;
     Array.prototype.forEach.call(this.querySelectorAll('[data-pnres]'), function(x){ x.classList.toggle('on', x.dataset.pnres === pnRes); });
     renderPainelClientes(); if (pnRes) $('pn-cli-body').closest('.pn-card').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+  $('view-painel').addEventListener('click', function(e){
+    var b = e.target.closest('[data-pnrf]'); if (!b) return;
+    state.r.f = b.dataset.pnrf; state.r.mes = ''; if ($('r-f')) $('r-f').value = state.r.f; showTab('r'); renderRet(); window.scrollTo(0, 0);
+  });
   $('pn-mais').addEventListener('click', function(){ pnLimite += 200; renderPainelClientes(); });
   $('pn-cli-body').addEventListener('click', function(e){ var b = e.target.closest('[data-pn]'); if (!b) return; var r = todasRows().filter(function(x){ return x.id === b.dataset.pn; })[0]; if (r) openForm(r); });
   $('pn-xlsx').addEventListener('click', async function(){
