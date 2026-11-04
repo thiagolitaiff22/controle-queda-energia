@@ -2005,7 +2005,7 @@ a.rep-st.ok{text-decoration:none}
           </div>
         </div>
         <div class="card pn-card">
-          <div class="pn-top"><div><b>Levas lado a lado</b><small>Cada leva é uma semana de audiências. Compare o resultado de uma leva com a outra; clique numa leva para ver o Painel só dela.</small></div></div>
+          <div class="pn-top"><div><b>Levas lado a lado</b><small>Cada leva é um mutirão de audiências (início de abril, início de julho e fim de novembro). Quem é cadastrado até a pauta sair entra na leva em formação; depois disso, vai para a seguinte. Clique numa leva para ver o Painel só dela.</small></div></div>
           <div class="pn-tab-wrap"><table class="ct-tbl pn-tab pn-lv-tab"><thead><tr><th>Leva</th><th>Semana das audiências</th><th class="dir">Clientes</th><th class="dir">Procedentes</th><th class="dir">Conclusos</th><th class="dir">Ausências</th><th class="dir">Improcedentes</th><th class="dir">Procedência</th><th class="dir">Já renovaram</th></tr></thead><tbody id="pn-lv-body"></tbody></table></div>
         </div>
         <div class="card pn-card">
@@ -5339,17 +5339,21 @@ a.rep-st.ok{text-decoration:none}
     var porCpf = {};
     todasRows().forEach(function(x){ var d = digits(x.cpf); if (d.length === 11) (porCpf[d] = porCpf[d] || []).push(String(x.protocolo || x.criadoEm || '').slice(0, 10)); });
     var renovou = function(r){ var d = digits(r.cpf), p = String(r.protocolo || '').slice(0, 10); return !!(d.length === 11 && p && (porCpf[d] || []).some(function(q){ return q > p; })); };
+    // leva em formação: quem ainda não tem audiência entra no próximo mutirão (início de abril, início de julho ou fim de novembro)
+    var ult = semanas.length ? parseDate(semanas[semanas.length - 1]) : today(), MUT = [[3, 'início de abril'], [6, 'início de julho'], [10, 'fim de novembro']], prev = '';
+    for (var ai = 0; ai < 3 && !prev; ai++){ var ano = ult.getFullYear() + ai; MUT.forEach(function(m){ if (!prev && (ano > ult.getFullYear() || m[0] > ult.getMonth())) prev = m[1] + '/' + ano; }); }
+    var rotForm = 'Leva ' + (semanas.length + 1) + ' · em formação';
     var chip = function(k, rot, n){ return '<button type="button" data-pnlv="' + k + '" aria-pressed="' + (pnLeva === k) + '">' + rot + ' <b>' + n + '</b></button>'; };
     $('pn-levas').innerHTML = chip('', 'Todas as levas', todos.length) +
       semanas.map(function(k, i){ return chip(k, 'Leva ' + (i + 1) + ' · ' + rotuloSemana(k), g[k].length); }).join('') +
-      (g.sem ? chip('sem', 'Sem audiência ainda', g.sem.length) : '');
+      (g.sem ? chip('sem', rotForm + (prev ? ' (' + prev + ')' : ''), g.sem.length) : '');
     var conta = function(rs, x){ return rs.filter(function(r){ return resAud(r) === x; }).length; };
     $('pn-lv-body').innerHTML = semanas.map(function(k, i){
       var rs = g[k], p = conta(rs, 'procedente'), realiz = rs.filter(function(r){ return jaRealizada(r); }).length;
       return '<tr class="pn-lv' + (pnLeva === k ? ' on' : '') + '" data-pnlv="' + k + '"><td class="nome">Leva ' + (i + 1) + '</td><td>' + rotuloSemana(k) + '</td><td class="dir n">' + rs.length + '</td>' +
         '<td class="dir n" style="color:var(--green)">' + p + '</td><td class="dir n">' + conta(rs, 'conclusos') + '</td><td class="dir n">' + conta(rs, 'faltou') + '</td><td class="dir n">' + conta(rs, 'improcedente') + '</td>' +
         '<td class="dir n"><b>' + (realiz ? Math.round(p / realiz * 100) + '%' : 'audiência por vir') + '</b></td><td class="dir n">' + rs.filter(renovou).length + '</td></tr>';
-    }).join('') + (g.sem ? '<tr class="pn-lv' + (pnLeva === 'sem' ? ' on' : '') + '" data-pnlv="sem"><td class="nome">Sem audiência ainda</td><td class="small">aguardando pauta</td><td class="dir n">' + g.sem.length + '</td><td colspan="6" class="small dir">a leva é definida quando a audiência for marcada</td></tr>' : '');
+    }).join('') + (g.sem ? '<tr class="pn-lv' + (pnLeva === 'sem' ? ' on' : '') + '" data-pnlv="sem"><td class="nome">' + rotForm + '</td><td class="small">próximo mutirão' + (prev ? ': ' + prev : '') + '</td><td class="dir n">' + g.sem.length + '</td><td colspan="6" class="small dir">aguardando a pauta; quem for cadastrado depois que a pauta sair fica para a leva seguinte</td></tr>' : '');
   }
   $('view-painel').addEventListener('click', function(e){
     var b = e.target.closest('[data-pnlv]'); if (!b) return;
@@ -6074,7 +6078,7 @@ a.rep-st.ok{text-decoration:none}
   });
   var VIEWS = { g: ['tab-painel', 'view-painel'], d: ['tab-cad', 'view-cad'], n: ['tab-novo', 'view-novo'], c: ['tab-clientes', 'view-clientes'], f: ['tab-fin', 'view-fin'], r: ['tab-ret', 'view-ret'], t: ['tab-ct', 'view-ct'], h: ['tab-aud', 'view-aud'], e: ['tab-equipe', 'view-equipe'] };
   var TITULOS = {
-    g: ['Painel', 'Visão geral da Queda de Energia por leva (cada leva é uma semana de audiências): resultados, renovação e todos os clientes'],
+    g: ['Painel', 'Visão geral da Queda de Energia por leva (cada leva é um mutirão de audiências): resultados, renovação e todos os clientes'],
     d: ['Cadastro', 'Clientes em cadastro, ainda sem protocolo · Ações contra a Âmbar Energia, Alvarães/AM'],
     n: ['Novo cliente', 'Cadastro direto no sistema, sem fotos: só os dados do cliente'],
     c: ['Controle', 'Processos protocolados: avisos e audiências até a audiência acontecer'],
