@@ -1135,6 +1135,47 @@ html[data-tema] body .enviar[disabled] svg{stroke:var(--lv-i3)!important}
 html[data-tema] body .lista .nm{min-width:0!important;flex:1 1 auto!important}
 html[data-tema] body .lista .nm b,html[data-tema] body .lista .nm span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 html[data-tema] body .lista small{max-width:58%;overflow:hidden;text-overflow:ellipsis}
+
+/* Pagamentos (gestor): resumo, progresso e as duas partes */
+html[data-tema] body .pg-resumo{border-radius:22px;padding:18px 18px 16px;margin:0 0 6px;background:radial-gradient(120% 120% at 100% 0%,rgba(255,255,255,.07),rgba(255,255,255,0) 50%),linear-gradient(160deg,#1c1c1f,#0b0b0c);border:1px solid #2a2a2c;color:#fff;box-shadow:0 18px 40px -22px rgba(0,0,0,.7)}
+html[data-tema] body .pg-resumo-t{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+html[data-tema] body .pg-resumo-t span{font-size:13px;font-weight:600;color:rgba(255,255,255,.62)}
+html[data-tema] body .pg-resumo-t b{font-size:15px;font-weight:700;color:#fff}
+html[data-tema] body .pg-bar{display:block;height:8px;border-radius:999px;background:rgba(255,255,255,.1);overflow:hidden;margin:12px 0 16px}
+html[data-tema] body .pg-bar i{display:block;height:100%;border-radius:inherit;background:#34d399}
+html[data-tema] body .pg-nums{display:grid;grid-template-columns:repeat(4,1fr)}
+html[data-tema] body .pg-nums > div{padding-left:12px;border-left:1px solid rgba(255,255,255,.1)}
+html[data-tema] body .pg-nums > div:first-child{padding-left:0;border-left:0}
+html[data-tema] body .pg-nums b{display:block;font-size:24px;font-weight:700;letter-spacing:-.03em;line-height:1.1;color:#fff}
+html[data-tema] body .pg-nums b small{font-size:13px;font-weight:600;color:rgba(255,255,255,.45);margin-left:1px}
+html[data-tema] body .pg-nums span{display:block;font-size:11.5px;color:rgba(255,255,255,.55);margin-top:4px;line-height:1.25}
+html[data-tema] body .pg-nums .falta b{color:#fca5a5}
+html[data-tema] body .pg-nums .ok b{color:#6ee7b7}
+html[data-tema] body .pg-pp .pp-t{min-width:0}
+html[data-tema] body .pg-bar-s{height:5px;margin:7px 0 0;background:var(--lv-s3)}
+html[data-tema] body .pg-bar-s i{background:var(--lv-ok)}
+html[data-tema] body .pag-cab b{font-size:24px!important;font-weight:700!important;letter-spacing:-.02em;color:var(--lv-i1)!important}
+html[data-tema] body .pag-volta{color:var(--lv-i2)!important;font-weight:600!important}
+html[data-tema] body .chips button{border-radius:999px!important;background:var(--lv-s1)!important;border:1px solid var(--lv-l1)!important;color:var(--lv-i2)!important;font-weight:600!important}
+html[data-tema] body .chips button[aria-pressed="true"]{background:var(--lv-hi)!important;border-color:var(--lv-hi)!important;color:var(--lv-on)!important}
+html[data-tema] body .pag-l > .pg-cli{display:block!important}
+html[data-tema] body .pg-partes{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+html[data-tema] body .pg-b{display:flex!important;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:9px 12px!important;border-radius:12px!important;background:var(--lv-s2)!important;border:1px solid var(--lv-l1)!important;color:var(--lv-i1)!important;font:inherit;cursor:pointer;min-height:0!important;height:auto!important;width:auto!important}
+html[data-tema] body .pg-b small{font-size:11px;color:var(--lv-i3);font-weight:500}
+html[data-tema] body .pg-b b{font-size:13px;font-weight:650}
+html[data-tema] body .pg-b.ok{background:color-mix(in srgb,var(--lv-ok) 10%,var(--lv-s1))!important;border-color:color-mix(in srgb,var(--lv-ok) 40%,transparent)!important}
+html[data-tema] body .pg-b.ok b{color:var(--lv-ok)}
+html[data-tema] body .pg-b.sai{border-color:color-mix(in srgb,var(--lv-red) 45%,transparent)!important}
+html[data-tema] body .pg-b.sai b{color:var(--lv-red)}
+html[data-tema] body .pg-b.espera{cursor:default;opacity:.65;border-style:dashed!important}
+html[data-tema] body .pg-partes{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}
+html[data-tema] body .pg-b{width:100%!important;min-width:0!important;max-width:none!important;box-sizing:border-box}
+html[data-tema] body .lista .pg-b small,html[data-tema] body .pg-b small{all:unset;display:block;font-size:11px;font-weight:500;color:var(--lv-i3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+html[data-tema] body .lista .pg-b small::before,html[data-tema] body .lista .pg-b small::after{content:none!important;display:none!important}
+html[data-tema] body .pg-b b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+html[data-tema] body .pag-l .pg-partes{padding:0!important;margin:10px 0 0!important}
+html[data-tema] body .pag-l .pg-b small{display:block!important;padding:0!important;margin:0!important;background:none!important;border:0!important;border-radius:0!important;font-size:11px!important;color:var(--lv-i3)!important;max-width:100%!important;white-space:nowrap!important}
+html[data-tema] body .pag-l .pg-b{margin:0!important;padding:9px 11px!important}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><script>try{var t=localStorage.getItem("campo_tema");if(!t)t="dark";document.documentElement.setAttribute("data-tema",t);}catch(e){document.documentElement.setAttribute("data-tema","light");}</script>
 </head>
@@ -1173,7 +1214,7 @@ html[data-tema] body .lista small{max-width:58%;overflow:hidden;text-overflow:el
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 56;
+  var APP_VERSAO = 57;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
@@ -1525,22 +1566,40 @@ html[data-tema] body .lista small{max-width:58%;overflow:hidden;text-overflow:el
       var c = e.target.closest('[data-cli]'); if (c) fichaCli(c.dataset.cli);
     };
   }
+  function contaPag(itens){
+    var n = itens.length, p1 = itens.filter(function(c){ return c.p1; }).length, sai = itens.filter(function(c){ return c.saiu || c.p2; }).length, p2 = itens.filter(function(c){ return c.p2; }).length;
+    var partes = n + sai, pagas = p1 + p2;
+    return { n: n, p1: p1, sai: sai, p2: p2, partes: partes, pagas: pagas, falta: partes - pagas, pct: partes ? Math.round(pagas / partes * 100) : 0 };
+  }
+  function resumoPag(t, titulo){
+    return '<div class="pg-resumo"><div class="pg-resumo-t"><span>' + titulo + '</span><b>' + (t.partes ? t.pct + '% pago' : '—') + '</b></div>' +
+      '<div class="pg-bar"><i style="width:' + t.pct + '%"></i></div>' +
+      '<div class="pg-nums">' +
+        '<div><b>' + t.n + '</b><span>' + (t.n === 1 ? 'Indicação' : 'Indicações') + '</span></div>' +
+        '<div><b>' + t.p1 + '<small>/' + t.n + '</small></b><span>Pagas no protocolo</span></div>' +
+        '<div><b>' + t.p2 + '<small>/' + t.sai + '</small></b><span>Pagas quando saiu</span></div>' +
+        '<div class="' + (t.falta ? 'falta' : 'ok') + '"><b>' + t.falta + '</b><span>' + (t.falta === 1 ? 'Parte a pagar' : 'Partes a pagar') + '</span></div>' +
+      '</div></div>';
+  }
   function listaProspsPag(){
     // todos da equipe (Equipe/BI), com as indicações protocoladas de cada um (Pagamentos)
     var porId = {}; (gest || []).forEach(function(p){ porId[p.id] = p; });
     var base = (equipe && equipe.length ? equipe : (gp && gp.prospectadores) || gest || []).map(function(p){ var g = porId[p.id]; return { id: p.id, nome: p.nome, avulso: p.avulso, itens: (g && g.itens) || [] }; });
     (gest || []).forEach(function(p){ if (!base.some(function(b){ return b.id === p.id; }) && p.itens && p.itens.length) base.push({ id: p.id, nome: p.nome, itens: p.itens }); });
-    var ps = base.map(function(p){
-      var ap = p.itens.filter(gestAPagar).length, ult = p.itens.reduce(function(m, c){ return String(c.protocolo || '') > m ? String(c.protocolo) : m; }, '');
-      return { p: p, ap: ap, ult: ult };
-    }).sort(function(x, y){ return y.ap - x.ap || y.ult.localeCompare(x.ult) || String(x.p.nome).localeCompare(String(y.p.nome)); });
+    var ps = base.map(function(p){ return { p: p, t: contaPag(p.itens) }; })
+      .sort(function(x, y){ return y.t.falta - x.t.falta || y.t.n - x.t.n || String(x.p.nome).localeCompare(String(y.p.nome)); });
     if (!ps.length) return '<div class="vazio">' + (navigator.onLine === false ? 'Sem internet agora.' : 'Carregando…') + '</div>';
+    var todos = []; base.forEach(function(p){ todos = todos.concat(p.itens); });
     var ini = function(n){ var p = String(n || '').replace(/^(dr\.?|dra\.?|dona|seu)\s+/i, '').trim().split(/\s+/); return ((p[0] || '').charAt(0) + (p.length > 1 ? p[p.length - 1].charAt(0) : '')).toUpperCase(); };
-    return '<div class="pp-cards">' + ps.map(function(x){
-      return '<button type="button" class="pp" data-pagp="' + esc(x.p.id) + '"><span class="pp-av">' + esc(ini(x.p.nome)) + '</span>' +
-        '<span class="pp-t"><b>' + esc(x.p.nome) + '</b><span>' + (x.p.itens.length ? x.p.itens.length + (x.p.itens.length === 1 ? ' indicação' : ' indicações') + (x.ult ? ' · última ' + dataBR(x.ult).slice(0, 5) : '') : 'ainda sem indicação protocolada') + (x.p.avulso ? ' · só indicou' : '') + '</span></span>' +
-        '<span class="pp-s ' + (x.ap ? 'ap' : x.p.itens.length ? 'ok' : 'novo') + '">' + (x.ap ? x.ap + ' a pagar' : x.p.itens.length ? 'em dia' : 'novo') + '</span><span class="pp-seta">›</span></button>';
-    }).join('') + '</div>';
+    return resumoPag(contaPag(todos), 'Pagamentos das indicações') +
+      '<div class="rot">Prospectadores · toque no nome para marcar o pagamento</div>' +
+      '<div class="pp-cards">' + ps.map(function(x){
+        var t = x.t;
+        return '<button type="button" class="pp pg-pp" data-pagp="' + esc(x.p.id) + '"><span class="pp-av">' + esc(ini(x.p.nome)) + '</span>' +
+          '<span class="pp-t"><b>' + esc(x.p.nome) + '</b>' +
+          (t.n ? '<span>' + t.n + (t.n === 1 ? ' indicação' : ' indicações') + ' · pago ' + t.pagas + ' de ' + t.partes + (t.partes === 1 ? ' parte' : ' partes') + '</span><span class="pg-bar pg-bar-s"><i style="width:' + t.pct + '%"></i></span>' : '<span>ainda sem indicação protocolada' + (x.p.avulso ? ' · só indicou' : '') + '</span>') + '</span>' +
+          '<span class="pp-s ' + (t.falta ? 'ap' : t.n ? 'ok' : 'novo') + '">' + (t.falta ? t.falta + ' a pagar' : t.n ? 'tudo pago' : 'novo') + '</span><span class="pp-seta">›</span></button>';
+      }).join('') + '</div>';
   }
   document.addEventListener('click', function(e){
     var r = e.target.closest('[data-pagp]'); if (!r) return;
@@ -1565,20 +1624,24 @@ html[data-tema] body .lista small{max-width:58%;overflow:hidden;text-overflow:el
     var ps = gest.filter(function(p){ return p.itens && p.itens.length; });
     var p = ps.filter(function(x){ return x.id === gestProsp; })[0];
     if (!p && gestProsp){ var eq = (equipe || []).filter(function(x){ return x.id === gestProsp; })[0]; if (eq) p = { id: eq.id, nome: eq.nome, itens: [] }; }
-    if (!p){ gestProsp = ''; box.innerHTML = '<div class="rot" style="margin-top:0">Prospectadores · toque no nome para pagar</div>' + listaProspsPag(); return; }
+    if (!p){ gestProsp = ''; box.innerHTML = listaProspsPag(); return; }
     var itens = p.itens;
     var l = itens.filter(function(c){ return gestFiltro === 'todas' || (gestFiltro === 'pagas' ? !gestAPagar(c) : gestAPagar(c)); })
       .sort(function(x, y){ return String(y.protocolo || '').localeCompare(String(x.protocolo || '')); });   // o que chegou agora primeiro
-    var nAP = itens.filter(gestAPagar).length;
+    var t = contaPag(itens), nAP = itens.filter(gestAPagar).length;
     box.innerHTML =
       '<button type="button" class="pag-volta" id="pag-volta">‹ Prospectadores</button>' +
-      '<div class="pag-cab"><b>' + esc(p.nome) + '</b><span>' + itens.length + (itens.length === 1 ? ' indicação' : ' indicações') + ' · <i class="' + (nAP ? 'ap' : 'ok') + '">' + (nAP ? nAP + ' a pagar' : 'tudo pago') + '</i></span></div>' +
-      '<div class="chips" id="pag-f">' + [['apagar', 'A pagar'], ['pagas', 'Pagas'], ['todas', 'Todas']].map(function(f){ return '<button type="button" data-f="' + f[0] + '" aria-pressed="' + (gestFiltro === f[0]) + '">' + f[1] + '</button>'; }).join('') + '</div>' +
+      '<div class="pag-cab"><b>' + esc(p.nome) + '</b></div>' +
+      resumoPag(t, 'Pagamentos de ' + esc(primeiroNome(p.nome))) +
+      '<div class="chips" id="pag-f">' + [['apagar', 'A pagar · ' + nAP], ['pagas', 'Pagas · ' + (itens.length - nAP)], ['todas', 'Todas · ' + itens.length]].map(function(f){ return '<button type="button" data-f="' + f[0] + '" aria-pressed="' + (gestFiltro === f[0]) + '">' + f[1] + '</button>'; }).join('') + '</div>' +
       (l.length ? '<div class="lista pag-l">' + l.map(function(c){
         var dois = c.saiu || c.p2;   // 2ª parte só aparece quando o processo sai (cliente recebeu)
-        return '<div><span class="nm"><b>' + esc(nomeBonito(c.nome)) + '</b><span>' + (c.protocolo ? 'protocolo ' + dataBR(c.protocolo) : esc(c.processo || '')) + '</span></span>' +
-          '<button type="button" class="pg-b' + (c.p1 ? ' ok' : '') + '" data-c="' + esc(c.id) + '" data-p="1">' + (c.p1 ? '✓ Pago<em>' + dataBR(c.p1) + '</em>' : 'Marcar pago') + '</button>' +
-          (dois ? '<button type="button" class="pg-b' + (c.p2 ? ' ok' : '') + '" data-c="' + esc(c.id) + '" data-p="2">' + (c.p2 ? '✓ 2ª parte<em>' + dataBR(c.p2) + '</em>' : '2ª parte<em>saiu: a pagar</em>') + '</button>' : '') + '</div>';
+        return '<div class="pg-cli"><span class="nm"><b>' + esc(nomeBonito(c.nome)) + '</b><span>' + (c.protocolo ? 'protocolo ' + dataBR(c.protocolo) : esc(c.processo || '')) + '</span></span>' +
+          '<div class="pg-partes">' +
+            '<button type="button" class="pg-b' + (c.p1 ? ' ok' : ' sai') + '" data-c="' + esc(c.id) + '" data-p="1"><small>1ª parte · protocolo</small>' + (c.p1 ? '<b>✓ Paga em ' + dataBR(c.p1).slice(0, 5) + '</b>' : '<b>Marcar paga</b>') + '</button>' +
+            (dois ? '<button type="button" class="pg-b' + (c.p2 ? ' ok' : ' sai') + '" data-c="' + esc(c.id) + '" data-p="2"><small>2ª parte · quando saiu</small>' + (c.p2 ? '<b>✓ Paga em ' + dataBR(c.p2).slice(0, 5) + '</b>' : '<b>Saiu · marcar</b>') + '</button>'
+              : '<span class="pg-b espera"><small>2ª parte · quando sair</small><b>Aguardando sair</b></span>') +
+          '</div></div>';
       }).join('') + '</div>' : '<div class="vazio">' + (gestFiltro === 'apagar' ? 'Nada a pagar para ' + esc(primeiroNome(p.nome)) + '.' : 'Nenhuma indicação aqui.') + '</div>');
     $('pag-volta').onclick = function(){ gestProsp = ''; lsSet('campo_gest_prosp', ''); gestFiltro = 'apagar'; desenharPagV(); window.scrollTo(0, 0); };
     if ($('pag-f')) $('pag-f').onclick = function(e){ var b = e.target.closest('[data-f]'); if (!b) return; gestFiltro = b.dataset.f; desenharPagV(); };
