@@ -1731,6 +1731,60 @@ a.rep-st.ok{text-decoration:none}
 .pauta-row{grid-template-columns:minmax(0,2.4fr) repeat(4,minmax(0,1fr))!important;cursor:pointer}
 .pauta-row.head{cursor:default}
 .pauta-cli{grid-template-columns:minmax(0,2fr) minmax(0,1.4fr) minmax(0,1fr) auto!important}
+/* Audiências mais bonita: abas sublinhadas, cartões e pauta em cartões */
+#app .aud-sub{display:flex;align-self:stretch;gap:28px;border:0;border-bottom:1px solid var(--line);border-radius:0!important;background:none;overflow:visible}
+#app .aud-sub button{border:0!important;background:none!important;padding:10px 2px;margin-bottom:-1px;font-size:14px;font-weight:500;color:var(--ink-3);border-bottom:2px solid transparent!important;border-radius:0!important}
+#app .aud-sub button:hover{color:var(--ink)}
+#app .aud-sub button[aria-pressed="true"]{color:var(--ink)!important;font-weight:600;border-bottom-color:var(--ink)!important}
+#view-aud .pt-stats{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}
+#view-aud .pt-stats .card.stat{padding:16px 18px;border:1px solid var(--line);background:var(--panel);border-radius:8px!important}
+#view-aud .pt-stats .stat-h{font-size:13px;font-weight:600;color:var(--ink);text-transform:none;letter-spacing:0}
+#view-aud .pt-stats .stat-v{font-size:26px;margin-top:8px}
+#view-aud .pt-stats .stat-c{font-family:var(--font);font-size:12px;color:var(--ink-3);margin-top:2px}
+@media (max-width:900px){ #view-aud .pt-stats{grid-template-columns:repeat(2,minmax(0,1fr))} }
+.pt-vazio{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:48px 20px;border:1px dashed var(--line-2);border-radius:8px;background:var(--panel)}
+.pt-vazio-ico{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:var(--soft);color:var(--ink-2);margin-bottom:6px}
+.pt-vazio-ico svg.i{width:24px;height:24px}
+.pt-vazio b{font-size:15px}
+.pt-vazio span{max-width:440px;color:var(--ink-3);font-size:13px}
+.pt-vazio .btn{margin-top:10px;border-radius:999px!important;padding:9px 18px}
+.pt-lista{display:flex;flex-direction:column;gap:10px}
+.pt-card{border:1px solid var(--line);border-radius:8px;background:var(--panel);overflow:hidden}
+.pt-card.perto{border-color:var(--line-2)}
+.pt-head{display:grid;grid-template-columns:56px minmax(0,1.6fr) 90px minmax(0,1.6fr) 24px;gap:18px;align-items:center;width:100%;border:0;background:none;padding:14px 18px;text-align:left;color:var(--ink);cursor:pointer;font:inherit}
+.pt-head:hover{background:var(--hover)}
+.pt-data{display:flex;flex-direction:column;align-items:center;justify-content:center;width:56px;height:56px;border-radius:8px;background:var(--soft);line-height:1}
+.pt-data b{font-size:22px;font-weight:700}
+.pt-data small{font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;margin-top:3px}
+.pt-card.perto .pt-data{background:var(--ink);color:var(--bg)}
+.pt-card.perto .pt-data small{color:inherit;opacity:.7}
+.pt-tit{display:flex;flex-direction:column;gap:3px;min-width:0}
+.pt-tit b{font-size:15px;font-weight:600}
+.pt-tit small,.pt-num small{font-size:12.5px;color:var(--ink-3)}
+.pt-card.perto .pt-quando{color:var(--amber);font-weight:600}
+.pt-num{display:flex;flex-direction:column;gap:2px}
+.pt-num b{font-size:20px;font-weight:700}
+.pt-aviso{display:flex;flex-direction:column;gap:7px;min-width:0}
+.pt-aviso-t{font-size:12.5px;color:var(--ink-2)}
+.pt-aviso-t b{color:var(--ink)}
+.pt-aviso-t em{font-style:normal;color:var(--amber)}
+.pt-bar{height:6px;border-radius:999px;background:var(--soft);overflow:hidden}
+.pt-bar span{display:block;height:100%;border-radius:inherit;background:var(--green)}
+.pt-chev{color:var(--ink-3);transition:transform .15s}
+.pt-card.aberto .pt-chev{transform:rotate(180deg)}
+.pt-clientes{border-top:1px solid var(--line)}
+.pt-cli{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1.4fr) minmax(0,1fr) 110px;gap:14px;align-items:center;padding:10px 18px 10px 92px;font-size:13px}
+.pt-cli + .pt-cli{border-top:1px solid var(--line)}
+.pt-nome{font-weight:500}
+.pt-sub{color:var(--ink-3);font-size:12.5px}
+.pt-tag{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;font-size:11px;font-weight:600;color:var(--blue);background:var(--blue-soft)}
+@media (max-width:900px){
+  .pt-head{grid-template-columns:48px minmax(0,1fr) 24px;row-gap:10px}
+  .pt-num{display:none}
+  .pt-aviso{grid-column:2/3}
+  .pt-cli{grid-template-columns:1fr auto;padding-left:18px}
+  .pt-cli .pt-sub{grid-column:1/-1}
+}
 </style>
 <script src="vendor/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -2040,7 +2094,7 @@ a.rep-st.ok{text-decoration:none}
           <div class="nc-acoes"><button type="button" class="tb-btn" id="nc-voltar">Cancelar</button><button type="submit" class="btn primary" id="nc-salvar">Cadastrar cliente</button></div>
         </form>
       </section>
-      <section id="view-aud" hidden style="display:flex;flex-direction:column;gap:18px">
+      <section id="view-aud" class="vw-dash" hidden style="display:flex;flex-direction:column;gap:18px">
         <div class="res-rap aud-sub" role="tablist" aria-label="Parte de Audiências"><button type="button" data-aus="pauta" aria-pressed="false">Pauta</button><button type="button" data-aus="ct" aria-pressed="false">Contestações</button><button type="button" data-aus="res" aria-pressed="false">Resultados</button></div>
         <div class="fbar">
           <div class="search tb-busca"><svg class="i"><use href="#i-search"/></svg><input id="au-q" type="search" placeholder="Buscar cliente por nome ou CPF"></div>
@@ -5017,34 +5071,51 @@ a.rep-st.ok{text-decoration:none}
   $('tab-aud').addEventListener('click', function(){ audModo = 'pauta'; pintarAudModo(); renderAud(); });
   $('au-pj').addEventListener('click', function(){ $('btn-pj').click(); });
   function renderAudPauta(){
-    var DL = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+    var DL = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+    var MES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
     var q = norm(auQ), qd = digits(auQ);
     var bate = function(r){ return !q || norm(r.nome).indexOf(q) >= 0 || (qd.length >= 3 && (digits(r.cpf).indexOf(qd) >= 0 || digits(r.processo).indexOf(qd) >= 0)); };
     var g = {};
     todasRows().forEach(function(r){ if (!r.audData || r.arquivado) return; var n = daysUntil(r.audData); if (n == null || n < 0 || jaRealizada(r)) return; var k = chaveSessao(r); (g[k] = g[k] || []).push(r); });
     var ks = Object.keys(g).sort();
-    if (q) ks = ks.filter(function(k){ return g[k].some(bate); });
     var semPauta = todasRows().filter(function(r){ return noControle(r) && !r.audData; }).length;
-    var tot = 0; ks.forEach(function(k){ tot += g[k].length; });
-    $('au-count').textContent = ks.length + (ks.length === 1 ? ' audiência marcada' : ' audiências marcadas') + ' · ' + tot + ' clientes';
-    var h = '<div class="pauta-resumo"><span><b>' + ks.length + '</b> ' + (ks.length === 1 ? 'audiência marcada' : 'audiências marcadas') + '</span><span><b>' + tot + '</b> clientes com pauta</span><span><b>' + semPauta + '</b> protocolados aguardando pauta</span></div>';
-    h += '<div class="card list"><div class="row head pauta-row"><div>Audiência</div><div>Clientes</div><div>Online</div><div>Avisados</div><div>Falta avisar</div></div>';
-    if (!ks.length) h += '<div class="empty">' + (q ? 'Nenhuma audiência marcada com esse cliente.' : 'Nenhuma audiência marcada. Clique em <b>Buscar pauta no PROJUDI</b> para ler as audiências designadas.') + '</div>';
+    var tot = 0, avTot = 0; ks.forEach(function(k){ tot += g[k].length; avTot += g[k].filter(function(r){ return r.avisado; }).length; });
+    if (q) ks = ks.filter(function(k){ return g[k].some(bate); });
+    $('au-count').textContent = '';
+    var prox = ks[0] ? ks[0].split('|') : null;
+    var card = function(ico, rot, v, cap){ return '<div class="card stat"><div class="stat-h"><svg class="i"><use href="#' + ico + '"/></svg>' + rot + '</div><div class="stat-v tnum">' + v + '</div><div class="stat-c">' + cap + '</div></div>'; };
+    var h = '<div class="stats pt-stats">' +
+      card('i-cal', 'Audiências marcadas', Object.keys(g).length, prox ? 'Próxima: ' + fmtDate(prox[0]) + (prox[1] ? ' às ' + esc(prox[1]) : '') : 'Nenhuma marcada') +
+      card('i-users', 'Clientes com pauta', tot, tot ? Math.round(avTot / tot * 100) + '% já avisados' : '—') +
+      card('i-bell', 'Falta avisar', tot - avTot, tot - avTot ? 'clientes com audiência marcada' : 'Todos avisados') +
+      card('i-clock', 'Aguardando pauta', semPauta, 'protocolados ainda sem audiência') + '</div>';
+    if (!ks.length){
+      h += '<div class="pt-vazio"><div class="pt-vazio-ico"><svg class="i"><use href="#i-calcheck"/></svg></div><b>' + (q ? 'Nenhuma audiência marcada com esse cliente' : 'Nenhuma audiência marcada') + '</b>' +
+        (q ? '' : '<span>Busque no PROJUDI as audiências designadas. As datas entram nos clientes e cada audiência aparece aqui, com quem já foi avisado.</span><button type="button" class="btn primary" data-pt-pj><svg class="i"><use href="#i-scale"/></svg>Buscar pauta no PROJUDI</button>') + '</div>';
+    }
+    h += '<div class="pt-lista">';
     ks.forEach(function(k){
-      var rs = g[k], p = k.split('|'), n = daysUntil(p[0]), aberto = pautaAberta[k] || !!q;
-      var av = rs.filter(function(r){ return r.avisado; }).length, on = rs.filter(function(r){ return r.online; }).length;
-      var quando = n === 0 ? 'hoje' : n === 1 ? 'amanhã' : 'em ' + n + ' dias';
-      h += '<div class="row pauta-row au-sess' + (aberto ? ' aberto' : '') + '" data-pauta="' + esc(k) + '">' +
-        '<div><b>' + fmtDate(p[0]) + '</b> <span class="small">' + DL[parseDate(p[0]).getDay()] + (p[1] ? ' · ' + esc(p[1]) : '') + ' · ' + quando + '</span></div>' +
-        '<div class="tnum">' + rs.length + '</div><div class="tnum">' + (on || '—') + '</div><div class="tnum au-ok">' + av + '</div><div class="tnum' + (rs.length - av ? ' au-crit' : '') + '">' + (rs.length - av) + '</div></div>';
-      if (aberto) h += '<div class="au-clientes">' + rs.filter(bate).sort(function(a, b){ return String(a.nome).localeCompare(String(b.nome), 'pt'); }).map(function(r){
-        return '<div class="au-cli pauta-cli"><span>' + esc(r.nome) + (r.online ? ' <span class="small">· online</span>' : '') + '</span><span class="small tnum">' + esc(r.processo || '') + '</span>' +
-          '<span class="small">' + esc(r.contato || '') + '</span><span class="cad-sit ' + (r.avisado ? 'ok' : 'warn') + '">' + (r.avisado ? 'Avisado' : 'Não avisado') + '</span></div>';
+      var rs = g[k], p = k.split('|'), d = parseDate(p[0]), n = daysUntil(p[0]), aberto = pautaAberta[k] || !!q;
+      var av = rs.filter(function(r){ return r.avisado; }).length, on = rs.filter(function(r){ return r.online; }).length, pct = Math.round(av / rs.length * 100);
+      var quando = n === 0 ? 'Hoje' : n === 1 ? 'Amanhã' : 'Em ' + n + ' dias';
+      h += '<div class="pt-card' + (aberto ? ' aberto' : '') + (n <= 3 ? ' perto' : '') + '"><button type="button" class="pt-head" data-pauta="' + esc(k) + '" aria-expanded="' + aberto + '">' +
+        '<span class="pt-data"><b>' + String(d.getDate()).padStart(2, '0') + '</b><small>' + MES[d.getMonth()] + '</small></span>' +
+        '<span class="pt-tit"><b>' + DL[d.getDay()].replace(/^./, function(c){ return c.toUpperCase(); }) + (p[1] ? ' · ' + esc(p[1]) : '') + '</b><small><span class="pt-quando">' + quando + '</span>' + (on ? ' · ' + on + ' online' : '') + '</small></span>' +
+        '<span class="pt-num"><b class="tnum">' + rs.length + '</b><small>clientes</small></span>' +
+        '<span class="pt-aviso"><span class="pt-aviso-t"><b class="tnum">' + av + '</b> de ' + rs.length + ' avisados' + (rs.length - av ? ' · <em>' + (rs.length - av) + ' faltam</em>' : '') + '</span><span class="pt-bar"><span style="width:' + pct + '%"></span></span></span>' +
+        '<svg class="i pt-chev"><use href="#i-chev"/></svg></button>';
+      if (aberto) h += '<div class="pt-clientes">' + rs.filter(bate).sort(function(a, b){ return String(a.nome).localeCompare(String(b.nome), 'pt'); }).map(function(r){
+        return '<div class="pt-cli"><span class="pt-nome">' + esc(r.nome) + (r.online ? ' <span class="pt-tag">online</span>' : '') + '</span><span class="tnum pt-sub">' + esc(r.processo || '') + '</span>' +
+          '<span class="tnum pt-sub">' + esc(r.contato || '') + '</span><span class="cad-sit ' + (r.avisado ? 'ok' : 'warn') + '">' + (r.avisado ? 'Avisado' : 'Não avisado') + '</span></div>';
       }).join('') + '</div>';
+      h += '</div>';
     });
     $('au-pauta').innerHTML = h + '</div>';
   }
-  $('au-pauta').addEventListener('click', function(e){ var s2 = e.target.closest('[data-pauta]'); if (!s2) return; var k = s2.dataset.pauta; pautaAberta[k] = !pautaAberta[k]; renderAudPauta(); });
+  $('au-pauta').addEventListener('click', function(e){
+    if (e.target.closest('[data-pt-pj]')){ $('btn-pj').click(); return; }
+    var s2 = e.target.closest('[data-pauta]'); if (!s2) return; var k = s2.dataset.pauta; pautaAberta[k] = !pautaAberta[k]; renderAudPauta();
+  });
 
   $('ct-aud-ant').addEventListener('click', function(){ var ks = ctSessoes(), p = ks.indexOf(ctSessao); ctSessao = p > 0 ? ks[p - 1] : (p < 0 ? ks[ks.length - 1] || '' : ctSessao); ctLimite = 200; renderContest(); });
   $('ct-aud-prox').addEventListener('click', function(){ var ks = ctSessoes(), p = ks.indexOf(ctSessao); ctSessao = p < 0 ? ks[0] || '' : (ks[p + 1] || ctSessao); ctLimite = 200; renderContest(); });
