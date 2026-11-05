@@ -1197,6 +1197,17 @@ html[data-tema] body .ag-st{background:none!important;border:0!important;padding
 html[data-tema] body .rn-nota{font-size:12.5px;color:var(--lv-i3);margin:2px 2px 14px;line-height:1.45}
 html[data-tema] body .rn-l > div{cursor:pointer}
 html[data-tema] body .rn-wa{flex:none;font-size:12.5px;font-weight:600;color:var(--lv-i1);text-decoration:none;padding:6px 0 6px 10px}
+/* revisão de lançamento: aviso de documentos e data das audiências sem amarelo */
+html[data-tema] body .aviso-docs{background:var(--lv-s1)!important;border:1px solid var(--lv-l2)!important;color:var(--lv-i1)!important;border-radius:18px!important;box-shadow:none!important}
+html[data-tema] body .aviso-docs .n{background:var(--lv-red)!important;color:#fff!important;border-radius:12px!important}
+html[data-tema] body .aviso-docs b{color:var(--lv-i1)!important}
+html[data-tema] body .aviso-docs small{color:var(--lv-i3)!important}
+html[data-tema] body .auds .dia{background:var(--lv-s2)!important;border:1px solid var(--lv-l1)!important;color:var(--lv-i1)!important;box-shadow:none!important;border-radius:12px!important}
+html[data-tema] body .auds .dia b{color:var(--lv-i1)!important}
+html[data-tema] body .auds .dia span{color:var(--lv-i3)!important}
+html[data-tema] body .auds .lig{background:none!important;border:1px solid var(--lv-l2)!important;color:var(--lv-i1)!important;border-radius:999px!important;box-shadow:none!important}
+html[data-tema] body .auds .lig svg{stroke:var(--lv-i1)!important}
+html[data-tema] body .auds > div + div{border-top:1px solid var(--lv-l1)!important}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><script>try{var t=localStorage.getItem("campo_tema");if(!t)t="dark";document.documentElement.setAttribute("data-tema",t);}catch(e){document.documentElement.setAttribute("data-tema","light");}</script>
 </head>
@@ -1235,7 +1246,7 @@ html[data-tema] body .rn-wa{flex:none;font-size:12.5px;font-weight:600;color:var
 <script>
 (function(){
   'use strict';
-  var APP_VERSAO = 59;
+  var APP_VERSAO = 60;
   var CFG = { url: 'https://etmknidodbmtpvbzgvhp.supabase.co', key: 'sb_publishable_0tH0slL5lOQ06uZadSb28A__DYpJs0r' };
   var DOCS = [
     { k: 'procuracao', arq: 'Procuração', t: 'Procuração', s: 'assinada', ic: 'i-pena', req: true, fala: 'Tire a foto da procuração assinada. Se tiver mais de uma folha, toque de novo para a próxima.', multi: true },
