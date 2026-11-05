@@ -1894,6 +1894,7 @@ a.rep-st.ok{text-decoration:none}
   <symbol id="i-cash" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/></symbol>
   <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
   <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+  <symbol id="i-plug" viewBox="0 0 24 24"><path d="M9 2v6M15 2v6"/><path d="M6 8h12v4a6 6 0 0 1-12 0z"/><path d="M12 18v4"/></symbol>
   <symbol id="i-box" viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/></symbol>
 </svg>
 
@@ -1938,6 +1939,7 @@ a.rep-st.ok{text-decoration:none}
       <button class="tab admin-only" role="tab" id="tab-fin" aria-selected="false" type="button" title="Financeiro"><svg class="i"><use href="#i-cash"/></svg><span>Financeiro</span></button>
       <button class="tab" role="tab" id="tab-ret" aria-selected="false" type="button" title="Nova ação"><svg class="i"><use href="#i-file"/></svg><span>Nova ação</span></button>
       <button class="tab admin-only" role="tab" id="tab-equipe" aria-selected="false" type="button" title="Configurações"><svg class="i"><use href="#i-gear"/></svg><span>Configurações</span></button>
+      <button class="tab admin-only" role="tab" id="tab-integ" aria-selected="false" type="button" title="Integrações"><svg class="i"><use href="#i-plug"/></svg><span>Integrações</span></button>
     </nav>
   </aside>
   <div class="side-scrim" id="side-scrim"></div>
@@ -2255,6 +2257,16 @@ a.rep-st.ok{text-decoration:none}
           <button class="btn" id="btn-eq-novo" type="button"><svg class="i"><use href="#i-plus"/></svg>Novo funcionário</button>
         </div>
         <div class="card eq-list" id="eq-list"></div>
+        <p class="foot-note">Depois de cadastrar, envie o endereço do sistema ao funcionário. No primeiro uso ele clica em <b>Primeiro acesso</b>, informa o mesmo e-mail cadastrado aqui e cria a senha dele. <b>Administrador</b> faz tudo, inclusive excluir clientes e cuidar da equipe. <b>Assistente</b> cadastra e atualiza clientes, avisos e resultados, e gera convites, mas não exclui registros.</p>
+        <div class="sec-title">Prospectadores</div>
+        <div class="prosp-head">
+          <p class="view-desc">Quem é responsável por avisar cada cliente. Clientes novos são atribuídos automaticamente pelas palavras do endereço.</p>
+          <button class="btn" id="btn-prosp-novo" type="button"><svg class="i"><use href="#i-plus"/></svg>Novo prospectador</button>
+        </div>
+        <div class="prosp-grid" id="prosp-list"></div>
+      </section>
+
+      <section id="view-integ" hidden style="display:flex;flex-direction:column;gap:18px">
         <div class="integ-head"><div class="sec-title" style="margin:0">Integrações</div><p class="view-desc">Todas as integrações do escritório num só lugar. Clique no cartão para colar a chave, testar ou ajustar.</p></div>
         <div class="ig-grid" id="ig-grid"></div>
         <div class="integ-grid" id="ig-paineis" hidden>
@@ -2340,13 +2352,6 @@ a.rep-st.ok{text-decoration:none}
           <small class="integ-s" id="av-status">Nada sendo enviado.</small>
         </div>
         </div>
-        <p class="foot-note">Depois de cadastrar, envie o endereço do sistema ao funcionário. No primeiro uso ele clica em <b>Primeiro acesso</b>, informa o mesmo e-mail cadastrado aqui e cria a senha dele. <b>Administrador</b> faz tudo, inclusive excluir clientes e cuidar da equipe. <b>Assistente</b> cadastra e atualiza clientes, avisos e resultados, e gera convites, mas não exclui registros.</p>
-        <div class="sec-title">Prospectadores</div>
-        <div class="prosp-head">
-          <p class="view-desc">Quem é responsável por avisar cada cliente. Clientes novos são atribuídos automaticamente pelas palavras do endereço.</p>
-          <button class="btn" id="btn-prosp-novo" type="button"><svg class="i"><use href="#i-plus"/></svg>Novo prospectador</button>
-        </div>
-        <div class="prosp-grid" id="prosp-list"></div>
       </section>
 
     </div>
@@ -6082,7 +6087,7 @@ a.rep-st.ok{text-decoration:none}
     } catch(err){ toast(errMsg(err)); }
     finally { $('av-save').disabled = false; }
   });
-  var VIEWS = { g: ['tab-painel', 'view-painel'], d: ['tab-cad', 'view-cad'], n: ['tab-novo', 'view-novo'], c: ['tab-clientes', 'view-clientes'], f: ['tab-fin', 'view-fin'], r: ['tab-ret', 'view-ret'], t: ['tab-ct', 'view-ct'], h: ['tab-aud', 'view-aud'], e: ['tab-equipe', 'view-equipe'] };
+  var VIEWS = { g: ['tab-painel', 'view-painel'], d: ['tab-cad', 'view-cad'], n: ['tab-novo', 'view-novo'], c: ['tab-clientes', 'view-clientes'], f: ['tab-fin', 'view-fin'], r: ['tab-ret', 'view-ret'], t: ['tab-ct', 'view-ct'], h: ['tab-aud', 'view-aud'], e: ['tab-equipe', 'view-equipe'], i: ['tab-integ', 'view-integ'] };
   var TITULOS = {
     g: ['Painel', 'Visão geral da Queda de Energia por leva (cada leva é um mutirão de audiências): resultados, renovação e todos os clientes'],
     d: ['Cadastro', 'Clientes em cadastro, ainda sem protocolo · Ações contra a Âmbar Energia, Alvarães/AM'],
@@ -6095,13 +6100,14 @@ a.rep-st.ok{text-decoration:none}
     r: ['Nova ação', 'Base de todos os clientes protocolados · quando cada um pode entrar com a nova ação (5 meses depois do protocolo)'],
     t: ['Audiências', 'Contestações: teses da Âmbar e resultado de cada cliente das audiências a lançar'],
     h: ['Audiências', 'Pauta marcada no PROJUDI, contestações e resultados'],
-    e: ['Configurações', 'Equipe, integrações e prospectadores']
+    e: ['Configurações', 'Equipe e prospectadores'],
+    i: ['Integrações', 'LiderHub, tribunal, IA, Asaas, cadastro pelo celular e avisos automáticos']
   };
   function showTab(which){
     state.view = which;
-    if ((which === 'e' || which === 'f') && !isAdmin()) which = 'c';
+    if ((which === 'e' || which === 'f' || which === 'i') && !isAdmin()) which = 'c';
     if (TITULOS[which]){ $('pg-tit').textContent = TITULOS[which][0]; $('pg-sub').textContent = TITULOS[which][1]; }
-    $('btn-novo').hidden = which === 'e';
+    $('btn-novo').hidden = which === 'e' || which === 'i';
     Object.keys(VIEWS).forEach(function(k){ $(VIEWS[k][0]).setAttribute('aria-selected', k === which ? 'true' : 'false'); $(VIEWS[k][1]).hidden = k !== which; });
     if (which === 't') $('tab-aud').setAttribute('aria-selected', 'true');
     pintarAudModo();
